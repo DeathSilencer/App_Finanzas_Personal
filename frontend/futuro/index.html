@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Financiero Al Futuro | Sistema Maestro 7 Pasos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Estilos compartidos y de futuro -->
+    <link rel="stylesheet" href="../shared/css/base.css">
+    <link rel="stylesheet" href="css/futuro.css">
+</head>
+<body class="min-h-screen flex flex-col antialiased relative">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- ========================================== -->
+    <!-- NOTIFICACIÓN LATERAL IZQUIERDA: TDC NU -->
+    <!-- ========================================== -->
+    <div id="tdc-side-reminder" class="fixed bottom-6 left-6 z-50 transition-all duration-500 transform translate-x-[-130%] opacity-0 max-w-sm w-full pointer-events-auto">
+        <div class="glass-panel p-5 rounded-3xl border border-purple-500/40 shadow-2xl shadow-purple-950/80 bg-gradient-to-b from-slate-900/95 via-purple-950/50 to-slate-950/95 relative overflow-hidden backdrop-blur-xl">
+            <div class="absolute -top-10 -right-10 w-28 h-28 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-purple-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center shadow-lg">
+                        <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-white tracking-wide flex items-center space-x-1.5">
+                            <span>Tarjeta de Crédito Nu</span>
+                            <span id="tdc-side-badge-status" class="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-800">TOTALERO</span>
+                        </h4>
+                        <p class="text-[10px] text-slate-400">Recordatorio inteligente al iniciar</p>
+                    </div>
+                </div>
+                <button onclick="toggleSideReminder(false)" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition" title="Minimizar">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                        <p class="text-[10px] text-slate-400 font-semibold">💳 Llevas Gastado / Deuda:</p>
+                        <p class="text-base font-black text-rose-400 mt-0.5" id="tdc-side-deuda">$0.00</p>
+                        <p class="text-[9px] text-slate-500" id="tdc-side-uso">0% de tu límite ($500)</p>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                        <p class="text-[10px] text-slate-400 font-semibold">🟢 Saldo Disponible:</p>
+                        <p class="text-base font-black text-emerald-400 mt-0.5" id="tdc-side-disponible">$500.00</p>
+                        <p class="text-[9px] text-slate-500">Límite Total: $500.00</p>
+                    </div>
+                </div>
+                <div class="p-3 rounded-xl bg-purple-950/60 border border-purple-500/30 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-purple-200">Monto para no pagar intereses:</span>
+                        <span class="text-sm font-black text-white" id="tdc-side-pago-totalero">$0.00</span>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-purple-500/20 grid grid-cols-2 gap-2 text-[10px]">
+                        <div>
+                            <span class="text-slate-400 font-medium">✂️ Fecha de Corte:</span>
+                            <p class="font-bold text-slate-200" id="tdc-side-corte">Día 23</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-medium">⏰ Fecha Límite Pago:</span>
+                            <p class="font-bold text-amber-300" id="tdc-side-pago-limite">Día 3 del mes</p>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-purple-300 mt-2 font-medium" id="tdc-side-dias-restantes">
+                        ⏳ ¡Estás a tiempo! Paga antes de la fecha límite para pagar $0.00 de intereses.
+                    </p>
+                </div>
+            </div>
+            <div class="mt-3.5 flex items-center space-x-2">
+                <button onclick="switchTab('tab-tdc'); toggleSideReminder(false);" class="flex-1 py-1.5 text-center bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-1.5">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                    <span>Ver Pestaña TDC</span>
+                </button>
+                <button onclick="toggleSideReminder(false)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimized Floating Button (Left-Side) -->
+    <div id="tdc-side-pill" class="fixed bottom-6 left-6 z-40 hidden pointer-events-auto">
+        <button onclick="toggleSideReminder(true)" class="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-bold text-xs shadow-2xl shadow-purple-900/50 flex items-center space-x-2 border border-purple-400/40 hover:scale-105 transition-all">
+            <i data-lucide="credit-card" class="w-4 h-4 text-purple-300"></i>
+            <span>TDC Nu: <span id="tdc-pill-deuda" class="text-amber-300">$0.00</span></span>
+        </button>
+    </div>
+
+    <!-- Top Navbar -->
+    <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                    <i data-lucide="trending-up" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        Plan Financiero a Futuro
+                    </h1>
+                    <p class="text-xs text-slate-400">Sincronizado con <span class="text-emerald-400 font-semibold">Plan_Financiero_Futuro.xlsx</span></p>
+                </div>
+            </div>
+
+            <!-- Switcher back to Gastos Básicos -->
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleSideReminder(true)" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-xs font-bold text-purple-300 border border-purple-500/30 transition">
+                    <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+                    <span>TDC Nu</span>
+                </button>
+                <div class="hidden sm:flex items-center space-x-2 bg-emerald-950/60 border border-emerald-800/60 px-3 py-1 rounded-full text-xs font-semibold text-emerald-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Excel Conectado</span>
+                </div>
+                <a href="../gastos/" class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                    <span>Ir a Gastos Básicos</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Navigation Tabs (Exact 5 Sheets from Excel) -->
+        <div class="flex space-x-2 border-b border-slate-800 pb-2 overflow-x-auto tab-scroll">
+            <button onclick="switchTab('tab-dash-maestro')" id="btn-tab-dash-maestro" class="tab-btn active px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>📊 Dashboard Maestro</span>
+            </button>
+            <button onclick="switchTab('tab-cetes')" id="btn-tab-cetes" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+                <span>🔒 Ahorro Involuntario Cetes</span>
+            </button>
+            <button onclick="switchTab('tab-tdc')" id="btn-tab-tdc" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                <span>💳 Control TDC Nu</span>
+            </button>
+            <button onclick="switchTab('tab-fondo-emergencia')" id="btn-tab-fondo-emergencia" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+                <span>🛡️ Proyección Fondo Emergencia</span>
+            </button>
+            <button onclick="switchTab('tab-retiro')" id="btn-tab-retiro" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="award" class="w-4 h-4"></i>
+                <span>🚀 Retiro &amp; Beneficio SAT</span>
+            </button>
+            <button onclick="switchTab('tab-config-maestro')" id="btn-tab-config-maestro" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-amber-400 hover:text-amber-300 transition whitespace-nowrap">
+                <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+                <span>⚙️ Celdas Amarillas Maestras</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: DASHBOARD MAESTRO -->
+        <div id="tab-dash-maestro" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 kpi-grid">
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingreso Base Quincenal</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-white mt-1" id="m-kpi-ingreso">$5,000.00</h3>
+                    <p class="text-xs text-slate-400 mt-2 font-medium">Equivalente a $10,000.00/mes</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tasa Nu Cuenta</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-purple-400 mt-1" id="m-kpi-nu">13.00%</h3>
+                    <p class="text-xs text-slate-400 mt-2">Rendimiento diario compuesto</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tasa Cetesdirecto (3M)</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-blue-400 mt-1" id="m-kpi-cetes">6.45%</h3>
+                    <p class="text-xs text-slate-400 mt-2">Ahorro recurrente involuntario</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tasa AFORE XXI Banorte</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1" id="m-kpi-afore">8.50%</h3>
+                    <p class="text-xs text-emerald-400 mt-2 font-semibold">+ Devolución ISR Art. 151</p>
+                </div>
+            </div>
+
+            <!-- Master Distribution Table -->
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-400"></i>
+                            <span>Distribución Automática de Ingresos (Regla Alemana 50/30/10/5/5)</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Sincronizada directamente con la hoja <b>Dashboard Maestro</b> de tu Excel</p>
+                    </div>
+                    <button onclick="switchTab('tab-config-maestro')" class="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition">
+                        <i data-lucide="sliders" class="w-3 h-3"></i>
+                        <span>Ajustar Parámetros</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Paso / Regla</th>
+                                <th class="p-3.5">Nombre del Rubro</th>
+                                <th class="p-3.5 text-center">% Asignado</th>
+                                <th class="p-3.5 text-right">Quincenal ($)</th>
+                                <th class="p-3.5 text-right">Mensual ($)</th>
+                                <th class="p-3.5">Destino / Mecánica Operativa</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="p-3.5 font-bold text-blue-400">Paso 1</td>
+                                <td class="p-3.5 font-semibold text-white">🔒 Ahorro Involuntario Inmediato</td>
+                                <td class="p-3.5 text-center font-bold text-blue-300" id="dist-pct-p1">5.0%</td>
+                                <td class="p-3.5 text-right font-bold text-white" id="dist-q-p1">$250.00</td>
+                                <td class="p-3.5 text-right font-medium text-slate-300" id="dist-m-p1">$500.00</td>
+                                <td class="p-3.5 text-xs text-slate-300">Cetesdirecto (Ahorro recurrente a 3 meses)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="p-3.5 font-bold text-indigo-400">Paso 2</td>
+                                <td class="p-3.5 font-semibold text-white">🏠 Gastos Básicos &amp; Supervivencia</td>
+                                <td class="p-3.5 text-center font-bold text-indigo-300" id="dist-pct-p2">50.0%</td>
+                                <td class="p-3.5 text-right font-bold text-white" id="dist-q-p2">$2,500.00</td>
+                                <td class="p-3.5 text-right font-medium text-slate-300" id="dist-m-p2">$5,000.00</td>
+                                <td class="p-3.5 text-xs text-slate-300">Nu Cajita Básicos (13% diario) -&gt; TDC / Débito</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="p-3.5 font-bold text-purple-400">Paso 7</td>
+                                <td class="p-3.5 font-semibold text-white">🍕 Ocio &amp; Vida Culpa Cero</td>
+                                <td class="p-3.5 text-center font-bold text-purple-300" id="dist-pct-p7">30.0%</td>
+                                <td class="p-3.5 text-right font-bold text-white" id="dist-q-p7">$1,500.00</td>
+                                <td class="p-3.5 text-right font-medium text-slate-300" id="dist-m-p7">$3,000.00</td>
+                                <td class="p-3.5 text-xs text-slate-300">Nu Cajita Ocio (13% diario) -&gt; Débito Directo</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="p-3.5 font-bold text-teal-400">Paso 3</td>
+                                <td class="p-3.5 font-semibold text-white">🛡️ Fondo de Emergencia</td>
+                                <td class="p-3.5 text-center font-bold text-teal-300" id="dist-pct-p3">10.0%</td>
+                                <td class="p-3.5 text-right font-bold text-white" id="dist-q-p3">$500.00</td>
+                                <td class="p-3.5 text-right font-medium text-slate-300" id="dist-m-p3">$1,000.00</td>
+                                <td class="p-3.5 text-xs text-slate-300">Nu Cajita Emergencia (Meta 3 Meses Básicos)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="p-3.5 font-bold text-emerald-400">Paso 6</td>
+                                <td class="p-3.5 font-semibold text-white">🚀 Retiro con Beneficio Fiscal SAT</td>
+                                <td class="p-3.5 text-center font-bold text-emerald-300" id="dist-pct-p6">5.0%</td>
+                                <td class="p-3.5 text-right font-bold text-white" id="dist-q-p6">$250.00</td>
+                                <td class="p-3.5 text-right font-medium text-slate-300" id="dist-m-p6">$500.00</td>
+                                <td class="p-3.5 text-xs text-slate-300">AFORE XXI Banorte (Aporte Deducible Art. 151)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: AHORRO INVOLUNTARIO CETES -->
+        <div id="tab-cetes" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 rounded-2xl bg-gradient-to-r from-blue-950/50 via-slate-900 to-slate-900 border-blue-800/30">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-xs font-bold uppercase">Interés Compuesto Cetesdirecto</span>
+                        <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">🔒 Aporte Quincenal: <span id="cetes-kpi-q" class="text-blue-400">$250.00</span></h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
+                            Domiciliado en Cetes a 3 meses con reinversión automática al 6.45% anual. No depende de fuerza de voluntad.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl">
+                <h3 class="text-base font-bold text-white mb-4 flex items-center space-x-2">
+                    <i data-lucide="trending-up" class="w-4 h-4 text-blue-400"></i>
+                    <span>Tabla de Evolución Cetes a 25 Años (Hoja Excel 'Ahorro Involuntario Cetes')</span>
+                </h3>
+
+                <div class="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-800 rounded-xl">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Año</th>
+                                <th class="p-3.5 text-right">Ahorro Salido de Tu Bolsa ($)</th>
+                                <th class="p-3.5 text-right">Intereses Ganados ($)</th>
+                                <th class="p-3.5 text-right">Saldo Total Acumulado ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-cetes" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: CONTROL TDC NU -->
+        <div id="tab-tdc" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 kpi-grid">
+                <div class="glass-panel p-5 rounded-2xl border-purple-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Límite de Crédito</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="tdc-stat-limite">$500.00</h3>
+                    <p class="text-xs text-purple-400 mt-2 font-medium">Uso Máx Sugerido: <span class="font-bold text-white">$150.00 (30%)</span></p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Deuda Pendiente</p>
+                    <h3 class="text-2xl font-black text-rose-400 mt-1" id="tdc-stat-deuda">$0.00</h3>
+                    <p class="text-xs text-slate-400 mt-2">Utilización: <span id="tdc-stat-util" class="font-bold text-white">0%</span></p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo Disponible</p>
+                    <h3 class="text-2xl font-black text-emerald-400 mt-1" id="tdc-stat-disp">$500.00</h3>
+                    <p class="text-xs text-slate-400 mt-2">En Cajita Básicos rindiendo 13%</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Fechas Clave Nu</p>
+                    <h3 class="text-sm font-bold text-slate-200 mt-1">Corte: <span id="tdc-stat-corte" class="text-indigo-300">Día 23</span> | Pago: <span id="tdc-stat-pago" class="text-amber-300">Día 3</span></h3>
+                    <p class="text-xs text-rose-400 mt-2 font-semibold">Si te atrasas pagarías: <span id="tdc-stat-mora">+$0.00</span></p>
+                </div>
+            </div>
+
+            <!-- TDC Purchases Log & Form -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Add Purchase Form -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4 text-purple-400"></i>
+                        <span>Registrar Compra TDC Nu</span>
+                    </h3>
+                    <form id="form-add-tdc" onsubmit="handleTDCAdd(event)" class="space-y-3 text-xs">
+                        <div>
+                            <label class="text-slate-400 font-medium">Fecha de Compra</label>
+                            <input type="date" id="tdc-in-fecha" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 font-medium">Monto ($ MXN)</label>
+                            <input type="number" step="0.5" id="tdc-in-monto" placeholder="0.00" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 font-medium">Concepto / Establecimiento</label>
+                            <input type="text" id="tdc-in-concepto" placeholder="Ej. Oxxo / Despensa" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 font-medium">Categoría</label>
+                            <select id="tdc-in-categoria" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                                <option value="Básicos">Básicos</option>
+                                <option value="Ocio">Ocio</option>
+                                <option value="Imprevistos">Imprevistos</option>
+                                <option value="Copias/Material">Copias/Material</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 font-medium">¿Apartado en Cajita Básicos?</label>
+                            <select id="tdc-in-apartado" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                                <option value="Sí (En Cajita)">Sí (En Cajita al 13%)</option>
+                                <option value="Pendiente">Pendiente por apartar</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/30">
+                            Guardar Compra en Excel
+                        </button>
+                    </form>
+
+                    <!-- Tarjeta de Cargo Automático Recurrente -->
+                    <div class="mt-4 p-3.5 rounded-xl bg-slate-900/90 border border-purple-500/30 text-xs">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-purple-300 flex items-center space-x-1.5">
+                                <i data-lucide="repeat" class="w-3.5 h-3.5 text-purple-400"></i>
+                                <span>Cargo Automático Activo</span>
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                                🟢 PROGRAMADO
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-slate-300">
+                            <div>
+                                <p class="font-bold text-white flex items-center space-x-1">
+                                    <span>🎵 Spotify</span>
+                                    <span class="text-[10px] text-purple-400">(Ocio)</span>
+                                </p>
+                                <p class="text-[11px] text-slate-400">Cada día 12 de mes (Próximo: 12/09/2026)</p>
+                            </div>
+                            <div class="text-right font-black text-emerald-400 text-sm">
+                                $70.00 MXN
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Purchases Table (Hoja Control TDC Nu) -->
+                <div class="glass-panel p-5 rounded-2xl lg:col-span-2 flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                                <i data-lucide="list" class="w-4 h-4 text-purple-400"></i>
+                                <span>Bitácora de Compras (Hoja 'Control TDC Nu')</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Sincronizado directamente con las filas 13 a 112 de tu Excel (Capacidad: 100 compras)</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold" id="tdc-badge-count">
+                                0 compras
+                            </span>
+                            <button onclick="handleLiquidateTDC()" class="px-3 py-1 bg-emerald-600/30 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold transition">
+                                💳 Liquidar Todo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto flex-1 max-h-[500px] overflow-y-auto border border-slate-800 rounded-xl">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3">#</th>
+                                    <th class="p-3">Fecha</th>
+                                    <th class="p-3 text-right">Monto</th>
+                                    <th class="p-3">Concepto</th>
+                                    <th class="p-3">Categoría</th>
+                                    <th class="p-3 text-center">Estado</th>
+                                    <th class="p-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-tdc" class="divide-y divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: FONDO DE EMERGENCIA -->
+        <div id="tab-fondo-emergencia" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 rounded-2xl bg-gradient-to-r from-teal-950/50 via-slate-900 to-slate-900 border-teal-800/30">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-xs font-bold uppercase">Escudo Financiero Nu Cajita 13%</span>
+                        <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">🛡️ Meta 3 Meses Básicos: <span id="fe-kpi-meta" class="text-teal-400">$15,000.00</span></h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
+                            Aportando <b>$1,000.00 MXN mensuales</b> (10% de tus ingresos) creciendo al 13% anual diario.
+                        </p>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-xs text-slate-400">Meta Alcanzada En</p>
+                        <h3 class="text-2xl sm:text-3xl font-black text-emerald-400">Mes 14</h3>
+                        <p class="text-xs text-slate-400 mt-1">($15,702.43 MXN)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl">
+                <h3 class="text-base font-bold text-white mb-4 flex items-center space-x-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-teal-400"></i>
+                    <span>Proyección Mensual a 24 Meses (Hoja Excel 'Proyección Fondo Emergencia')</span>
+                </h3>
+
+                <div class="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-800 rounded-xl">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Mes</th>
+                                <th class="p-3.5 text-right">Aporte Salido de Bolsa ($)</th>
+                                <th class="p-3.5 text-right">Interés del Mes ($)</th>
+                                <th class="p-3.5 text-right">Interés Acumulado ($)</th>
+                                <th class="p-3.5 text-right">Saldo en Cajita ($)</th>
+                                <th class="p-3.5 text-center">% Avance Meta</th>
+                                <th class="p-3.5 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-fe" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: RETIRO & BENEFICIO SAT -->
+        <div id="tab-retiro" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 rounded-2xl bg-gradient-to-r from-emerald-950/50 via-slate-900 to-slate-900 border-emerald-800/30">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold uppercase">Efecto Doble Motor AFORE + SAT Art. 151</span>
+                        <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">🚀 Aporte Anual: <span id="sat-kpi-aporte" class="text-emerald-400">$6,000.00 MXN</span></h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
+                            Creciendo al 8.5% en AFORE XXI Banorte + <b class="text-teal-300">Devolución Anual SAT en Abril de $652.80 MXN</b>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl">
+                <h3 class="text-base font-bold text-white mb-4 flex items-center space-x-2">
+                    <i data-lucide="award" class="w-4 h-4 text-emerald-400"></i>
+                    <span>Tabla de Proyección a 25 Años con Beneficio Fiscal (Hoja Excel 'Retiro &amp; Beneficio SAT')</span>
+                </h3>
+
+                <div class="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-800 rounded-xl">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Año</th>
+                                <th class="p-3.5 text-right">Ahorro Bolsa ($)</th>
+                                <th class="p-3.5 text-right">Devuelto por SAT ($)</th>
+                                <th class="p-3.5 text-right">Saldo AFORE XXI ($)</th>
+                                <th class="p-3.5 text-right">Ganancia Neta ($)</th>
+                                <th class="p-3.5 text-center">Efecto Multiplicador</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-sat" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: CONFIGURACIÓN CELDAS AMARILLAS MAESTRAS -->
+        <div id="tab-config-maestro" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 rounded-2xl border-amber-500/30">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                        <i data-lucide="sliders" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Panel de Control Maestro (Celdas Amarillas B5:B17)</h3>
+                        <p class="text-xs text-slate-400">Cambia aquí tus ingresos, tasas de interés o porcentajes de distribución para actualizar todo tu Excel.</p>
+                    </div>
+                </div>
+
+                <form id="form-master-config" onsubmit="handleMasterConfigSubmit(event)" class="space-y-6 text-xs mt-6">
+                    <!-- Bloque 1: Ingreso y Tasas -->
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">1. Ingresos y Rendimientos Anuales</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="text-slate-400 font-semibold">Ingreso Base Quincenal ($ MXN)</label>
+                                <input type="number" step="100" id="cfg-ingreso" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Tasa Anual Nu Cuenta (Decimal)</label>
+                                <input type="number" step="0.001" id="cfg-tasa-nu" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Tasa Anual Cetes 3M (Decimal)</label>
+                                <input type="number" step="0.0001" id="cfg-tasa-cetes" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Tasa Anual AFORE (Decimal)</label>
+                                <input type="number" step="0.001" id="cfg-tasa-afore" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloque 2: Porcentajes de Distribución -->
+                    <div class="space-y-3 pt-4 border-t border-slate-800">
+                        <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">2. Distribución de Ingresos (Regla Alemana)</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div>
+                                <label class="text-slate-400 font-semibold">Paso 1: Cetes (5% = 0.05)</label>
+                                <input type="number" step="0.01" id="cfg-pct-p1" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Paso 2: Básicos (50% = 0.50)</label>
+                                <input type="number" step="0.01" id="cfg-pct-p2" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Paso 7: Ocio (30% = 0.30)</label>
+                                <input type="number" step="0.01" id="cfg-pct-p7" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Paso 3: Emergencia (10% = 0.10)</label>
+                                <input type="number" step="0.01" id="cfg-pct-p3" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Paso 6: Retiro (5% = 0.05)</label>
+                                <input type="number" step="0.01" id="cfg-pct-p6" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloque 3: TDC Nu -->
+                    <div class="space-y-3 pt-4 border-t border-slate-800">
+                        <h4 class="text-xs font-bold text-purple-400 uppercase tracking-wider">3. Parámetros Tarjeta de Crédito Nu</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="text-slate-400 font-semibold">Límite de Crédito ($ MXN)</label>
+                                <input type="number" step="50" id="cfg-tdc-limite" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Tasa Moratoria Anual (99.9% = 0.999)</label>
+                                <input type="number" step="0.001" id="cfg-tdc-tasa" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Día de Corte Mensual</label>
+                                <input type="number" id="cfg-tdc-corte" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">Día Límite de Pago Mensual</label>
+                                <input type="number" id="cfg-tdc-pago" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black rounded-xl text-sm transition shadow-lg shadow-amber-600/30 flex items-center justify-center space-x-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Guardar Todos los Parámetros en Plan_Financiero_Futuro.xlsx</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Editar Compra TDC -->
+    <div id="modal-edit-tdc" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-3xl max-w-md w-full border border-purple-500/40 shadow-2xl relative">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="edit-3" class="w-4 h-4 text-purple-400"></i>
+                    <span>Editar Compra TDC Nu</span>
+                </h3>
+                <button onclick="closeEditTDCModal()" class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="form-edit-tdc" onsubmit="handleEditTDCSubmit(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="edit-tdc-fila">
+                <div>
+                    <label class="text-slate-400 font-medium">Fecha</label>
+                    <input type="date" id="edit-tdc-fecha" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1">
+                </div>
+                <div>
+                    <label class="text-slate-400 font-medium">Monto ($ MXN)</label>
+                    <input type="number" step="0.5" id="edit-tdc-monto" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold">
+                </div>
+                <div>
+                    <label class="text-slate-400 font-medium">Concepto</label>
+                    <input type="text" id="edit-tdc-concepto" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1">
+                </div>
+                <div>
+                    <label class="text-slate-400 font-medium">Categoría</label>
+                    <select id="edit-tdc-categoria" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                        <option value="Básicos">Básicos</option>
+                        <option value="Ocio">Ocio</option>
+                        <option value="Imprevistos">Imprevistos</option>
+                        <option value="Copias/Material">Copias/Material</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-slate-400 font-medium">Apartado en Cajita</label>
+                        <select id="edit-tdc-apartado" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                            <option value="Sí (En Cajita)">Sí (En Cajita)</option>
+                            <option value="Pendiente">Pendiente</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-slate-400 font-medium">Estado de Pago</label>
+                        <select id="edit-tdc-estado" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Pagado">Pagado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeEditTDCModal()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/30">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Eliminar Compra TDC -->
+    <div id="modal-delete-tdc" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-3xl max-w-sm w-full border border-rose-900/40 shadow-2xl relative text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-4 border border-rose-500/30">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">¿Eliminar esta compra?</h3>
+            <p class="text-xs text-slate-300 mt-2" id="delete-tdc-texto">
+                Esta acción eliminará el registro de la hoja 'Control TDC Nu' de tu archivo Excel.
+            </p>
+            <input type="hidden" id="delete-tdc-fila-target">
+
+            <div class="flex space-x-2 mt-6">
+                <button type="button" onclick="closeDeleteTDCModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">
+                    Cancelar
+                </button>
+                <button type="button" onclick="confirmarEliminarTDC()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-rose-600/30">
+                    Sí, Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Scripts externos (orden importa) ── -->
+    <script src="../shared/js/toast.js"></script>
+    <script src="../shared/js/tdc-reminder.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/tdc.js"></script>
+    <script src="js/modals.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inFecha = document.getElementById('tdc-in-fecha');
+            if (inFecha) inFecha.value = new Date().toISOString().split('T')[0];
+            loadFuturoData();
+        });
+    </script>
+</body>
+</html>

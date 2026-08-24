@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suite Financiera Personal | Hub Central</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="shared/css/base.css">
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 antialiased">
+
+    <div class="max-w-4xl w-full text-center space-y-8">
+        
+        <!-- Main Logo & Titles -->
+        <div class="space-y-3">
+            <div class="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-emerald-500 shadow-xl shadow-indigo-500/20 mb-2">
+                <i data-lucide="wallet" class="w-8 h-8 text-white"></i>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-black bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                Suite Financiera Personal
+            </h1>
+            <p class="text-slate-400 text-sm max-w-lg mx-auto">
+                Plataforma web sincronizada en tiempo real con tus archivos de Excel en <b class="text-slate-200">Planes financieros a futuro y diario</b>.
+            </p>
+        </div>
+
+        <!-- 2 Main Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            
+            <!-- Card 1: Gastos Básicos (Destacada) -->
+            <a href="gastos/" class="glass-panel p-6 sm:p-8 rounded-3xl hover:border-purple-500/60 hover:shadow-2xl hover:shadow-purple-500/20 transition group flex flex-col justify-between relative overflow-hidden">
+                <div class="space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30 group-hover:scale-110 transition">
+                        <i data-lucide="receipt" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2.5 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-bold uppercase">Operación Diaria</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-white mt-2 group-hover:text-purple-300 transition">Control de Gastos Básicos</h2>
+                        <p class="text-xs text-slate-400 mt-1">
+                            Presupuesto quincenal de $2,500, registro rápido de combis ($32), comidas ($18), cálculo de excedente (80% Moto / 20% Salidas) y simulador de moto de $35,000.
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-semibold text-purple-400">
+                    <span>Sincronizado con Control_Gastos_Basicos.xlsx</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition"></i>
+                </div>
+            </a>
+
+            <!-- Card 2: Plan a Futuro -->
+            <a href="futuro/" class="glass-panel p-6 sm:p-8 rounded-3xl hover:border-emerald-500/60 hover:shadow-2xl hover:shadow-emerald-500/20 transition group flex flex-col justify-between relative overflow-hidden">
+                <div class="space-y-4">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 group-hover:scale-110 transition">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-bold uppercase">Estrategia Macro</span>
+                        </div>
+                        <h2 class="text-xl font-bold text-white mt-2 group-hover:text-emerald-300 transition">Plan Financiero al Futuro</h2>
+                        <p class="text-xs text-slate-400 mt-1">
+                            Regla 50/30/10/5/5 de Germán, Cetes 6.45%, Afore XXI Banorte con beneficio fiscal del SAT y monitoreo de tarjeta Nu ($500).
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-semibold text-emerald-400">
+                    <span>Sincronizado con Plan_Financiero_Futuro.xlsx</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition"></i>
+                </div>
+            </a>
+
+        </div>
+
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

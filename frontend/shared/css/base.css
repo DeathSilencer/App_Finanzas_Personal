@@ -1,0 +1,87 @@
+/* base.css — Estilos compartidos entre gastos/ y futuro/ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Tipografía y fondo global ───────────────────────────────────────────── */
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #0b1120;
+    color: #f8fafc;
+}
+
+/* ── Panel de vidrio (glass morphism) ───────────────────────────────────── */
+.glass-panel {
+    background: rgba(30, 41, 59, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────── */
+.tab-btn.active {
+    background-color: #10b981;
+    color: #ffffff;
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
+    border-color: #10b981;
+}
+
+/* ── Responsive: overflow en tabs pequeños ──────────────────────────────── */
+@media (max-width: 640px) {
+    .tab-btn {
+        font-size: 0.65rem;
+        padding: 0.4rem 0.6rem;
+    }
+    .tab-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .tab-scroll::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Reducir padding en tablas para pantallas chicas */
+    td, th {
+        padding: 0.4rem 0.5rem !important;
+        font-size: 0.7rem;
+    }
+
+    /* KPI cards en columna en móvil */
+    .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 400px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Animaciones ─────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* ── Print (PDF) ─────────────────────────────────────────────────────────── */
+@media print {
+    header, .tab-scroll, button, #tdc-side-reminder, #tdc-side-pill {
+        display: none !important;
+    }
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    .glass-panel {
+        background: white !important;
+        border: 1px solid #ccc !important;
+        backdrop-filter: none !important;
+    }
+    .tab-content.hidden {
+        display: block !important;
+    }
+}

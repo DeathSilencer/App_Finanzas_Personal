@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Respaldos
+_backup_antiguo/
+
+# Bases de datos y archivos locales
+*.db
+finanzas.db
+*.sqlite3
+
+# Entornos y secretos
+.env
+.env.local
+.env.*.local
+
+# Archivos de Excel (mantener datos personales fuera de git)
+*.xlsx
+*.xls
+*.csv
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDEs y Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# SO
+.DS_Store
+Thumbs.db

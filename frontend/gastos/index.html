@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Gastos Básicos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Estilos compartidos y de gastos -->
+    <link rel="stylesheet" href="../shared/css/base.css">
+    <link rel="stylesheet" href="css/gastos.css">
+</head>
+
+<body class="min-h-screen flex flex-col antialiased relative">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- ========================================== -->
+    <!-- NOTIFICACIÓN LATERAL IZQUIERDA: TDC NU -->
+    <!-- ========================================== -->
+    <div id="tdc-side-reminder"
+        class="fixed bottom-6 left-6 z-50 transition-all duration-500 transform translate-x-[-130%] opacity-0 max-w-sm w-full pointer-events-auto">
+        <div
+            class="glass-panel p-5 rounded-3xl border border-purple-500/40 shadow-2xl shadow-purple-950/80 bg-gradient-to-b from-slate-900/95 via-purple-950/50 to-slate-950/95 relative overflow-hidden backdrop-blur-xl">
+            <div
+                class="absolute -top-10 -right-10 w-28 h-28 bg-purple-500/20 rounded-full blur-2xl pointer-events-none">
+            </div>
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div
+                        class="w-8 h-8 rounded-xl bg-purple-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center shadow-lg">
+                        <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-white tracking-wide flex items-center space-x-1.5">
+                            <span>Tarjeta de Crédito Nu</span>
+                            <span id="tdc-side-badge-status"
+                                class="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-800">TOTALERO</span>
+                        </h4>
+                        <p class="text-[10px] text-slate-400">Recordatorio inteligente al iniciar</p>
+                    </div>
+                </div>
+                <button onclick="toggleSideReminder(false)"
+                    class="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition"
+                    title="Minimizar">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                        <p class="text-[10px] text-slate-400 font-semibold">💳 Llevas Gastado / Deuda:</p>
+                        <p class="text-base font-black text-rose-400 mt-0.5" id="tdc-side-deuda">$0.00</p>
+                        <p class="text-[9px] text-slate-500" id="tdc-side-uso">0% de tu límite</p>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+                        <p class="text-[10px] text-slate-400 font-semibold">🟢 Saldo Disponible:</p>
+                        <p class="text-base font-black text-emerald-400 mt-0.5" id="tdc-side-disponible">$0.00</p>
+                        <p class="text-[9px] text-slate-500" id="tdc-side-limite-sub">Límite Total</p>
+                    </div>
+                </div>
+                <div class="p-3 rounded-xl bg-purple-950/60 border border-purple-500/30 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-purple-200">Monto para no pagar intereses:</span>
+                        <span class="text-sm font-black text-white" id="tdc-side-pago-totalero">$0.00</span>
+                    </div>
+                    <div class="mt-2 pt-2 border-t border-purple-500/20 grid grid-cols-2 gap-2 text-[10px]">
+                        <div>
+                            <span class="text-slate-400 font-medium">✂️ Fecha de Corte:</span>
+                            <p class="font-bold text-slate-200" id="tdc-side-corte">Día 23</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-medium">⏰ Fecha Límite Pago:</span>
+                            <p class="font-bold text-amber-300" id="tdc-side-pago-limite">Día 3 del mes</p>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-purple-300 mt-2 font-medium" id="tdc-side-dias-restantes">
+                        ⏳ ¡Estás a tiempo! Paga antes de la fecha límite para pagar $0.00 de intereses.
+                    </p>
+                </div>
+            </div>
+            <div class="mt-3.5 flex items-center space-x-2">
+                <a href="../futuro/"
+                    class="flex-1 py-1.5 text-center bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-1.5">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>
+                    <span>Ir a Control TDC</span>
+                </a>
+                <button onclick="toggleSideReminder(false)"
+                    class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minimized Floating Button (Left-Side) -->
+    <div id="tdc-side-pill" class="fixed bottom-6 left-6 z-40 hidden pointer-events-auto">
+        <button onclick="toggleSideReminder(true)"
+            class="px-3.5 py-2 rounded-2xl bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-600 hover:to-indigo-500 text-white font-bold text-xs shadow-2xl shadow-purple-900/50 flex items-center space-x-2 border border-purple-400/40 hover:scale-105 transition-all">
+            <i data-lucide="credit-card" class="w-4 h-4 text-purple-300"></i>
+            <span>TDC Nu: <span id="tdc-pill-deuda" class="text-amber-300">$0.00</span></span>
+        </button>
+    </div>
+
+    <!-- Top Navbar -->
+    <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1
+                        class="text-base sm:text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        Control de Gastos Básicos
+                    </h1>
+                    <p class="text-xs text-slate-400">Sincronizado con <span
+                            class="text-indigo-400 font-semibold">Control_Gastos_Basicos.xlsx</span></p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="openCerrarQuincenaModal()"
+                    class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30">
+                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                    <span>Cerrar Quincena</span>
+                </button>
+                <button onclick="toggleSideReminder(true)"
+                    class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-xs font-bold text-purple-300 border border-purple-500/30 transition">
+                    <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+                    <span>TDC Nu</span>
+                </button>
+                <div
+                    class="hidden sm:flex items-center space-x-2 bg-emerald-950/60 border border-emerald-800/60 px-3 py-1 rounded-full text-xs font-semibold text-emerald-300">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Excel Conectado</span>
+                </div>
+                <a href="../futuro/"
+                    class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-xs font-bold text-emerald-300 border border-emerald-500/30 transition">
+                    <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
+                    <span>Ir a Plan a Futuro</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Navigation Tabs -->
+        <div class="flex space-x-2 border-b border-slate-800 pb-2 overflow-x-auto no-print tab-scroll">
+            <button onclick="switchTab('tab-resumen')" id="btn-tab-resumen"
+                class="tab-btn active px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                <span>📊 Resumen &amp; Presupuesto</span>
+            </button>
+            <button onclick="switchTab('tab-diario')" id="btn-tab-diario"
+                class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                <span>📝 Registro Diario de Gastos</span>
+            </button>
+            <button onclick="switchTab('tab-estado-cuenta'); loadHistorialData();" id="btn-tab-estado-cuenta"
+                class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-teal-400 hover:text-teal-300 transition whitespace-nowrap">
+                <i data-lucide="file-text" class="w-4 h-4 text-teal-400"></i>
+                <span>📜 Estado de Cuenta Mensual</span>
+            </button>
+            <button onclick="switchTab('tab-moto')" id="btn-tab-moto"
+                class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="bike" class="w-4 h-4"></i>
+                <span>🏍️ Simulador Moto (<span id="nav-moto-meta">$35,000.00</span>)</span>
+            </button>
+            <button onclick="switchTab('tab-config')" id="btn-tab-config"
+                class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-amber-400 hover:text-amber-300 transition whitespace-nowrap">
+                <i data-lucide="sliders" class="w-4 h-4 text-amber-400"></i>
+                <span>⚙️ Celdas Amarillas &amp; Fórmulas Auto</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: RESUMEN Y CATEGORÍAS -->
+        <div id="tab-resumen" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 kpi-grid">
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Presupuesto Quincenal</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-white mt-1" id="kpi-presupuesto">$2,500.00</h3>
+                    <p class="text-xs text-indigo-400 mt-2 font-semibold">Gastos fijos: <span id="kpi-fijos"
+                            class="text-slate-300">$750.00</span></p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Gasto Real Actual</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-rose-400 mt-1" id="kpi-gastado">$0.00</h3>
+                    <p class="text-xs text-slate-400 mt-2 font-medium" id="kpi-pct-gastado">0.0% consumido</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Efectivo a Retirar (Día de
+                        Pago)</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1" id="kpi-efectivo">$500.00</h3>
+                    <p class="text-xs text-slate-300 mt-2 font-medium" id="kpi-efectivo-sub">$320.00 Combi + $180.00
+                        Comidas</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Excedente Total Calculado</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-purple-400 mt-1" id="kpi-excedente">$1,750.00</h3>
+                    <p class="text-xs text-purple-300 mt-2 font-semibold" id="kpi-excedente-sub">80% Moto ($1,400.00) |
+                        20% Salidas ($350.00)</p>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="glass-panel p-5 rounded-2xl">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2.5">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-bold text-slate-300">Progreso del Presupuesto Quincenal:</span>
+                        <span
+                            class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm"
+                            id="bar-total-gastado">
+                            Total Gastado en la Quincena: $0.00
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs font-bold text-emerald-400" id="bar-remanente">Disponible: $2,500.00</span>
+                        <button onclick="openCerrarQuincenaModal()"
+                            class="px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 text-xs font-bold transition flex items-center space-x-1">
+                            <i data-lucide="check-circle" class="w-3 h-3"></i>
+                            <span>Cerrar Quincena</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="bar-fill"
+                        class="h-full bg-gradient-to-r from-emerald-500 to-indigo-500 transition-all duration-500 rounded-full"
+                        style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Tabla de categorías -->
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="table" class="w-4 h-4 text-indigo-400"></i>
+                            <span>Tabla de Control de Gastos por Categoría (Dashboard Gastos Básicos)</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Sincronizada en tiempo real con las fórmulas <b
+                                class="text-slate-300">=SUMIF</b> de tu Excel</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="openCerrarQuincenaModal()"
+                            class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30">
+                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                            <span>Cerrar Quincena Actual</span>
+                        </button>
+                        <button onclick="switchTab('tab-config')"
+                            class="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition">
+                            <i data-lucide="sliders" class="w-3 h-3"></i>
+                            <span>Ajustar Celdas Amarillas</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Categoría / Rubro</th>
+                                <th class="p-3.5">Mecánica / Detalle Operativo</th>
+                                <th class="p-3.5 text-right">Presupuesto ($)</th>
+                                <th class="p-3.5 text-center">% Asignado</th>
+                                <th class="p-3.5 text-right">Gasto Real ($)</th>
+                                <th class="p-3.5 text-right">Remanente ($)</th>
+                                <th class="p-3.5 text-center">% Consumido</th>
+                                <th class="p-3.5 text-center min-w-[140px]">Semáforo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-categorias" class="divide-y divide-slate-800">
+                            <!-- Dynamic category rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: REGISTRO DIARIO -->
+        <div id="tab-diario" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="space-y-6">
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <h3 class="text-sm font-bold text-white mb-3 flex items-center space-x-2">
+                            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                            <span>Botones Rápidos (1 Clic)</span>
+                        </h3>
+                        <div class="grid grid-cols-2 gap-2.5" id="container-quick-buttons"></div>
+                    </div>
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <h3 class="text-sm font-bold text-white mb-3 flex items-center space-x-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4 text-indigo-400"></i>
+                            <span>Registrar Gasto Personalizado</span>
+                        </h3>
+                        <form id="form-add-gasto" onsubmit="handleAddGasto(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="text-slate-400 font-medium">Fecha</label>
+                                <input type="date" id="in-fecha" required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-medium">Monto ($ MXN)</label>
+                                <input type="number" step="0.5" id="in-monto" placeholder="0.00" required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-indigo-500 font-bold">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-medium">Categoría</label>
+                                <select id="in-categoria"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                                    <option value="🚌 Pasajes Combi (Efectivo)">🚌 Pasajes Combi (Efectivo)</option>
+                                    <option value="🥪 Comidas en Escuela (Efectivo)">🥪 Comidas en Escuela (Efectivo)
+                                    </option>
+                                    <option value="📄 Copias, Material &amp; Papelería">📄 Copias, Material &amp;
+                                        Papelería</option>
+                                    <option value="🛡️ Imprevistos / Por si acaso">🛡️ Imprevistos / Por si acaso
+                                    </option>
+                                    <option value="🛡️ Excedente 80%: Fondo Emergencia / Moto">🛡️ Excedente 80%: Fondo
+                                        Emergencia / Moto</option>
+                                    <option value="🍕 Excedente 20%: Refuerzo Gustos / Salidas">🍕 Excedente 20%:
+                                        Refuerzo Gustos / Salidas</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-medium">Concepto / Detalle</label>
+                                <input type="text" id="in-concepto" placeholder="Ej. Combi de regreso" required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-indigo-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-slate-400 font-medium">Método</label>
+                                    <select id="in-metodo"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                                        <option value="Efectivo">Efectivo</option>
+                                        <option value="Débito Nu">Débito Nu</option>
+                                        <option value="TDC Nu">TDC Nu</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-slate-400 font-medium">Retirado</label>
+                                    <select id="in-retirado"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                                        <option value="Sí (Efectivo)">Sí (Efectivo)</option>
+                                        <option value="En Cajita Nu">En Cajita Nu</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition shadow-lg shadow-indigo-600/30">
+                                Guardar Gasto en Excel
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl lg:col-span-2 flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                                <i data-lucide="list" class="w-4 h-4 text-indigo-400"></i>
+                                <span>Historial de Gastos (Hoja 'Registro Diario' de Excel)</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Sincronizado directamente con las filas 11 a 110</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span
+                                class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold"
+                                id="badge-total-registros">0 registros</span>
+                            <button onclick="openLimpiarRegistroModal()"
+                                class="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 rounded-lg text-xs font-semibold transition flex items-center space-x-1"
+                                title="Limpiar todos los gastos del registro diario">
+                                <i data-lucide="eraser" class="w-3.5 h-3.5"></i>
+                                <span>Limpiar a $0.00</span>
+                            </button>
+                            <button onclick="openCerrarQuincenaModal()"
+                                class="px-3 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold transition flex items-center space-x-1">
+                                <i data-lucide="check-circle-2" class="w-3 h-3"></i>
+                                <span>Cerrar Quincena</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div
+                        class="overflow-x-auto flex-1 max-h-[500px] overflow-y-auto border border-slate-800 rounded-xl">
+                        <table class="w-full text-left text-xs">
+                            <thead
+                                class="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3">#</th>
+                                    <th class="p-3">Fecha</th>
+                                    <th class="p-3">Día</th>
+                                    <th class="p-3 text-right">Monto</th>
+                                    <th class="p-3">Categoría</th>
+                                    <th class="p-3">Concepto</th>
+                                    <th class="p-3">Método</th>
+                                    <th class="p-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-registros" class="divide-y divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ESTADO DE CUENTA MENSUAL (FORMATO INSTITUCIONAL & IMPRIMIBLE) -->
+        <div id="tab-estado-cuenta" class="tab-content hidden space-y-6">
+            <!-- Barra Superior de Controles (No imprimible) -->
+            <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-teal-800/40 no-print"
+                id="select-mes-historial-container">
+                <div class="flex items-center space-x-3">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center border border-teal-500/30">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-black text-white">Estado de Cuenta Formal</h2>
+                        <p class="text-xs text-slate-400">Consolidado automático con rendimientos, comparativas y
+                            bitácora en estilo institucional</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-xs text-slate-400 font-semibold">Seleccionar Mes:</label>
+                        <select id="select-mes-historial" onchange="renderEstadoCuentaSeleccionado()"
+                            class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-bold focus:border-teal-500"></select>
+                    </div>
+                    <button onclick="printEstadoCuenta()"
+                        class="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-teal-900/40 transition flex items-center space-x-1.5 border border-teal-400/40">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>Imprimir / Guardar PDF</span>
+                    </button>
+                    <button onclick="openCerrarQuincenaModal()"
+                        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30 flex items-center space-x-1.5">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                        <span>Archivar Quincena</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards Resumen Rápido (Solo Pantalla) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print" id="cards-estado-cuenta">
+                <div class="glass-panel p-5 rounded-2xl border-teal-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingreso Total Mensual</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-white mt-1" id="ec-ingreso">$0.00</h3>
+                    <p class="text-xs text-teal-400 mt-2 font-semibold" id="ec-quincenas-badge">0 quincenas cerradas</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border-rose-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Gastado en el Mes</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-rose-400 mt-1" id="ec-gastado">$0.00</h3>
+                    <p class="text-xs text-slate-400 mt-2 font-medium" id="ec-pct-gastado">0% del ingreso mensual</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border-emerald-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Ahorrado / Remanente</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1" id="ec-remanente">$0.00</h3>
+                    <p class="text-xs text-emerald-400 mt-2 font-semibold">Dinero protegido en Cajita</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border-purple-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Aporte Acumulado Moto (80%)</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-purple-400 mt-1" id="ec-moto">$0.00</h3>
+                    <p class="text-xs text-purple-300 mt-2 font-semibold" id="ec-salidas-sub">Salidas (20%): $0.00</p>
+                </div>
+            </div>
+
+            <!-- ========================================================================= -->
+            <!-- DOCUMENTO INSTITUCIONAL FORMAL: ESTADO DE CUENTA (PANTALLA & IMPRESIÓN) -->
+            <!-- ========================================================================= -->
+            <div id="print-estado-cuenta"
+                class="ec-doc bg-white text-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-300 shadow-2xl space-y-6">
+
+                <!-- ENCABEZADO SUPERIOR FORMAL (a) -->
+                <div
+                    class="ec-card-block flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-slate-900 pb-4">
+                    <!-- Logo / Identidad Izquierda -->
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xl shadow-md border border-slate-800">
+                            <span>PF</span>
+                        </div>
+                        <div>
+                            <h2 class="text-sm sm:text-base font-black tracking-tight text-slate-900 uppercase">
+                                CONTROL FINANCIERO PERSONAL
+                            </h2>
+                            <p class="text-[10px] text-slate-600 font-semibold tracking-wider uppercase">
+                                SISTEMA DE GESTIÓN PATRIMONIAL &amp; PRESUPUESTO
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Caja Central: ESTADO DE CUENTA -->
+                    <div class="ec-header-box px-6 py-2 rounded-lg text-center shadow-sm min-w-[240px]">
+                        <h1 class="text-sm font-black text-slate-900 uppercase tracking-widest">
+                            ESTADO DE CUENTA
+                        </h1>
+                        <p class="text-xs font-black text-indigo-950 mt-0.5 uppercase tracking-wide" id="ec-p-periodo">
+                            AGOSTO - 2026
+                        </p>
+                        <p class="text-[10px] text-slate-600 font-bold" id="ec-p-emision">
+                            al Día 23/08/2026
+                        </p>
+                    </div>
+
+                    <!-- Datos Emisión Derecha -->
+                    <div class="text-right text-xs space-y-0.5 min-w-[120px]">
+                        <p class="text-slate-600 font-bold">Página <b class="text-slate-900">1 / 1</b></p>
+                        <p class="text-slate-600 font-bold">Fecha: <b class="text-slate-900"
+                                id="ec-p-fecha-header">23/08/26</b></p>
+                        <p class="text-[9px] text-emerald-800 font-black uppercase">● AUDITADO &amp; CUADRADO</p>
+                    </div>
+                </div>
+
+                <!-- CUADRO DE METADATOS DEL TITULAR (b & c) -->
+                <div class="ec-card-block ec-meta-box p-3.5 rounded-xl border border-slate-900 text-xs shadow-sm">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-[11px]">
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-extrabold uppercase">b Titular /
+                                Usuario:</span>
+                            <p class="font-black text-slate-900 uppercase text-xs">David (Control Personal)</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-extrabold uppercase">c Plan Financiero:</span>
+                            <p class="font-bold text-slate-800">Plan Maestro 50/30/10/5/5 • Cajita Turbo Nu 13%</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-extrabold uppercase">Moneda / Divisa:</span>
+                            <p class="font-bold text-slate-800">MXN (Pesos Mexicanos)</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-500 font-extrabold uppercase">Estado de Cuenta:</span>
+                            <p class="font-black text-emerald-700">CONSOLIDADO AL 100%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BANNER DE BALANCE DESTACADO -->
+                <div
+                    class="ec-card-block p-3.5 rounded-xl bg-slate-100 border border-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-wide">
+                            SALDO REMANENTE AHORRADO EN EL PERÍODO:
+                            <span class="text-emerald-700 text-sm font-black ml-1.5" id="ec-p-saldo-banner">$0.00
+                                MXN</span>
+                        </h4>
+                        <p class="text-[10px] text-slate-600 mt-0.5">
+                            El saldo remanente incluye el excedente base más el ahorro extra no consumido, protegido en
+                            Cajita Nu (13% anual).
+                        </p>
+                    </div>
+                    <span
+                        class="px-2.5 py-1 rounded bg-emerald-100 text-emerald-900 text-[10px] font-black uppercase border border-emerald-300 shrink-0">
+                        🛡️ CAPITAL RESGUARDADO
+                    </span>
+                </div>
+
+                <!-- SECCIÓN d: RESUMEN DE INGRESOS Y GASTOS DEL PERÍODO -->
+                <div class="ec-card-block space-y-2">
+                    <div class="ec-section-bar p-2 rounded-t-lg flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="ec-badge-letter">d</span>
+                            <span class="text-xs font-black tracking-wide">RESUMEN DE INGRESOS Y GASTOS DEL
+                                PERÍODO</span>
+                        </div>
+                        <span class="text-[10px] text-slate-300 font-semibold lowercase">cifras en mxn</span>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-300 rounded-b-lg">
+                        <table class="ec-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left w-2/5">Concepto / Rubro Financiero</th>
+                                    <th class="text-right w-1/5">Presupuesto Asignado ($)</th>
+                                    <th class="text-right w-1/5">Gasto Real Ejecutado ($)</th>
+                                    <th class="text-right w-1/5">Remanente / Saldo ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ec-tbody-resumen-movimientos">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN e: BARRA ENMARCADA DE TOTALES -->
+                <div
+                    class="ec-card-block ec-total-bar p-3 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center">
+                        <span class="ec-badge-letter">e</span>
+                        <span class="font-black tracking-widest uppercase">T O T A L E S</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-4 text-xs font-black">
+                        <div>Presupuesto: <span class="ec-blue text-sm" id="ec-tot-presupuesto">$0.00</span></div>
+                        <div>Gasto Real: <span class="ec-red text-sm" id="ec-tot-gasto">-$0.00</span></div>
+                        <div>Saldo Remanente: <span class="ec-green text-sm" id="ec-tot-saldo">$0.00</span></div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN f: COMPARATIVA CON MES ANTERIOR & RENDIMIENTOS (Lo pedido por el usuario) -->
+                <div class="ec-card-block space-y-2">
+                    <div class="ec-section-bar p-2 rounded-t-lg flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="ec-badge-letter">f</span>
+                            <span class="text-xs font-black tracking-wide">COMPARATIVA VS MES ANTERIOR &amp; RENDIMIENTO
+                                FINANCIERO</span>
+                        </div>
+                        <span class="text-[10px] text-slate-300 font-semibold lowercase">análisis de variación y
+                            rendimiento</span>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-300 rounded-b-lg">
+                        <table class="ec-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Indicador Financiero</th>
+                                    <th class="text-right">Mes Anterior</th>
+                                    <th class="text-right">Mes Actual</th>
+                                    <th class="text-right">Variación ($)</th>
+                                    <th class="text-center">Variación (%)</th>
+                                    <th class="text-left">Diagnóstico / Rendimiento Estimado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ec-tbody-comparativa-mes">
+                                <!-- Dynamic comparison rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN g: DESGLOSE CONSOLIDADO POR CATEGORÍA -->
+                <div class="ec-card-block space-y-2">
+                    <div class="ec-section-bar p-2 rounded-t-lg flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="ec-badge-letter">g</span>
+                            <span class="text-xs font-black tracking-wide">DESGLOSE CONSOLIDADO POR CATEGORÍA /
+                                RUBRO</span>
+                        </div>
+                        <span class="text-[10px] text-slate-300 font-semibold lowercase">detalle presupuestario</span>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-300 rounded-b-lg">
+                        <table class="ec-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Categoría / Rubro</th>
+                                    <th class="text-right">Presupuesto Mensual ($)</th>
+                                    <th class="text-right">Gasto Real ($)</th>
+                                    <th class="text-right">Remanente / Ahorro ($)</th>
+                                    <th class="text-center">% Consumido</th>
+                                    <th class="text-center">Semáforo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ec-tbody-categorias-desglose">
+                                <!-- Dynamic category rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN h: RECOMENDACIÓN INTELIGENTE DE RETIRO Y FONDOS (COMPENSACIÓN DE SOBRANTES) -->
+                <div class="ec-card-block space-y-2">
+                    <div class="ec-section-bar p-2 rounded-t-lg flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="ec-badge-letter">h</span>
+                            <span class="text-xs font-black tracking-wide">RECOMENDACIÓN INTELIGENTE DE RETIRO DE EFECTIVO &amp; FONDOS (COMPENSACIÓN DE SOBRANTES)</span>
+                        </div>
+                        <span class="text-[10px] text-slate-300 font-semibold lowercase">ajuste para el próximo pago</span>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-300 rounded-b-lg">
+                        <table class="ec-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Categoría / Rubro</th>
+                                    <th class="text-center">Tipo / Manejo</th>
+                                    <th class="text-right">Presupuesto Base ($)</th>
+                                    <th class="text-right">Gasto Real ($)</th>
+                                    <th class="text-right">Sobrante a Favor ($)</th>
+                                    <th class="text-right">Monto Neto Próximo Pago ($)</th>
+                                    <th class="text-right">Ahorro en Retiro ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ec-tbody-compensacion-retiro">
+                                <!-- Dynamic compensation rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Caja Destacada de Desglose Específico de Retiro en Efectivo -->
+                    <div id="ec-container-compensacion-detalle" class="p-3.5 rounded-xl bg-slate-100 border border-slate-300 text-xs space-y-2">
+                        <!-- Dynamic specific advice -->
+                    </div>
+                </div>
+
+                <!-- SECCIÓN i: RESUMEN DE QUINCENAS CONSOLIDADAS -->
+                <div class="ec-card-block space-y-2">
+                    <div class="ec-section-bar p-2 rounded-t-lg flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="ec-badge-letter">i</span>
+                            <span class="text-xs font-black tracking-wide">RESUMEN DE QUINCENAS ARCHIVADAS EN EL MES</span>
+                        </div>
+                        <span class="text-[10px] text-slate-300 font-semibold lowercase">desglose por quincena</span>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-300 rounded-b-lg">
+                        <table class="ec-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Período Quincenal</th>
+                                    <th class="text-center">Fecha Cierre</th>
+                                    <th class="text-right">Presupuesto ($)</th>
+                                    <th class="text-right">Gastos Fijos ($)</th>
+                                    <th class="text-right">Gasto Real ($)</th>
+                                    <th class="text-right">Remanente ($)</th>
+                                    <th class="text-right">Aporte Moto 80% ($)</th>
+                                    <th class="text-center">Movimientos</th>
+                                    <th class="text-center no-print">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ec-tbody-quincenas-tabla">
+                                <!-- Dynamic quincena rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN j: BITÁCORA DETALLADA DE MOVIMIENTOS -->
+                <div class="ec-card-block space-y-2">
+                    <div class="ec-section-bar p-2 rounded-t-lg flex items-center justify-between">
+                        <div class="flex items-center">
+                            <span class="ec-badge-letter">j</span>
+                            <span class="text-xs font-black tracking-wide">BITÁCORA DETALLADA DE MOVIMIENTOS Y GASTOS</span>
+                        </div>
+                        <span class="text-[10px] text-slate-300 font-semibold lowercase" id="ec-p-badge-movimientos">0 movimientos</span>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-300 rounded-b-lg max-h-[400px] overflow-y-auto">
+                        <table class="ec-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-center w-12">#</th>
+                                    <th class="text-left">Fecha</th>
+                                    <th class="text-left">Quincena</th>
+                                    <th class="text-left">Concepto / Detalle</th>
+                                    <th class="text-left">Categoría</th>
+                                    <th class="text-left">Método Pago</th>
+                                    <th class="text-right">Importe ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ec-tbody-movimientos-tabla">
+                                <!-- Dynamic individual transaction rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN k: NOTA FORMAL Y PIE DE PÁGINA (ESTILO IMAGEN DE REFERENCIA) -->
+                <div
+                    class="ec-card-block p-3 rounded-xl bg-slate-50 border border-slate-300 text-[10px] text-slate-600 space-y-1">
+                    <p class="font-extrabold uppercase text-slate-800">
+                        k NOTA DE AUDITORÍA Y CONTROL:
+                    </p>
+                    <p>
+                        ESTE DOCUMENTO ES UN ESTADO DE CUENTA CONSOLIDADO GENERADO AUTOMÁTICAMENTE A PARTIR DE TUS
+                        REGISTROS EN EXCEL (<b class="text-slate-800">Control_Gastos_Basicos.xlsx</b> y <b
+                            class="text-slate-800">Plan_Financiero_Futuro.xlsx</b>).
+                    </p>
+                    <p class="text-[9px] text-slate-500">
+                        Cálculos sincronizados con fórmulas exactas de rendimiento anualizado en Cajita Turbo Nu (13% anual sobre saldo digital resguardado, excluyendo efectivo retirado). Válido para control personal y administración presupuestaria.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- TAB 4: SIMULADOR MOTO -->
+        <div id="tab-moto" class="tab-content hidden space-y-6">
+            <!-- Header Banner de la Meta -->
+            <div class="glass-panel p-6 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-900 border-indigo-800/40">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase">Plan de Aceleración y Meta Moto</span>
+                        <h2 class="text-2xl sm:text-3xl font-black text-white mt-2">🏍️ Meta Moto: <span id="moto-kpi-meta">$35,000.00</span> de Contado</h2>
+                        <p class="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl">
+                            Cálculo exacto basado en el <b>excedente base neto del 80% (<span id="moto-kpi-excedente-q" class="text-indigo-400 font-bold">$1,320.00</span>)</b> + <b>ahorro extra en vacaciones (<span id="moto-kpi-vacaciones-extra" class="text-emerald-400 font-bold">+$525.00</span>)</b> por tus <b class="text-white" id="moto-kpi-dias">15 días hábiles sin clases (L-V)</b> + <b>tus aportaciones voluntarias directas</b>.
+                        </p>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-xs text-slate-400">Tiempo Estimado Restante</p>
+                        <h3 class="text-2xl sm:text-3xl font-black text-emerald-400" id="moto-tiempo">2.8 Cuatris</h3>
+                        <p class="text-xs text-slate-400 mt-1" id="moto-meses">(~11.2 meses / 22.4 quincenas)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPIs de Progreso Real -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass-panel p-5 rounded-2xl border-indigo-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">🎯 Meta Total Moto</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="moto-card-meta">$35,000.00</h3>
+                    <p class="text-xs text-indigo-400 mt-1 font-semibold">Compra de contado</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border-emerald-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">🟢 Ahorro Real Acumulado</p>
+                    <h3 class="text-2xl font-black text-emerald-400 mt-1" id="moto-card-acumulado">$0.00</h3>
+                    <p class="text-xs text-emerald-300 mt-1 font-semibold" id="moto-card-pct">0.0% de la meta</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border-amber-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">⏳ Capital Faltante</p>
+                    <h3 class="text-2xl font-black text-amber-400 mt-1" id="moto-card-faltante">$35,000.00</h3>
+                    <p class="text-xs text-amber-300 mt-1 font-semibold" id="moto-card-quincenas-sub">0 quincenas estimadas</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border-purple-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">🏖️ Ahorro Extra Vacaciones</p>
+                    <h3 class="text-2xl font-black text-purple-400 mt-1" id="moto-card-vacaciones">+$525.00</h3>
+                    <p class="text-xs text-purple-300 mt-1 font-semibold" id="moto-card-vacaciones-sub">15 días x pasaje diario</p>
+                </div>
+            </div>
+
+            <!-- Formulario Rápido: Registrar Aportación Directa a la Moto -->
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl border-indigo-500/40 bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-400"></i>
+                            <span>¿Cuánto metiste en la quincena para la Moto? (Aportación Directa)</span>
+                        </h3>
+                        <p class="text-xs text-slate-400">
+                            Ingresa el monto que agregaste directamente a tu fondo de la moto para que el sistema recalcule tu acumulado, el faltante y los meses restantes en Excel.
+                        </p>
+                    </div>
+                    <form onsubmit="handleRegistrarAporteMoto(event)" class="flex flex-wrap items-center gap-2">
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-slate-500 font-bold">$</span>
+                            <input type="number" step="50" id="in-moto-aporte-monto" placeholder="0.00" required class="w-36 bg-slate-900 border border-slate-700 rounded-xl pl-7 pr-3 py-2 text-white font-bold text-sm focus:border-indigo-500">
+                        </div>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span>Sumar a la Moto</span>
+                        </button>
+                    </form>
+                </div>
+                <div class="flex items-center space-x-2 mt-3 pt-3 border-t border-slate-800/80 text-xs">
+                    <span class="text-slate-400">Atajos rápidos:</span>
+                    <button onclick="setAporteMotoQuick(500)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">+$500</button>
+                    <button onclick="setAporteMotoQuick(1000)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">+$1,000</button>
+                    <button onclick="setAporteMotoQuick(1500)" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">+$1,500</button>
+                    <span class="text-slate-500 text-[11px] ml-auto">Acumulado en celda B7 de Excel: <b id="lbl-moto-aportes-directos" class="text-indigo-300">$0.00</b></span>
+                </div>
+            </div>
+
+            <!-- Explicación de Gastos Escolares Ahorrados en Vacaciones -->
+            <div class="p-4 rounded-2xl bg-slate-900 border border-indigo-500/30 flex items-start space-x-3 text-xs">
+                <i data-lucide="info" class="w-5 h-5 text-indigo-400 shrink-0 mt-0.5"></i>
+                <div class="text-slate-300 space-y-1">
+                    <p class="font-bold text-white">¿Cómo se calcula el ahorro extra en vacaciones / días sin clases?</p>
+                    <p>Al no asistir a la escuela en días hábiles (Lunes a Viernes), te ahorras los gastos escolares: <b class="text-white" id="moto-alert-costo-diario">$32.00 de combi + $20.00 de comida + $5.00 de copias = $57.00/día</b> (el rubro de Imprevistos se mantiene activo por si surge alguna necesidad). Por lo tanto: <b class="text-emerald-400" id="moto-alert-vacaciones-calc">15 días x $57.00/día = +$855.00 de ahorro extra</b> por cuatrimestre.</p>
+                </div>
+            </div>
+
+            <!-- Tabla de Proyección Cuatrimestral -->
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
+                        <span>Proyección Cuatrimestral (Simulador Vacaciones &amp; Moto en Excel)</span>
+                    </h3>
+                    <button onclick="switchTab('tab-config')"
+                        class="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition">
+                        <i data-lucide="sliders" class="w-3 h-3"></i>
+                        <span>Editar Parámetros Moto</span>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Periodo / Cuatrimestre</th>
+                                <th class="p-3.5 text-center">Semanas de Clase</th>
+                                <th class="p-3.5 text-center">Días sin Clases (L-V)</th>
+                                <th class="p-3.5 text-right">Ahorro Extra Vacaciones ($)</th>
+                                <th class="p-3.5 text-right">Excedente Base Acumulado ($)</th>
+                                <th class="p-3.5 text-right">Total Ahorrado Cuatri ($)</th>
+                                <th class="p-3.5 text-center">Avance Meta Moto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-simulador-moto" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: CONFIGURACIÓN (CELDAS AMARILLAS) -->
+        <div id="tab-config" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 rounded-2xl border-amber-500/30">
+                <div class="flex items-center space-x-3 mb-2">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30">
+                        <i data-lucide="sliders" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Panel de Control: Celdas Amarillas &amp; Fórmulas
+                            Automáticas</h3>
+                        <p class="text-xs text-slate-400">Modifica el presupuesto total, tus gastos fijos o tus días
+                            hábiles de vacaciones. El <b>ahorro de vacaciones y el excedente 80% / 20% se calculan 100%
+                                solos</b>.</p>
+                    </div>
+                </div>
+                <form id="form-gastos-config" onsubmit="handleGastosConfigSubmit(event)" class="space-y-6 text-xs mt-6">
+                    <div class="space-y-3">
+                        <h4
+                            class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center space-x-1.5">
+                            <i data-lucide="wallet" class="w-3.5 h-3.5"></i>
+                            <span>1. Presupuesto Quincenal y Gastos Operativos Reales ($ MXN)</span>
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="sm:col-span-2 lg:col-span-1">
+                                <label class="text-slate-400 font-semibold">💰 Presupuesto Asignado (Celda B4)</label>
+                                <input type="number" step="50" id="cfg-g-presupuesto" oninput="recalcLivePreview()"
+                                    required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">🚌 Pasajes Combi (Celda C8)</label>
+                                <input type="number" step="10" id="cfg-g-combi" oninput="recalcLivePreview()" required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">🥪 Comidas Escuela (Celda C9)</label>
+                                <input type="number" step="10" id="cfg-g-comida" oninput="recalcLivePreview()" required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">📄 Copias &amp; Papelería (Celda
+                                    C10)</label>
+                                <input type="number" step="10" id="cfg-g-copias" oninput="recalcLivePreview()" required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">🛡️ Imprevistos (Celda C11)</label>
+                                <input type="number" step="10" id="cfg-g-imprevistos" oninput="recalcLivePreview()"
+                                    required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span
+                                class="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center space-x-1.5">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                <span>Cálculos Automáticos en Tiempo Real</span>
+                            </span>
+                            <span class="text-xs text-slate-400">Repartición 80% / 20% &amp; Vacaciones</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
+                                <p class="text-[11px] text-slate-400 font-medium">Gastos Operativos Fijos</p>
+                                <p class="text-base font-black text-rose-400 mt-0.5" id="prev-gastos-fijos">$750.00</p>
+                                <span class="text-[10px] text-slate-400">Combi + Comidas + Otros</span>
+                            </div>
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-indigo-500/40">
+                                <p class="text-[11px] text-indigo-300 font-medium">🛡️ Excedente Moto (80%)</p>
+                                <p class="text-base font-black text-indigo-400 mt-0.5" id="prev-excedente-moto">
+                                    $1,400.00</p>
+                                <span class="text-[10px] text-slate-400">Ahorro quincenal base</span>
+                            </div>
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-amber-500/40">
+                                <p class="text-[11px] text-amber-300 font-medium">🍕 Excedente Salidas (20%)</p>
+                                <p class="text-base font-black text-amber-400 mt-0.5" id="prev-excedente-gustos">$350.00
+                                </p>
+                                <span class="text-[10px] text-slate-400">Disponible para fin de semana</span>
+                            </div>
+                            <div class="p-3 bg-slate-900/80 rounded-xl border border-emerald-500/40">
+                                <p class="text-[11px] text-emerald-300 font-medium">🏖️ Ahorro Extra Vacaciones</p>
+                                <p class="text-base font-black text-emerald-400 mt-0.5" id="prev-vacaciones-extra">
+                                    $1,250.00</p>
+                                <span class="text-[10px] text-slate-400" id="prev-vacaciones-sub">25 días x
+                                    $50.00/día</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3 pt-4 border-t border-slate-800">
+                        <h4
+                            class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                            <i data-lucide="bike" class="w-3.5 h-3.5"></i>
+                            <span>2. Parámetros del Simulador de Vacaciones &amp; Moto</span>
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="text-slate-400 font-semibold">🎯 Meta Estimada Moto ($ MXN)</label>
+                                <input type="number" step="500" id="cfg-g-meta-moto" required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">📅 Días sin Escuela (L-V)</label>
+                                <input type="number" id="cfg-g-dias-libres-num" oninput="recalcLivePreview()" required
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                                <p class="text-[10px] text-slate-500 mt-1">Días L-V que no vas a clases.</p>
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-semibold">📥 Aportes Extra Directos ($)</label>
+                                <input type="number" step="100" id="cfg-g-aportaciones-directas" placeholder="0.00"
+                                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold text-sm mt-1 focus:border-amber-500">
+                                <p class="text-[10px] text-slate-500 mt-1">Guardado en celda B7 de Excel.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit"
+                        class="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black rounded-xl text-sm transition shadow-lg shadow-amber-600/30 flex items-center justify-center space-x-2">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Guardar Parámetros y Fórmulas Automáticas en Excel</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Cerrar Quincena -->
+    <div id="modal-cerrar-quincena"
+        class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-3xl max-w-lg w-full border border-emerald-500/40 shadow-2xl relative">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div
+                        class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Cerrar Quincena Actual &amp; Reiniciar</h3>
+                        <p class="text-xs text-slate-400">Archivar balance en Estado de Cuenta</p>
+                    </div>
+                </div>
+                <button onclick="closeCerrarQuincenaModal()"
+                    class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <form id="form-cerrar-quincena" onsubmit="handleCerrarQuincenaSubmit(event)" class="space-y-4 text-xs">
+                <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                    <div class="flex justify-between"><span class="text-slate-400">Presupuesto Quincenal:</span><span
+                            class="font-bold text-white" id="cq-prev-presupuesto">$2,500.00</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Total Gastado Real:</span><span
+                            class="font-bold text-rose-400" id="cq-prev-gastado">$0.00</span></div>
+                    <div class="flex justify-between border-t border-slate-800 pt-2"><span
+                            class="text-slate-300 font-semibold">Remanente / Ahorro Total Efectivo:</span><span
+                            class="font-black text-emerald-400 text-sm" id="cq-prev-remanente">$2,500.00</span></div>
+                    <div
+                        class="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-[11px] space-y-1 mt-2">
+                        <div class="flex justify-between font-bold text-indigo-300"><span>🏍️ Destino Moto (80% del
+                                remanente real):</span><span id="cq-prev-moto">$2,000.00</span></div>
+                        <div class="flex justify-between font-bold text-amber-300"><span>🍕 Destino Salidas (20% del
+                                remanente real):</span><span id="cq-prev-salidas">$500.00</span></div>
+                        <p class="text-[10px] text-slate-400 mt-1 italic" id="cq-prev-extra-note">💡 Todo lo no gastado
+                            en gastos básicos se reparte automáticamente: 80% Moto y 20% Salidas.</p>
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-400 pt-1"><span>Movimientos a
+                            archivar:</span><span class="font-bold text-teal-300" id="cq-prev-num-reg">0
+                            movimientos</span></div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="text-slate-400 font-semibold">Nombre del Período</label>
+                        <input type="text" id="cq-in-periodo" required
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-bold mt-1 focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-slate-400 font-semibold">Mes de Cierre</label>
+                        <select id="cq-in-mes" onchange="onCerrarQuincenaMesChange()"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white font-bold mt-1 focus:border-emerald-500">
+                            <!-- Opciones limitadas dinámicamente a Mes Actual y Mes Anterior -->
+                        </select>
+                    </div>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-relaxed">💡 <b>¿Qué pasará al confirmar?</b> Se archivará
+                    toda la información en la hoja <b>Histórico de Quincenas</b> y se limpiará completamente la hoja
+                    <b>Registro Diario</b> para que arranques tu nueva quincena limpia desde $0.00.
+                </p>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeCerrarQuincenaModal()"
+                        class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">Cancelar</button>
+                    <button type="submit"
+                        class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Confirmar y Reiniciar</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Eliminar Cierre de Quincena -->
+    <div id="modal-delete-cierre"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="glass-panel p-6 rounded-3xl max-w-sm w-full border border-rose-900/40 shadow-2xl relative text-center">
+            <div
+                class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-4 border border-rose-500/30">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">¿Eliminar este cierre?</h3>
+            <p class="text-xs text-slate-300 mt-2" id="delete-cierre-texto">Esta acción eliminará el cierre seleccionado
+                de la hoja 'Histórico de Quincenas' de tu archivo Excel.</p>
+            <input type="hidden" id="delete-cierre-id-target">
+            <div class="flex space-x-2 mt-6">
+                <button type="button" onclick="closeDeleteCierreModal()"
+                    class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">Cancelar</button>
+                <button type="button" onclick="confirmarBorrarCierre()"
+                    class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-rose-600/30">Sí,
+                    Eliminar Cierre</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Limpiar Registro Diario -->
+    <div id="modal-limpiar-registro"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="glass-panel p-6 rounded-3xl max-w-sm w-full border border-rose-900/40 shadow-2xl relative text-center">
+            <div
+                class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-4 border border-rose-500/30">
+                <i data-lucide="eraser" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">¿Reiniciar Registro a $0.00?</h3>
+            <p class="text-xs text-slate-300 mt-2">Esta acción vaciará todas las compras de la hoja 'Registro Diario' en
+                tu archivo Excel para que arranques tu quincena en $0.00.</p>
+            <div class="flex space-x-2 mt-6">
+                <button type="button" onclick="closeLimpiarRegistroModal()"
+                    class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">Cancelar</button>
+                <button type="button" onclick="confirmarLimpiarRegistro()"
+                    class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-rose-600/30">Sí,
+                    Reiniciar a $0.00</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Registro -->
+    <div id="modal-edit-gasto"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-3xl max-w-md w-full border border-slate-700 shadow-2xl relative">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2"><i data-lucide="edit-3"
+                        class="w-4 h-4 text-indigo-400"></i><span>Editar Registro de Gasto</span></h3>
+                <button onclick="closeEditModal()"
+                    class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition"><i
+                        data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form id="form-edit-gasto" onsubmit="handleEditSubmit(event)" class="space-y-3.5 text-xs">
+                <input type="hidden" id="edit-fila">
+                <div><label class="text-slate-400 font-medium">Fecha</label><input type="date" id="edit-fecha" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"></div>
+                <div><label class="text-slate-400 font-medium">Monto ($ MXN)</label><input type="number" step="0.5"
+                        id="edit-monto" required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold">
+                </div>
+                <div><label class="text-slate-400 font-medium">Categoría</label>
+                    <select id="edit-categoria"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                        <option value="🚌 Pasajes Combi (Efectivo)">🚌 Pasajes Combi (Efectivo)</option>
+                        <option value="🥪 Comidas en Escuela (Efectivo)">🥪 Comidas en Escuela (Efectivo)</option>
+                        <option value="📄 Copias, Material &amp; Papelería">📄 Copias, Material &amp; Papelería</option>
+                        <option value="🛡️ Imprevistos / Por si acaso">🛡️ Imprevistos / Por si acaso</option>
+                        <option value="🛡️ Excedente 80%: Fondo Emergencia / Moto">🛡️ Excedente 80%: Fondo Emergencia /
+                            Moto</option>
+                        <option value="🍕 Excedente 20%: Refuerzo Gustos / Salidas">🍕 Excedente 20%: Refuerzo Gustos /
+                            Salidas</option>
+                    </select>
+                </div>
+                <div><label class="text-slate-400 font-medium">Concepto</label><input type="text" id="edit-concepto"
+                        required
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"></div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div><label class="text-slate-400 font-medium">Método</label>
+                        <select id="edit-metodo"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Débito Nu">Débito Nu</option>
+                            <option value="TDC Nu">TDC Nu</option>
+                        </select>
+                    </div>
+                    <div><label class="text-slate-400 font-medium">Retirado</label>
+                        <select id="edit-retirado"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                            <option value="Sí (Efectivo)">Sí (Efectivo)</option>
+                            <option value="En Cajita Nu">En Cajita Nu</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button type="button" onclick="closeEditModal()"
+                        class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-lg transition">Cancelar</button>
+                    <button type="submit"
+                        class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition shadow-lg">Guardar
+                        Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Eliminar Registro -->
+    <div id="modal-delete-gasto"
+        class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="glass-panel p-6 rounded-3xl max-w-sm w-full border border-rose-900/40 shadow-2xl relative text-center">
+            <div
+                class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-4 border border-rose-500/30">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">¿Eliminar este registro?</h3>
+            <p class="text-xs text-slate-300 mt-2" id="delete-modal-texto">Esta acción eliminará el registro de la hoja
+                'Registro Diario' de tu archivo Excel.</p>
+            <input type="hidden" id="delete-fila-target">
+            <div class="flex space-x-2 mt-6">
+                <button type="button" onclick="closeDeleteModal()"
+                    class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">Cancelar</button>
+                <button type="button" onclick="confirmarEliminar()"
+                    class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-rose-600/30">Sí,
+                    Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Scripts externos (orden importa) ── -->
+    <script src="../shared/js/toast.js"></script>
+    <script src="../shared/js/tdc-reminder.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/modals.js"></script>
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const minDate = new Date();
+            minDate.setDate(today.getDate() - 7);
+
+            const formatYMD = d => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            const maxStr = formatYMD(today);
+            const minStr = formatYMD(minDate);
+
+            const inFecha = document.getElementById('in-fecha');
+            if (inFecha) {
+                inFecha.value = maxStr;
+                inFecha.max = maxStr;
+                inFecha.min = minStr;
+            }
+
+            const editFecha = document.getElementById('edit-fecha');
+            if (editFecha) {
+                editFecha.max = maxStr;
+                editFecha.min = minStr;
+            }
+
+            loadGastosData();
+        });
+    </script>
+</body>
+
+</html>
