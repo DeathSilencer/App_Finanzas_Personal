@@ -434,8 +434,45 @@ def handle_get_historial(handler):
             r["detalle"] = det
             cierres.append(r)
 
+        meses_dict = {}
+        for c in reversed(cierres):
+            clave_mes = f"{c.get('mes', '')} {c.get('anio', '')}".strip() or "General"
+            if clave_mes not in meses_dict:
+                meses_dict[clave_mes] = {
+                    "mes_anio": clave_mes,
+                    "mes": c.get('mes', ''),
+                    "anio": c.get('anio', 2026),
+                    "ingreso_total": 0.0,
+                    "gasto_real_total": 0.0,
+                    "remanente_total": 0.0,
+                    "ahorro_moto_total": 0.0,
+                    "excedente_salidas_total": 0.0,
+                    "num_quincenas": 0,
+                    "quincenas": [],
+                    "transacciones": []
+                }
+            m_entry = meses_dict[clave_mes]
+            m_entry["ingreso_total"] += c.get("presupuesto", 0.0)
+            m_entry["gasto_real_total"] += c.get("gasto_real", 0.0)
+            m_entry["remanente_total"] += c.get("remanente", 0.0)
+            m_entry["ahorro_moto_total"] += c.get("ahorro_moto_80", 0.0)
+            m_entry["excedente_salidas_total"] += c.get("refuerzo_gustos_20", 0.0)
+            m_entry["num_quincenas"] += 1
+            m_entry["quincenas"].append(c)
+
+            det = c.get("detalle", {})
+            regs = det.get("movimientos") or det.get("registros") or []
+            for reg in regs:
+                r_copy = dict(reg)
+                r_copy["quincena"] = c.get("periodo", "")
+                m_entry["transacciones"].append(r_copy)
+
         conn.close()
-        handler.send_json({"status": "success", "cierres": cierres})
+        handler.send_json({
+            "status": "success",
+            "meses": list(meses_dict.values()),
+            "cierres": cierres
+        })
     except Exception as e:
         handler.send_json({"status": "error", "message": str(e)}, 500)
 

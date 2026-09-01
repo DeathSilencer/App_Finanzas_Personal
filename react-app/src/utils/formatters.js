@@ -29,3 +29,10 @@ export function getDiaSemana(fechaStr) {
   }
   return "Lunes";
 }
+
+/**
+ * Redondea un número a 2 decimales con precisión.
+ */
+export function round2(num) {
+  return Math.round((Number(num || 0) + Number.EPSILON) * 100) / 100;
+}

@@ -42,7 +42,7 @@ export default function App() {
 
   // Estado de datos
   const [gastosData, setGastosData] = useState(null);
-  const [historialGastos, setHistorialGastos] = useState([]);
+  const [historialGastos, setHistorialGastos] = useState({ meses: [], cierres: [] });
   const [futuroData, setFuturoData] = useState(null);
   const [historialFuturo, setHistorialFuturo] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,7 +85,7 @@ export default function App() {
     try {
       const res = await api.getHistorialGastos();
       if (res.status === 'success') {
-        setHistorialGastos(res.cierres || []);
+        setHistorialGastos(res);
       }
     } catch (err) {
       console.error(err);
@@ -406,7 +406,8 @@ export default function App() {
 
             {gastosTab === 'estado-cuenta' && (
               <EstadoCuentaMensual
-                historial={historialGastos}
+                historialData={historialGastos}
+                currentResumen={gastosData?.resumen}
                 onDeleteCierre={handleDeleteCierreGastos}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaGastosOpen(true)}
               />
