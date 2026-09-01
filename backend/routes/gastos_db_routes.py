@@ -139,10 +139,11 @@ def handle_get_gastos(handler):
         total_ahorrado_moto = round(ahorro_acumulado_historico + aportaciones_directas, 2)
 
         # 5. Simulador Moto
-        # Ahorro extra vacaciones: combi ($32/día) + comida ($18/día) = $50/día x 25 días hábiles = $1,250
-        costo_diario_combi = monto_combi / 10.0
+        # Ahorro extra vacaciones escolares: combi ($32/día) + comida ($18/día) = $50/día x 25 días hábiles = $1,250.00
+        # (Los sábados de $28 con la novia se mantienen constantes todo el año)
+        costo_diario_combi_escolar = 32.0
         costo_diario_comida = monto_comida / 10.0
-        costo_diario_escolar = costo_diario_combi + costo_diario_comida
+        costo_diario_escolar = costo_diario_combi_escolar + costo_diario_comida
         ahorro_extra_vacaciones = round(dias_libres_cuatri * costo_diario_escolar, 2)
 
         ahorro_cuatri = round((excedente_80_moto * quincenas_cuatri) + ahorro_extra_vacaciones, 2)

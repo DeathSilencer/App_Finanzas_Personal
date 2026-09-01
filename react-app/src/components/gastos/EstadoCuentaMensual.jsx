@@ -53,7 +53,7 @@ export default function EstadoCuentaMensual({
 
   // Cálculos base dinámicos
   const numQ = mData?.num_quincenas || 1;
-  const mCombi = currentResumen.monto_combi || 320;
+  const mCombi = currentResumen.monto_combi || 376;
   const mComida = currentResumen.monto_comida || 180;
   const mCopias = currentResumen.monto_copias || 50;
   const mImprevistos = currentResumen.monto_imprevistos || 200;
@@ -745,7 +745,7 @@ export default function EstadoCuentaMensual({
                       <p className="text-[10px] text-slate-500 font-extrabold uppercase">Presupuesto Efectivo Base:</p>
                       <p className="text-base font-black text-slate-900 mt-0.5">{fmt(compensacionData.advice.totPresBaseEfectivoQ)}</p>
                       <p className="text-[9px] text-slate-500">
-                        ({fmt(compensacionData.advice.baseQCombi)} Combi + {fmt(compensacionData.advice.baseQComida)} Comidas)
+                        ({fmt(compensacionData.advice.baseQCombi)} Pasajes + {fmt(compensacionData.advice.baseQComida)} Comidas)
                       </p>
                     </div>
                     <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-200">

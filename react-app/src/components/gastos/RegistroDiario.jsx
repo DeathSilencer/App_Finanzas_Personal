@@ -19,6 +19,8 @@ export default function RegistroDiario({
   const quickButtons = [
     { label: '🚌 Combi Ida', monto: 16, cat: '🚌 Pasajes Combi (Efectivo)', con: 'Combi de ida' },
     { label: '🚌 Combi Ida y Vuelta', monto: 32, cat: '🚌 Pasajes Combi (Efectivo)', con: 'Combi ida y regreso' },
+    { label: '❤️ Pasaje Novia Ida', monto: 14, cat: '🚌 Pasajes Combi (Efectivo)', con: 'Pasaje sábado con novia ida' },
+    { label: '❤️ Pasaje Novia Completo', monto: 28, cat: '🚌 Pasajes Combi (Efectivo)', con: 'Pasaje sábado con novia ida y vuelta' },
     { label: '🥪 Desayuno / Torta', monto: 45, cat: '🥪 Comidas en Escuela (Efectivo)', con: 'Desayuno en escuela' },
     { label: '🍲 Comida Completa', monto: 80, cat: '🥪 Comidas en Escuela (Efectivo)', con: 'Comida corrida escolar' },
     { label: '📄 Copias / Impresiones', monto: 15, cat: '📄 Copias, Material & Papelería', con: 'Copias e impresiones' },
