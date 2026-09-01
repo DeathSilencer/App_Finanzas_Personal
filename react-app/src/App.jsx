@@ -246,6 +246,17 @@ export default function App() {
     }
   };
 
+  const handleDeleteCierreFuturo = async (id) => {
+    if (!window.confirm('¿Eliminar esta quincena del histórico de Plan a Futuro? Se recalcularán los saldos acumulados de tu Cajita Turbo.')) return;
+    try {
+      const res = await api.borrarCierreFuturo(id);
+      addToast(res.message, 'warning');
+      await Promise.all([loadHistorialFuturoData(), loadFuturo()]);
+    } catch (err) {
+      addToast(err.message, 'error');
+    }
+  };
+
   const handleAddCompraTDC = async (payload) => {
     try {
       const res = await api.addTDC(payload);
@@ -560,6 +571,7 @@ export default function App() {
                 historial={historialFuturo}
                 onReload={loadHistorialFuturoData}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaFuturoOpen(true)}
+                onDeleteCierre={handleDeleteCierreFuturo}
               />
             )}
 

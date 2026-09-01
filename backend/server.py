@@ -33,7 +33,7 @@ from routes.futuro_db_routes import (
     handle_tdc_delete, handle_tdc_pay, handle_config_futuro,
     handle_add_gasto_ocio, handle_delete_gasto_ocio,
     handle_update_aportacion_futuro, handle_cerrar_quincena_futuro,
-    handle_get_historial_futuro
+    handle_get_historial_futuro, handle_borrar_cierre_futuro
 )
 
 
@@ -117,6 +117,7 @@ class FinanzasHandler(http.server.SimpleHTTPRequestHandler):
             "/api/futuro/delete_gasto_ocio": lambda: handle_delete_gasto_ocio(self, data),
             "/api/futuro/aportacion":      lambda: handle_update_aportacion_futuro(self, data),
             "/api/futuro/cerrar_quincena": lambda: handle_cerrar_quincena_futuro(self, data),
+            "/api/futuro/borrar_cierre":   lambda: handle_borrar_cierre_futuro(self, data),
         }
 
         handler_fn = routes_map.get(path)

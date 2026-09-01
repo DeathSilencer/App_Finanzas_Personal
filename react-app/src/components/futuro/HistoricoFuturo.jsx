@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { History, RefreshCw, PlusCircle, Eye, X } from 'lucide-react';
+import { History, RefreshCw, PlusCircle, Eye, X, Trash2 } from 'lucide-react';
 import { fmt } from '../../utils/formatters';
 
 export default function HistoricoFuturo({
   historial = [],
   onReload,
-  onOpenCerrarQuincena
+  onOpenCerrarQuincena,
+  onDeleteCierre
 }) {
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -19,7 +20,7 @@ export default function HistoricoFuturo({
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-black text-white">Histórico Quincenas de Futuro</h2>
-            <p className="text-xs text-slate-400">Consolidado quincenal archivado en SQLite</p>
+            <p className="text-xs text-slate-400">Consolidado quincenal archivado en SQLite • Control y Eliminación</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -57,7 +58,7 @@ export default function HistoricoFuturo({
                 <th className="p-3.5 text-right">Aporte Cetes</th>
                 <th className="p-3.5 text-right">Total Cajita Nu</th>
                 <th className="p-3.5 text-center">Movs</th>
-                <th className="p-3.5 text-center">Detalle</th>
+                <th className="p-3.5 text-center min-w-[140px]">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -86,13 +87,26 @@ export default function HistoricoFuturo({
                       </span>
                     </td>
                     <td className="p-3.5 text-center">
-                      <button
-                        onClick={() => setSelectedItem(c)}
-                        className="px-2.5 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 text-xs font-bold transition flex items-center space-x-1 mx-auto"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Ver</span>
-                      </button>
+                      <div className="flex items-center justify-center space-x-1.5">
+                        <button
+                          onClick={() => setSelectedItem(c)}
+                          className="px-2.5 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 text-xs font-bold transition flex items-center space-x-1"
+                          title="Ver detalle"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Ver</span>
+                        </button>
+                        {onDeleteCierre && (
+                          <button
+                            onClick={() => onDeleteCierre(c.id)}
+                            className="px-2.5 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 text-xs font-bold transition flex items-center space-x-1"
+                            title="Eliminar esta quincena del histórico"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Eliminar</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -168,10 +182,25 @@ export default function HistoricoFuturo({
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 flex items-center space-x-2">
+              {onDeleteCierre && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idToDelete = selectedItem.id;
+                    setSelectedItem(null);
+                    onDeleteCierre(idToDelete);
+                  }}
+                  className="px-4 py-2.5 bg-rose-950/70 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-xl text-xs font-bold transition flex items-center space-x-1.5"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Eliminar Quincena</span>
+                </button>
+              )}
               <button
+                type="button"
                 onClick={() => setSelectedItem(null)}
-                className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition"
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition"
               >
                 Cerrar
               </button>

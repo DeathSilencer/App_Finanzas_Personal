@@ -575,6 +575,47 @@ def handle_get_historial_futuro(handler):
         handler.send_json({"status": "error", "message": str(e)}, 500)
 
 
+def handle_borrar_cierre_futuro(handler, data):
+    try:
+        cierre_id = safe_int(data.get("id"))
+        if not cierre_id:
+            handler.send_json({"status": "error", "message": "ID no proporcionado"}, 400)
+            return
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Obtener la quincena a borrar
+        cursor.execute("SELECT periodo, aporte_emergencia FROM historico_quincenas_futuro WHERE id = ?", (cierre_id,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            handler.send_json({"status": "error", "message": f"No se encontró la quincena #{cierre_id}"}, 404)
+            return
+
+        periodo_nombre = row["periodo"]
+        emg_cerrado = float(row["aporte_emergencia"] or 0.0)
+
+        # Ajustar fondo de emergencia acumulado en config_futuro
+        cursor.execute("SELECT emergencia_aportado_activo FROM config_futuro WHERE id = 1")
+        row_cfg = cursor.fetchone()
+        if row_cfg:
+            curr_emg = float(row_cfg["emergencia_aportado_activo"] or 500.0)
+            nuevo_emg = max(500.0, round(curr_emg - emg_cerrado, 2))
+            cursor.execute("UPDATE config_futuro SET emergencia_aportado_activo = ? WHERE id = 1", (nuevo_emg,))
+
+        cursor.execute("DELETE FROM historico_quincenas_futuro WHERE id = ?", (cierre_id,))
+        conn.commit()
+        conn.close()
+
+        handler.send_json({
+            "status": "success",
+            "message": f"🗑️ Quincena '{periodo_nombre}' eliminada del histórico de Plan a Futuro."
+        })
+    except Exception as e:
+        handler.send_json({"status": "error", "message": str(e)}, 500)
+
+
 def handle_tdc_add(handler, data):
     try:
         fecha = str(data.get("fecha") or datetime.now().strftime("%Y-%m-%d"))

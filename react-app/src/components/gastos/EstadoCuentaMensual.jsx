@@ -464,6 +464,59 @@ export default function EstadoCuentaMensual({
         </div>
       </div>
 
+      {/* GESTIÓN RÁPIDA DE QUINCENAS ARCHIVADAS (no-print) */}
+      {hasData && mData.quincenas && mData.quincenas.length > 0 && (
+        <div className="glass-panel p-5 rounded-2xl border border-slate-800 no-print space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
+              <h3 className="text-sm font-bold text-white">Quincenas Archivadas en {mData.mes_anio}</h3>
+            </div>
+            <span className="text-xs text-slate-400">
+              {mData.quincenas.length} quincena{mData.quincenas.length > 1 ? 's' : ''} en el histórico
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                <tr>
+                  <th className="p-2.5">Período</th>
+                  <th className="p-2.5 text-center">Fecha Cierre</th>
+                  <th className="p-2.5 text-right">Presupuesto</th>
+                  <th className="p-2.5 text-right">Gasto Real</th>
+                  <th className="p-2.5 text-right">Remanente Ahorrado</th>
+                  <th className="p-2.5 text-right">Ahorro Moto (80%)</th>
+                  <th className="p-2.5 text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80">
+                {mData.quincenas.map((q, idx) => (
+                  <tr key={q.id || idx} className="hover:bg-slate-800/40 transition">
+                    <td className="p-2.5 font-bold text-white whitespace-nowrap">{q.periodo}</td>
+                    <td className="p-2.5 text-center text-slate-400 whitespace-nowrap">{q.fecha_cierre}</td>
+                    <td className="p-2.5 text-right text-slate-300 font-semibold">{fmt(q.presupuesto)}</td>
+                    <td className="p-2.5 text-right text-rose-400 font-bold">{q.gasto_real > 0 ? '-' + fmt(q.gasto_real) : '$0.00'}</td>
+                    <td className="p-2.5 text-right text-emerald-400 font-black">{fmt(q.remanente)}</td>
+                    <td className="p-2.5 text-right text-purple-300 font-bold">{fmt(q.ahorro_moto_80)}</td>
+                    <td className="p-2.5 text-center">
+                      <button
+                        onClick={() => onDeleteCierre(q.id)}
+                        className="px-2.5 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 text-xs font-bold transition flex items-center space-x-1 mx-auto"
+                        title="Eliminar quincena del histórico"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Eliminar</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* DOCUMENTO INSTITUCIONAL FORMAL: ESTADO DE CUENTA (PANTALLA & IMPRESIÓN) */}
       {/* ────────────────────────────────────────────────────────────────── */}
