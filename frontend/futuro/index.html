@@ -110,6 +110,10 @@
 
             <!-- Switcher back to Gastos Básicos -->
             <div class="flex items-center space-x-3">
+                <button onclick="openCerrarQuincenaFuturoModal()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30">
+                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                    <span>Cerrar Quincena Futuro</span>
+                </button>
                 <button onclick="toggleSideReminder(true)" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 text-xs font-bold text-purple-300 border border-purple-500/30 transition">
                     <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
                     <span>TDC Nu</span>
@@ -129,9 +133,21 @@
     <!-- Main Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Navigation Tabs (Exact 5 Sheets from Excel) -->
+        <!-- Navigation Tabs (Hojas Excel + Control Cajita & Ocio) -->
         <div class="flex space-x-2 border-b border-slate-800 pb-2 overflow-x-auto tab-scroll">
-            <button onclick="switchTab('tab-dash-maestro')" id="btn-tab-dash-maestro" class="tab-btn active px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+            <button onclick="switchTab('tab-general-cajita')" id="btn-tab-general-cajita" class="tab-btn active px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="landmark" class="w-4 h-4 text-purple-400"></i>
+                <span>🏛️ General &amp; Cajita Turbo Nu</span>
+            </button>
+            <button onclick="switchTab('tab-ocio')" id="btn-tab-ocio" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="party-popper" class="w-4 h-4 text-amber-400"></i>
+                <span>🍕 Registro de Ocio &amp; Gastos</span>
+            </button>
+            <button onclick="switchTab('tab-historial-futuro'); loadHistorialFuturoData();" id="btn-tab-historial-futuro" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
+                <i data-lucide="history" class="w-4 h-4 text-teal-400"></i>
+                <span>📜 Histórico Quincenas Futuro</span>
+            </button>
+            <button onclick="switchTab('tab-dash-maestro')" id="btn-tab-dash-maestro" class="tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-slate-400 hover:text-white transition whitespace-nowrap">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
                 <span>📊 Dashboard Maestro</span>
             </button>
@@ -157,8 +173,494 @@
             </button>
         </div>
 
+        
+        <!-- ========================================== -->
+        <!-- TAB 0: GENERAL & CAJITA TURBO NU (13% ANUAL) -->
+        <!-- ========================================== -->
+        <div id="tab-general-cajita" class="tab-content space-y-6">
+            <!-- Hero Card: Cajita Turbo Nu -->
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-purple-950/60 via-slate-900/90 to-slate-950 border border-purple-500/30 relative overflow-hidden shadow-2xl">
+                <div class="absolute -top-20 -right-20 w-64 h-64 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                    <div class="space-y-2 max-w-2xl">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-black uppercase tracking-wider flex items-center space-x-1.5">
+                                <span class="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
+                                <span>Cajita Turbo Nu • 13% Anual Compuesto</span>
+                            </span>
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[11px] font-bold">
+                                🛡️ Sub-contabilidad Inteligente
+                            </span>
+                        </div>
+                        <h2 class="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                            Total en Cajita Turbo: <span id="cajita-gran-total" class="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-white to-purple-400">$2,000.00</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Nu solo permite tener <b class="text-white font-semibold">1 sola Cajita Turbo</b>. Aquí conviven físicamente tus 3 fondos protegidos. Tu dinero genera <b class="text-emerald-400" id="cajita-rend-mensual">+$21.67/mes</b> en rendimientos diarios manteniendo el blindaje contable de cada peso.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-3 shrink-0">
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-purple-500/30 text-right space-y-0.5">
+                            <span class="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">Rendimiento Anual Nu</span>
+                            <h4 class="text-2xl font-black text-purple-400">13.00%</h4>
+                            <p class="text-[10px] text-emerald-400 font-semibold" id="cajita-rend-anual-calc">Estimado: ~$260.00/año</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="switchTab('tab-ocio')" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2">
+                                <i data-lucide="party-popper" class="w-4 h-4"></i>
+                                <span>Ver Bitácora de Ocio</span>
+                            </button>
+                            <button onclick="openCerrarQuincenaFuturoModal()" class="px-3.5 py-2.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition flex items-center space-x-1.5">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                <span class="hidden sm:inline">Cerrar Quincena</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Distribución Proporcional de la Cajita -->
+                <div class="mt-6 pt-6 border-t border-purple-500/20 space-y-2">
+                    <div class="flex justify-between items-center text-xs font-semibold text-slate-300">
+                        <span>Distribución de Fondos dentro de tu Cajita Turbo:</span>
+                        <span class="text-purple-300 font-mono text-[11px]" id="cajita-proporcion-summary">62.5% Ocio • 25% Emergencia • 12.5% Retiro</span>
+                    </div>
+                    <div class="w-full h-4 bg-slate-800/90 rounded-full overflow-hidden flex shadow-inner">
+                        <div id="cajita-bar-ocio" class="bg-amber-400 transition-all duration-500 relative group cursor-pointer" style="width: 62.5%" title="Ocio Disponible"></div>
+                        <div id="cajita-bar-emergencia" class="bg-emerald-500 transition-all duration-500 relative group cursor-pointer" style="width: 25%" title="Fondo Emergencia"></div>
+                        <div id="cajita-bar-retiro" class="bg-indigo-500 transition-all duration-500 relative group cursor-pointer" style="width: 12.5%" title="Retiro SAT"></div>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between text-[11px] gap-2 pt-1 text-slate-400">
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="text-slate-300">🍕 Ocio Disponible: <b class="text-white" id="cajita-txt-ocio">$1,250.00</b></span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span class="text-slate-300">🛡️ Fondo Emergencia: <b class="text-white" id="cajita-txt-emergencia">$500.00</b></span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                            <span class="text-slate-300">🚀 Retiro SAT: <b class="text-white" id="cajita-txt-retiro">$250.00</b></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid de Tarjetas de Fondos ($2,500 Quincenales) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Tarjeta 1: Ocio -->
+                <div class="glass-panel p-5 rounded-2xl border-amber-500/30 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase">Paso 7 • 30%</span>
+                            <span class="text-xs text-slate-400 font-semibold">Cajita Turbo Nu</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white mt-3 flex items-center space-x-1.5">
+                            <span>🍕 Gustos / Ocio</span>
+                        </h4>
+                        <h3 class="text-2xl font-black text-amber-400 mt-1" id="card-ocio-disp">$1,250.00</h3>
+                        <p class="text-xs text-slate-400 mt-1 font-medium">
+                            Presupuesto: <b class="text-slate-300" id="card-ocio-pres">$1,500.00</b> | Gastado: <b class="text-rose-400" id="card-ocio-gastado">$250.00</b>
+                        </p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                        <span class="text-[11px] text-emerald-400 font-semibold" id="card-ocio-status">🟢 $1,250.00 Disponible</span>
+                        <button onclick="switchTab('tab-ocio')" class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition">
+                            Registrar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 2: Fondo Emergencia -->
+                <div class="glass-panel p-5 rounded-2xl border-emerald-500/30 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase">Paso 3 • 10%</span>
+                            <span class="text-xs text-slate-400 font-semibold">Cajita Turbo Nu</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white mt-3 flex items-center space-x-1.5">
+                            <span>🛡️ Fondo de Emergencia</span>
+                        </h4>
+                        <h3 class="text-2xl font-black text-emerald-400 mt-1" id="card-fe-aportado">$500.00</h3>
+                        <p class="text-xs text-slate-400 mt-1 font-medium">
+                            Asignación: <b class="text-slate-300">$500.00 / qna</b> (Meta: $15,000)
+                        </p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                        <span class="text-[11px] text-emerald-400 font-semibold flex items-center space-x-1">
+                            <i data-lucide="lock" class="w-3 h-3"></i>
+                            <span>Blindado en Cajita</span>
+                        </span>
+                        <button onclick="openAjusteAporteModal('emergencia')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                            Ajustar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 3: Retiro SAT -->
+                <div class="glass-panel p-5 rounded-2xl border-indigo-500/30 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-[10px] font-black uppercase">Paso 6 • 5%</span>
+                            <span class="text-xs text-slate-400 font-semibold">Cajita Turbo Nu</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white mt-3 flex items-center space-x-1.5">
+                            <span>🚀 Retiro SAT (AFORE)</span>
+                        </h4>
+                        <h3 class="text-2xl font-black text-indigo-400 mt-1" id="card-retiro-aportado">$250.00</h3>
+                        <p class="text-xs text-slate-400 mt-1 font-medium">
+                            Asignación: <b class="text-slate-300">$250.00 / qna</b> (Deducible SAT)
+                        </p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                        <span class="text-[11px] text-indigo-300 font-semibold">📈 Deducción Art. 151</span>
+                        <button onclick="openAjusteAporteModal('retiro')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition">
+                            Ajustar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tarjeta 4: Cetesdirecto -->
+                <div class="glass-panel p-5 rounded-2xl border-blue-500/30 flex flex-col justify-between space-y-4 bg-gradient-to-br from-blue-950/30 via-slate-900 to-slate-900">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-0.5 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] font-black uppercase">Paso 1 • 5%</span>
+                            <span class="text-xs text-blue-300 font-semibold">Cetesdirecto (3M)</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white mt-3 flex items-center space-x-1.5">
+                            <span>🔒 Ahorro Involuntario</span>
+                        </h4>
+                        <h3 class="text-2xl font-black text-blue-400 mt-1" id="card-cetes-aportado">$250.00</h3>
+                        <p class="text-xs text-slate-400 mt-1 font-medium">
+                            Asignación: <b class="text-slate-300">$250.00 / qna</b> al 6.45%
+                        </p>
+                    </div>
+                    <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                        <span class="text-[11px] text-emerald-400 font-semibold flex items-center space-x-1" id="card-cetes-estado">
+                            <i data-lucide="check-circle" class="w-3 h-3"></i>
+                            <span>Aportado (Cetes)</span>
+                        </span>
+                        <button onclick="openAjusteAporteModal('cetes')" class="px-2.5 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 text-xs font-bold transition">
+                            Declarar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Distribución de los Otros $2,500 Quincenales -->
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                            <i data-lucide="pie-chart" class="w-4 h-4 text-purple-400"></i>
+                            <span>Estructura de los Otros $2,500 Quincenales (50% Restante del Sueldo)</span>
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Sincronizado con la hoja <b class="text-purple-300">Registro Ocio &amp; Cajita Nu</b></p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="switchTab('tab-ocio')" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition flex items-center space-x-1.5">
+                            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                            <span>Registrar Gasto de Ocio</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">Fondo / Destino</th>
+                                <th class="p-3.5">Paso / Regla</th>
+                                <th class="p-3.5 text-center">% Presupuesto</th>
+                                <th class="p-3.5 text-right">Asignación Quincenal</th>
+                                <th class="p-3.5 text-right">Aportado / Gastado</th>
+                                <th class="p-3.5 text-right">Saldo Actual</th>
+                                <th class="p-3.5">Cuenta / Ubicación Física</th>
+                                <th class="p-3.5 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-xs">
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                                    <span>🍕 Gustos / Ocio</span>
+                                </td>
+                                <td class="p-3.5 text-slate-300">Paso 7: Estilo de Vida</td>
+                                <td class="p-3.5 text-center font-bold text-amber-400">30.0%</td>
+                                <td class="p-3.5 text-right font-semibold text-white">$1,500.00</td>
+                                <td class="p-3.5 text-right font-bold text-rose-400" id="tb-ocio-gastado">-$250.00</td>
+                                <td class="p-3.5 text-right font-black text-amber-300 text-sm" id="tb-ocio-disponible">$1,250.00</td>
+                                <td class="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Líquido)</td>
+                                <td class="p-3.5 text-center">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">Disponible</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                                    <span>🛡️ Fondo de Emergencia</span>
+                                </td>
+                                <td class="p-3.5 text-slate-300">Paso 3: Colchón 3 Meses</td>
+                                <td class="p-3.5 text-center font-bold text-emerald-400">10.0%</td>
+                                <td class="p-3.5 text-right font-semibold text-white">$500.00</td>
+                                <td class="p-3.5 text-right font-bold text-emerald-400">+$500.00</td>
+                                <td class="p-3.5 text-right font-black text-emerald-400 text-sm">$500.00</td>
+                                <td class="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Intocable)</td>
+                                <td class="p-3.5 text-center">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">Blindado</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                                    <span>🚀 Retiro SAT (AFORE)</span>
+                                </td>
+                                <td class="p-3.5 text-slate-300">Paso 6: Deducible Art. 151</td>
+                                <td class="p-3.5 text-center font-bold text-indigo-400">5.0%</td>
+                                <td class="p-3.5 text-right font-semibold text-white">$250.00</td>
+                                <td class="p-3.5 text-right font-bold text-indigo-400">+$250.00</td>
+                                <td class="p-3.5 text-right font-black text-indigo-300 text-sm">$250.00</td>
+                                <td class="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Resguardo)</td>
+                                <td class="p-3.5 text-center">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800">Resguardado</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition bg-blue-950/10">
+                                <td class="p-3.5 font-bold text-white flex items-center space-x-2">
+                                    <span>🔒 Ahorro Involuntario</span>
+                                </td>
+                                <td class="p-3.5 text-slate-300">Paso 1: Bloqueo Automático</td>
+                                <td class="p-3.5 text-center font-bold text-blue-400">5.0%</td>
+                                <td class="p-3.5 text-right font-semibold text-white">$250.00</td>
+                                <td class="p-3.5 text-right font-bold text-blue-400">+$250.00</td>
+                                <td class="p-3.5 text-right font-black text-blue-300 text-sm">$250.00</td>
+                                <td class="p-3.5 text-blue-300 font-medium">🔵 Cetesdirecto (3 Meses)</td>
+                                <td class="p-3.5 text-center">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800">Aportado</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="bg-slate-900 font-bold border-t-2 border-slate-700 text-xs">
+                            <tr>
+                                <td colspan="2" class="p-3.5 text-white uppercase tracking-wider font-extrabold">Total Otros Fondos Quincenales:</td>
+                                <td class="p-3.5 text-center text-emerald-400 font-black">50.0%</td>
+                                <td class="p-3.5 text-right text-emerald-400 font-black text-sm">$2,500.00</td>
+                                <td class="p-3.5 text-right text-slate-300 font-black">+$750 Aport. | -$250 Gast.</td>
+                                <td class="p-3.5 text-right text-purple-300 font-black text-base" id="tb-total-fondos-calc">$2,250.00</td>
+                                <td colspan="2" class="p-3.5 text-right text-slate-400 font-semibold">Cajita Nu ($2,000) + Cetes ($250)</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB: REGISTRO DIARIO DE OCIO & GASTOS -->
+        <!-- ========================================== -->
+        <div id="tab-ocio" class="tab-content hidden space-y-6">
+            <!-- KPIs de Ocio -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 kpi-grid">
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Presupuesto Quincenal Ocio</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-white mt-1" id="ocio-kpi-presupuesto">$1,500.00</h3>
+                    <p class="text-xs text-amber-400 mt-2 font-semibold">Paso 7: Salidas, gustos &amp; diversión</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Gasto Real Actual</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-rose-400 mt-1" id="ocio-kpi-gastado">$250.00</h3>
+                    <p class="text-xs text-slate-400 mt-2 font-medium" id="ocio-kpi-pct">16.7% consumido</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo Disponible para Gastar</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-emerald-400 mt-1" id="ocio-kpi-disponible">$1,250.00</h3>
+                    <p class="text-xs text-slate-300 mt-2 font-medium">Libre para comidas o salidas</p>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl border-purple-500/30">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Resguardo en Cajita Turbo</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-purple-400 mt-1" id="ocio-kpi-cajita">$2,000.00</h3>
+                    <p class="text-xs text-purple-300 mt-2 font-semibold" id="ocio-kpi-cajita-sub">Incluye Emergencia + Retiro + Ocio</p>
+                </div>
+            </div>
+
+            <!-- Progress Bar de Ocio -->
+            <div class="glass-panel p-5 rounded-2xl">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2.5">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-bold text-slate-300">Consumo del Presupuesto de Ocio ($1,500):</span>
+                        <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40" id="ocio-bar-gastado-badge">
+                            Gastado: $250.00
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs font-bold text-emerald-400" id="ocio-bar-disponible-badge">Disponible: $1,250.00</span>
+                        <button onclick="openCerrarQuincenaFuturoModal()" class="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition flex items-center space-x-1">
+                            <i data-lucide="check-circle" class="w-3 h-3"></i>
+                            <span>Cerrar Quincena</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="ocio-bar-fill" class="h-full bg-gradient-to-r from-emerald-500 to-amber-500 transition-all duration-500 rounded-full" style="width: 16.7%"></div>
+                </div>
+            </div>
+
+            <!-- Grid: Formulario de Ocio + Botones Rápidos + Bitácora -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Columna Izquierda: Botones Rápidos y Formulario -->
+                <div class="space-y-6">
+                    <!-- Botones Rápidos de Ocio -->
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <h3 class="text-sm font-bold text-white mb-3 flex items-center space-x-2">
+                            <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                            <span>Botones Rápidos de Ocio (1 Clic)</span>
+                        </h3>
+                        <div class="grid grid-cols-2 gap-2.5" id="container-quick-ocio-buttons">
+                            <!-- Inyectados por JS -->
+                        </div>
+                    </div>
+
+                    <!-- Formulario de Registro Personalizado de Ocio -->
+                    <div class="glass-panel p-5 rounded-2xl">
+                        <h3 class="text-sm font-bold text-white mb-3 flex items-center space-x-2">
+                            <i data-lucide="plus-circle" class="w-4 h-4 text-purple-400"></i>
+                            <span>Registrar Gasto de Ocio</span>
+                        </h3>
+                        <form id="form-add-ocio" onsubmit="handleAddGastoOcio(event)" class="space-y-3 text-xs">
+                            <div>
+                                <label class="text-slate-400 font-medium">Fecha</label>
+                                <input type="date" id="ocio-in-fecha" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-purple-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-medium">Monto ($ MXN)</label>
+                                <input type="number" step="0.5" id="ocio-in-monto" placeholder="0.00" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-purple-500 font-bold">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-medium">Categoría de Ocio</label>
+                                <select id="ocio-in-categoria" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                                    <option value="🍕 Salidas &amp; Gustos">🍕 Salidas &amp; Gustos</option>
+                                    <option value="🎬 Cine &amp; Entretenimiento">🎬 Cine &amp; Entretenimiento</option>
+                                    <option value="🎮 Videojuegos &amp; Digital">🎮 Videojuegos &amp; Digital</option>
+                                    <option value="🍔 Comida Fuera / Restaurantes">🍔 Comida Fuera / Restaurantes</option>
+                                    <option value="🛍️ Compras Personales">🛍️ Compras Personales</option>
+                                    <option value="✨ Otros Gustos">✨ Otros Gustos</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-medium">Concepto / Detalle</label>
+                                <input type="text" id="ocio-in-concepto" placeholder="Ej. Tacos con amigos o cine" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-purple-500">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 font-medium">Método de Pago</label>
+                                <select id="ocio-in-metodo" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1">
+                                    <option value="Débito Nu">Débito Nu (Cajita)</option>
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="TDC Nu">TDC Nu</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-1.5">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span>Guardar Gasto de Ocio en Excel</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Tabla Bitácora de Ocio -->
+                <div class="glass-panel p-5 rounded-2xl lg:col-span-2 flex flex-col">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+                                <i data-lucide="list" class="w-4 h-4 text-purple-400"></i>
+                                <span>Bitácora de Gastos de Ocio (Hoja 'Registro Ocio &amp; Cajita Nu')</span>
+                            </h3>
+                            <p class="text-xs text-slate-400">Sincronizado directamente con las filas 11 a 110 de tu Excel</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold" id="badge-total-registros-ocio">0 registros</span>
+                            <button onclick="openCerrarQuincenaFuturoModal()" class="px-3 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold transition flex items-center space-x-1">
+                                <i data-lucide="check-circle-2" class="w-3 h-3"></i>
+                                <span>Cerrar Quincena</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto flex-1 max-h-[520px] overflow-y-auto border border-slate-800 rounded-xl">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                                <tr>
+                                    <th class="p-3">#</th>
+                                    <th class="p-3">Fecha</th>
+                                    <th class="p-3">Día</th>
+                                    <th class="p-3 text-right">Monto</th>
+                                    <th class="p-3">Categoría</th>
+                                    <th class="p-3">Concepto / Detalle</th>
+                                    <th class="p-3">Método</th>
+                                    <th class="p-3 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-registros-ocio" class="divide-y divide-slate-800">
+                                <!-- Filas dinámicas -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB: HISTÓRICO DE QUINCENAS FUTURO -->
+        <!-- ========================================== -->
+        <div id="tab-historial-futuro" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-teal-800/40">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center border border-teal-500/30">
+                        <i data-lucide="history" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-black text-white">Histórico Quincenas de Futuro</h2>
+                        <p class="text-xs text-slate-400">Consolidado quincenal archivado en la hoja <b>Histórico Quincenas Futuro</b></p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button onclick="loadHistorialFuturoData()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                        <span>Actualizar</span>
+                    </button>
+                    <button onclick="openCerrarQuincenaFuturoModal()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30 flex items-center space-x-1.5">
+                        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                        <span>Archivar Quincena Actual</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de Quincenas Archivadas de Futuro -->
+            <div class="glass-panel p-5 sm:p-6 rounded-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs sm:text-sm">
+                        <thead class="bg-slate-900/90 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3.5">#</th>
+                                <th class="p-3.5">Período</th>
+                                <th class="p-3.5 text-center">Fecha Cierre</th>
+                                <th class="p-3.5 text-right">Pres. Ocio</th>
+                                <th class="p-3.5 text-right">Gasto Ocio</th>
+                                <th class="p-3.5 text-right">Remanente Ocio</th>
+                                <th class="p-3.5 text-right">Aporte Emergencia</th>
+                                <th class="p-3.5 text-right">Aporte Retiro</th>
+                                <th class="p-3.5 text-right">Aporte Cetes</th>
+                                <th class="p-3.5 text-right">Total Cajita Nu</th>
+                                <th class="p-3.5 text-center">Movs</th>
+                                <th class="p-3.5 text-center">Detalle</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-historial-futuro" class="divide-y divide-slate-800">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- TAB 1: DASHBOARD MAESTRO -->
-        <div id="tab-dash-maestro" class="tab-content space-y-6">
+        <div id="tab-dash-maestro" class="tab-content hidden space-y-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 kpi-grid">
                 <div class="glass-panel p-5 rounded-2xl">
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingreso Base Quincenal</p>
@@ -670,6 +1172,132 @@
         </div>
     </div>
 
+    
+    <!-- ========================================== -->
+    <!-- MODALES DE CONTROL CAJITA & OCIO EN FUTURO -->
+    <!-- ========================================== -->
+
+    <!-- Modal Eliminar Gasto de Ocio -->
+    <div id="modal-delete-ocio" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-3xl max-w-sm w-full border border-rose-900/40 shadow-2xl relative text-center">
+            <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center mx-auto mb-4 border border-rose-500/30">
+                <i data-lucide="trash-2" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-base font-bold text-white">¿Eliminar este gasto de ocio?</h3>
+            <p class="text-xs text-slate-300 mt-2" id="delete-ocio-texto">
+                Esta acción eliminará el registro de la hoja 'Registro Ocio &amp; Cajita Nu' y recalculará tu saldo en Cajita Turbo.
+            </p>
+            <input type="hidden" id="delete-ocio-fila-target">
+
+            <div class="flex space-x-2 mt-6">
+                <button type="button" onclick="closeDeleteOcioModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">
+                    Cancelar
+                </button>
+                <button type="button" onclick="confirmarEliminarOcio()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-rose-600/30">
+                    Sí, Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cerrar Quincena Futuro -->
+    <div id="modal-cerrar-quincena-futuro" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 sm:p-7 rounded-3xl max-w-md w-full border border-emerald-500/30 shadow-2xl relative space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Cerrar Quincena en Futuro</h3>
+                        <p class="text-xs text-slate-400">Archivar en 'Histórico Quincenas Futuro'</p>
+                    </div>
+                </div>
+                <button onclick="closeCerrarQuincenaFuturoModal()" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div class="p-3 rounded-xl bg-emerald-950/50 border border-emerald-800/60 space-y-1.5">
+                    <div class="flex justify-between">
+                        <span class="text-slate-300 font-medium">Presupuesto Ocio:</span>
+                        <span class="font-bold text-white">$1,500.00</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-300 font-medium">Gasto Real Ocio:</span>
+                        <span class="font-bold text-rose-400" id="modal-cqf-gastado">$0.00</span>
+                    </div>
+                    <div class="flex justify-between pt-1 border-t border-emerald-800/40">
+                        <span class="text-emerald-300 font-bold">Remanente Ocio Resguardado:</span>
+                        <span class="font-black text-emerald-400 text-sm" id="modal-cqf-remanente">$0.00</span>
+                    </div>
+                    <div class="flex justify-between pt-1 border-t border-emerald-800/40">
+                        <span class="text-purple-300 font-bold">Total Resguardado en Cajita Nu:</span>
+                        <span class="font-black text-purple-300 text-sm" id="modal-cqf-cajita-total">$0.00</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-slate-400 font-semibold">Nombre del Período / Quincena</label>
+                    <input type="text" id="cqf-periodo" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-slate-400 font-semibold">Fecha de Cierre</label>
+                        <input type="date" id="cqf-fecha" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1">
+                    </div>
+                    <div>
+                        <label class="text-slate-400 font-semibold">Año</label>
+                        <input type="number" id="cqf-anio" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1">
+                    </div>
+                </div>
+                <p class="text-[11px] text-slate-400">
+                    💡 Al cerrar, el remanente de ocio se resguarda en tu Cajita Nu y la bitácora de ocio se reinicia en limpio para el siguiente período.
+                </p>
+            </div>
+
+            <div class="flex space-x-2 pt-2">
+                <button type="button" onclick="closeCerrarQuincenaFuturoModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">
+                    Cancelar
+                </button>
+                <button type="button" onclick="handleConfirmarCierreFuturo()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-emerald-600/30">
+                    Archivar Quincena
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ajustar Aportación Activa -->
+    <div id="modal-ajuste-aporte" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-3xl max-w-sm w-full border border-purple-500/30 shadow-2xl relative space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-white" id="ajuste-aporte-titulo">Ajustar Aportación</h3>
+                <button onclick="closeAjusteAporteModal()" class="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <input type="hidden" id="ajuste-aporte-tipo">
+                <div>
+                    <label class="text-slate-400 font-semibold">Monto Aportado ($ MXN)</label>
+                    <input type="number" step="10" id="ajuste-aporte-monto" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold text-base focus:border-purple-500">
+                </div>
+                <p class="text-[11px] text-slate-400" id="ajuste-aporte-desc">
+                    Se actualizará la celda correspondiente en la hoja 'Registro Ocio &amp; Cajita Nu'.
+                </p>
+            </div>
+            <div class="flex space-x-2 pt-2">
+                <button type="button" onclick="closeAjusteAporteModal()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition">
+                    Cancelar
+                </button>
+                <button type="button" onclick="handleConfirmarAjusteAporte()" class="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition">
+                    Guardar en Excel
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Eliminar Compra TDC -->
     <div id="modal-delete-tdc" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="glass-panel p-6 rounded-3xl max-w-sm w-full border border-rose-900/40 shadow-2xl relative text-center">
@@ -702,8 +1330,11 @@
     <script src="js/api.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const inFecha = document.getElementById('tdc-in-fecha');
-            if (inFecha) inFecha.value = new Date().toISOString().split('T')[0];
+            const todayStr = new Date().toISOString().split('T')[0];
+            const inFechaTDC = document.getElementById('tdc-in-fecha');
+            if (inFechaTDC) inFechaTDC.value = todayStr;
+            const inFechaOcio = document.getElementById('ocio-in-fecha');
+            if (inFechaOcio) inFechaOcio.value = todayStr;
             loadFuturoData();
         });
     </script>

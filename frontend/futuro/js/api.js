@@ -15,6 +15,8 @@ async function loadFuturoData() {
         fData = await res.json();
 
         if (res.ok && fData.status === 'success') {
+            renderGeneralCajita();
+            renderRegistrosOcio();
             renderDashboardMaestro();
             renderCetes();
             renderTDC();
@@ -183,3 +185,150 @@ async function handleMasterConfigSubmit(e) {
         showToast("⚠️ Error de conexión con el servidor local", "error");
     }
 }
+
+/**
+ * Registra un gasto de ocio desde el formulario.
+ */
+async function handleAddGastoOcio(e) {
+    e.preventDefault();
+    const payload = {
+        fecha:     document.getElementById('ocio-in-fecha').value,
+        monto:     parseFloat(document.getElementById('ocio-in-monto').value),
+        categoria: document.getElementById('ocio-in-categoria').value,
+        concepto:  document.getElementById('ocio-in-concepto').value,
+        metodo:    document.getElementById('ocio-in-metodo').value
+    };
+
+    try {
+        const res  = await fetch('/api/futuro/gasto_ocio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            showToast(`✅ ${data.message}`, "success");
+            document.getElementById('ocio-in-monto').value = '';
+            document.getElementById('ocio-in-concepto').value = '';
+            await loadFuturoData();
+        } else {
+            showToast(data.message || "Error al registrar gasto", "error");
+        }
+    } catch (err) {
+        showToast("⚠️ Error de conexión con el servidor", "error");
+    }
+}
+
+/**
+ * Botón rápido para agregar gasto de ocio en 1 clic.
+ */
+async function handleQuickAddOcio(monto, categoria, concepto) {
+    const today = new Date().toISOString().split('T')[0];
+    const payload = {
+        fecha:     today,
+        monto:     monto,
+        categoria: categoria,
+        concepto:  concepto,
+        metodo:    "Débito Nu"
+    };
+
+    try {
+        const res = await fetch('/api/futuro/gasto_ocio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            showToast(`⚡ ${data.message}`, "success");
+            await loadFuturoData();
+        } else {
+            showToast(data.message || "Error al registrar", "error");
+        }
+    } catch (err) {
+        showToast("⚠️ Error de conexión", "error");
+    }
+}
+
+/**
+ * Guarda el ajuste de aportación activa (cetes, emergencia, retiro)
+ */
+async function handleConfirmarAjusteAporte() {
+    const tipo = document.getElementById('ajuste-aporte-tipo').value;
+    const monto = parseFloat(document.getElementById('ajuste-aporte-monto').value);
+
+    if (isNaN(monto) || monto < 0) {
+        showToast("⚠️ Ingresa un monto válido", "warning");
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/futuro/aportacion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tipo, monto })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            showToast(`✅ ${data.message}`, "success");
+            closeAjusteAporteModal();
+            await loadFuturoData();
+        } else {
+            showToast(data.message || "Error al actualizar", "error");
+        }
+    } catch (err) {
+        showToast("⚠️ Error de conexión", "error");
+    }
+}
+
+/**
+ * Cierra la quincena en Plan a Futuro y archiva los datos en Excel.
+ */
+async function handleConfirmarCierreFuturo() {
+    const periodo = document.getElementById('cqf-periodo').value.trim();
+    const fecha = document.getElementById('cqf-fecha').value;
+    const anio = parseInt(document.getElementById('cqf-anio').value);
+
+    if (!periodo) {
+        showToast("⚠️ Ingresa el nombre del período", "warning");
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/futuro/cerrar_quincena', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ periodo, fecha_cierre: fecha, anio })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            showToast(data.message, "success");
+            closeCerrarQuincenaFuturoModal();
+            await loadFuturoData();
+            await loadHistorialFuturoData();
+        } else {
+            showToast(data.message || "Error al cerrar quincena", "error");
+        }
+    } catch (err) {
+        showToast("⚠️ Error de conexión al cerrar quincena", "error");
+    }
+}
+
+/**
+ * Carga el historial de quincenas de futuro desde el servidor.
+ */
+async function loadHistorialFuturoData() {
+    try {
+        const res = await fetch('/api/futuro/historial');
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            window.historialFuturoData = data.cierres || [];
+            renderHistorialFuturo(window.historialFuturoData);
+        } else {
+            showToast("Error al cargar historial de futuro", "error");
+        }
+    } catch (err) {
+        console.error("Error al cargar historial:", err);
+    }
+}
+

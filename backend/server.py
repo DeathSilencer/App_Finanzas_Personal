@@ -30,7 +30,10 @@ from routes.gastos_routes import (
 )
 from routes.futuro_routes import (
     handle_get_futuro, handle_tdc_add, handle_tdc_edit,
-    handle_tdc_delete, handle_tdc_pay, handle_config_futuro
+    handle_tdc_delete, handle_tdc_pay, handle_config_futuro,
+    handle_add_gasto_ocio, handle_delete_gasto_ocio,
+    handle_update_aportacion_futuro, handle_cerrar_quincena_futuro,
+    handle_get_historial_futuro
 )
 
 
@@ -63,6 +66,8 @@ class FinanzasHandler(http.server.SimpleHTTPRequestHandler):
             handle_get_historial(self)
         elif path == "/api/futuro":
             handle_get_futuro(self)
+        elif path == "/api/futuro/historial":
+            handle_get_historial_futuro(self)
         else:
             # Servir archivos estáticos del frontend
             super().do_GET()
@@ -93,6 +98,10 @@ class FinanzasHandler(http.server.SimpleHTTPRequestHandler):
             "/api/futuro/tdc_delete":      lambda: handle_tdc_delete(self, data),
             "/api/futuro/tdc_pay":         lambda: handle_tdc_pay(self, data),
             "/api/futuro/config":          lambda: handle_config_futuro(self, data),
+            "/api/futuro/gasto_ocio":      lambda: handle_add_gasto_ocio(self, data),
+            "/api/futuro/delete_gasto_ocio": lambda: handle_delete_gasto_ocio(self, data),
+            "/api/futuro/aportacion":      lambda: handle_update_aportacion_futuro(self, data),
+            "/api/futuro/cerrar_quincena": lambda: handle_cerrar_quincena_futuro(self, data),
         }
 
         handler_fn = routes_map.get(path)

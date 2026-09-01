@@ -116,7 +116,7 @@ def handle_get_futuro(handler):
             spot_date_str = today.strftime("%Y-%m-%d")
             item_spotify = {
                 "fila": fila_spot, "id": fila_spot - 12,
-                "fecha": spot_date_str, "monto": 70.0,
+                "fecha": spot_date_str, "monto": 74.0,
                 "concepto": "Suscripción Spotify", "categoria": "Ocio",
                 "tipo": "Suscripción Recurrente", "apartado": "Sí (En Cajita)", "estado": "Pendiente"
             }
@@ -126,7 +126,7 @@ def handle_get_futuro(handler):
                 ws_w_tdc = wb_write['Control TDC Nu']
                 ws_w_tdc.cell(row=fila_spot, column=1).value = fila_spot - 12
                 ws_w_tdc.cell(row=fila_spot, column=2).value = spot_date_str
-                ws_w_tdc.cell(row=fila_spot, column=3).value = 70.0
+                ws_w_tdc.cell(row=fila_spot, column=3).value = 74.0
                 ws_w_tdc.cell(row=fila_spot, column=4).value = "Suscripción Spotify"
                 ws_w_tdc.cell(row=fila_spot, column=5).value = "Ocio"
                 ws_w_tdc.cell(row=fila_spot, column=6).value = "Suscripción Recurrente"
@@ -183,6 +183,107 @@ def handle_get_futuro(handler):
                 "efecto_mult": mult
             })
 
+        # 7. Ocio y Subcontabilidad Cajita Turbo Nu (Los otros $2,500)
+        registros_ocio = []
+        pres_ocio = ingreso_base * pct_p7         # $1,500.00
+        pres_emergencia = ingreso_base * pct_p3   # $500.00
+        pres_retiro = ingreso_base * pct_p6       # $250.00
+        pres_cetes = ingreso_base * pct_p1        # $250.00
+        pres_total_otros = pres_ocio + pres_emergencia + pres_retiro + pres_cetes # $2,500.00
+
+        cetes_aportado = pres_cetes
+        cetes_estado = "Aportado (Cetesdirecto)"
+        emergencia_aportado = pres_emergencia
+        retiro_aportado = pres_retiro
+
+        if 'Registro Ocio & Cajita Nu' in wb.sheetnames:
+            ws_ocio = wb['Registro Ocio & Cajita Nu']
+            # Leer aportaciones activas
+            if ws_ocio.max_row >= 7:
+                cetes_aportado = safe_float(ws_ocio['H4'].value, pres_cetes)
+                cetes_estado = str(ws_ocio['H5'].value or "Aportado (Cetesdirecto)")
+                emergencia_aportado = safe_float(ws_ocio['H6'].value, pres_emergencia)
+                retiro_aportado = safe_float(ws_ocio['H7'].value, pres_retiro)
+            
+            # Leer bitácora de ocio
+            for r in range(11, 111):
+                m_val = ws_ocio.cell(row=r, column=4).value
+                if m_val is not None and str(m_val).strip() != "":
+                    try:
+                        m_num = float(m_val)
+                        if m_num > 0:
+                            registros_ocio.append({
+                                "fila": r,
+                                "id": ws_ocio.cell(row=r, column=1).value or (r - 10),
+                                "fecha": parse_fecha(ws_ocio.cell(row=r, column=2).value),
+                                "dia": str(ws_ocio.cell(row=r, column=3).value or ""),
+                                "monto": m_num,
+                                "categoria": str(ws_ocio.cell(row=r, column=5).value or "🍕 Salidas & Gustos"),
+                                "concepto": str(ws_ocio.cell(row=r, column=6).value or ""),
+                                "metodo": str(ws_ocio.cell(row=r, column=7).value or "Débito Nu")
+                            })
+                    except (ValueError, TypeError):
+                        pass
+
+        gasto_real_ocio = sum(r["monto"] for r in registros_ocio)
+        remanente_ocio = max(0.0, round(pres_ocio - gasto_real_ocio, 2))
+        pct_consumido_ocio = round((gasto_real_ocio / pres_ocio) * 100, 1) if pres_ocio > 0 else 0.0
+
+        # Subcontabilidad Cajita Turbo Nu (Fondo de Emergencia + Ocio Disponible + Retiro SAT)
+        saldo_en_cajita_ocio = remanente_ocio
+        saldo_en_cajita_emergencia = emergencia_aportado
+        saldo_en_cajita_retiro = retiro_aportado
+        gran_total_cajita_turbo = round(saldo_en_cajita_ocio + saldo_en_cajita_emergencia + saldo_en_cajita_retiro, 2)
+        rend_mensual_cajita = round(gran_total_cajita_turbo * (tasa_nu / 12), 2)
+
+        cajita_turbo = {
+            "gran_total": gran_total_cajita_turbo,
+            "rendimiento_mensual": rend_mensual_cajita,
+            "tasa_anual": tasa_nu,
+            "porciones": {
+                "emergencia": {
+                    "monto": saldo_en_cajita_emergencia,
+                    "pct": round((saldo_en_cajita_emergencia / gran_total_cajita_turbo * 100), 1) if gran_total_cajita_turbo > 0 else 0,
+                    "etiqueta": "Fondo de Emergencia (Intocable)"
+                },
+                "ocio": {
+                    "monto": saldo_en_cajita_ocio,
+                    "pct": round((saldo_en_cajita_ocio / gran_total_cajita_turbo * 100), 1) if gran_total_cajita_turbo > 0 else 0,
+                    "etiqueta": "Ocio & Salidas (Disponible para gastar)"
+                },
+                "retiro": {
+                    "monto": saldo_en_cajita_retiro,
+                    "pct": round((saldo_en_cajita_retiro / gran_total_cajita_turbo * 100), 1) if gran_total_cajita_turbo > 0 else 0,
+                    "etiqueta": "Retiro Fiscal SAT (Apartado)"
+                }
+            }
+        }
+
+        otros_fondos = {
+            "presupuesto_total": pres_total_otros,
+            "ocio": {
+                "presupuesto": pres_ocio,
+                "gasto_real": gasto_real_ocio,
+                "remanente": remanente_ocio,
+                "pct_consumido": pct_consumido_ocio
+            },
+            "emergencia": {
+                "presupuesto": pres_emergencia,
+                "aportado": emergencia_aportado
+            },
+            "retiro": {
+                "presupuesto": pres_retiro,
+                "aportado": retiro_aportado
+            },
+            "cetes": {
+                "presupuesto": pres_cetes,
+                "aportado": cetes_aportado,
+                "estado": cetes_estado
+            },
+            "registros_ocio": list(reversed(registros_ocio)),
+            "cajita_turbo": cajita_turbo
+        }
+
         handler.send_json({
             "status": "success",
             "config": {
@@ -201,6 +302,7 @@ def handle_get_futuro(handler):
                 "tdc_pago":     tdc_pago
             },
             "distribucion": distribucion,
+            "otros_fondos": otros_fondos,
             "cetes": {
                 "aporte_quincenal":  ingreso_base * pct_p1,
                 "aporte_anual":      aporte_cetes_anual,
@@ -216,7 +318,7 @@ def handle_get_futuro(handler):
                 "pago_dia":             tdc_pago,
                 "interes_atraso":       interes_atraso,
                 "proximo_spotify_fecha":proximo_spotify_str,
-                "proximo_spotify_monto":70.0,
+                "proximo_spotify_monto":74.0,
                 "compras":              list(reversed(compras_tdc))
             },
             "fondo_emergencia": {
@@ -237,6 +339,7 @@ def handle_get_futuro(handler):
                 "tabla":             sat_tabla
             }
         })
+        wb.close()
     except PermissionError:
         handler.send_json({"status": "error", "message": "⚠️ Plan_Financiero_Futuro.xlsx está abierto en Microsoft Excel. Ciérralo para permitir el acceso."}, 423)
     except Exception as e:
@@ -415,3 +518,291 @@ def handle_config_futuro(handler, data):
         handler.send_json({"status": "error", "message": "⚠️ Plan_Financiero_Futuro.xlsx está abierto en Excel. Ciérralo para guardar configuración."}, 423)
     except Exception as e:
         handler.send_json({"status": "error", "message": f"Error al guardar configuración: {str(e)}"}, 500)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /api/futuro/gasto_ocio  — Registrar gasto en bitácora de ocio
+# ─────────────────────────────────────────────────────────────────────────────
+def handle_add_gasto_ocio(handler, data):
+    try:
+        wb = load_wb_write(PATH_FUTURO)
+        if 'Registro Ocio & Cajita Nu' not in wb.sheetnames:
+            handler.send_json({"status": "error", "message": "Hoja 'Registro Ocio & Cajita Nu' no encontrada en Excel."}, 500)
+            return
+        ws_ocio = wb['Registro Ocio & Cajita Nu']
+
+        target_row = None
+        for r in range(11, 111):
+            val = ws_ocio.cell(row=r, column=4).value
+            if val is None or str(val).strip() == "" or float(val or 0) == 0:
+                target_row = r
+                break
+
+        if not target_row:
+            handler.send_json({"status": "error", "message": "Límite de 100 registros de ocio alcanzado para la quincena actual."}, 400)
+            return
+
+        now = datetime.now()
+        fecha_in = data.get("fecha", now.strftime("%Y-%m-%d"))
+        dias_es = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        try:
+            d_obj = datetime.strptime(fecha_in, "%Y-%m-%d")
+            dia_str = dias_es[d_obj.weekday()]
+        except Exception:
+            dia_str = dias_es[now.weekday()]
+
+        monto = safe_float(data.get("monto"), 0.0)
+        categoria = str(data.get("categoria", "🍕 Salidas & Gustos"))
+        concepto = str(data.get("concepto", "Gasto de ocio"))
+        metodo = str(data.get("metodo", "Débito Nu"))
+
+        ws_ocio.cell(row=target_row, column=1, value=target_row - 10)
+        ws_ocio.cell(row=target_row, column=2, value=fecha_in)
+        ws_ocio.cell(row=target_row, column=3, value=dia_str)
+        ws_ocio.cell(row=target_row, column=4, value=monto)
+        ws_ocio.cell(row=target_row, column=5, value=categoria)
+        ws_ocio.cell(row=target_row, column=6, value=concepto)
+        ws_ocio.cell(row=target_row, column=7, value=metodo)
+
+        wb.save(PATH_FUTURO)
+        wb.close()
+        handler.send_json({"status": "success", "message": f"¡Gasto de ocio de ${monto:.2f} registrado en Cajita Nu!"})
+    except PermissionError:
+        handler.send_json({"status": "error", "message": "⚠️ Plan_Financiero_Futuro.xlsx está abierto en Excel. Ciérralo para guardar."}, 423)
+    except Exception as e:
+        handler.send_json({"status": "error", "message": f"Error al guardar gasto de ocio: {str(e)}"}, 500)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /api/futuro/delete_gasto_ocio  — Eliminar gasto de ocio con reindexación
+# ─────────────────────────────────────────────────────────────────────────────
+def handle_delete_gasto_ocio(handler, data):
+    try:
+        row_del = int(data.get("fila"))
+        print(f"[DEBUG DELETE] Solicitado borrar fila: {row_del}")
+        wb = load_wb_write(PATH_FUTURO)
+        ws_ocio = wb['Registro Ocio & Cajita Nu']
+
+        active = []
+        for r in range(11, 111):
+            m = ws_ocio.cell(row=r, column=4).value
+            if m is not None and str(m).strip() != "":
+                try:
+                    m_num = float(m)
+                    if m_num > 0:
+                        active.append({
+                            "original_row": r,
+                            "fecha": ws_ocio.cell(row=r, column=2).value,
+                            "dia": ws_ocio.cell(row=r, column=3).value,
+                            "monto": m_num,
+                            "categoria": ws_ocio.cell(row=r, column=5).value,
+                            "concepto": ws_ocio.cell(row=r, column=6).value,
+                            "metodo": ws_ocio.cell(row=r, column=7).value
+                        })
+                except Exception:
+                    pass
+
+        remaining = [rec for rec in active if rec["original_row"] != row_del]
+
+        # Limpiar filas 11 a 110
+        for r in range(11, 111):
+            ws_ocio.cell(row=r, column=1).value = r - 10
+            for c in range(2, 8):
+                ws_ocio.cell(row=r, column=c).value = None
+
+        # Reescribir ordenadamente
+        for idx, rec in enumerate(remaining):
+            curr = 11 + idx
+            ws_ocio.cell(row=curr, column=1, value=idx + 1)
+            ws_ocio.cell(row=curr, column=2, value=rec["fecha"])
+            ws_ocio.cell(row=curr, column=3, value=rec["dia"])
+            ws_ocio.cell(row=curr, column=4, value=rec["monto"])
+            ws_ocio.cell(row=curr, column=5, value=rec["categoria"])
+            ws_ocio.cell(row=curr, column=6, value=rec["concepto"])
+            ws_ocio.cell(row=curr, column=7, value=rec["metodo"])
+
+        wb.save(PATH_FUTURO)
+        wb.close()
+        handler.send_json({"status": "success", "message": f"Gasto #{row_del-10} eliminado correctamente."})
+    except PermissionError:
+        handler.send_json({"status": "error", "message": "⚠️ Plan_Financiero_Futuro.xlsx está abierto en Excel. Ciérralo para editar."}, 423)
+    except Exception as e:
+        handler.send_json({"status": "error", "message": f"Error al eliminar gasto: {str(e)}"}, 500)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /api/futuro/aportacion  — Registrar aportación quincenal activa
+# ─────────────────────────────────────────────────────────────────────────────
+def handle_update_aportacion_futuro(handler, data):
+    try:
+        wb = load_wb_write(PATH_FUTURO)
+        ws_ocio = wb['Registro Ocio & Cajita Nu']
+        tipo = data.get("tipo")  # "cetes", "emergencia", "retiro"
+        monto = safe_float(data.get("monto"), 0.0)
+
+        if tipo == "cetes":
+            ws_ocio['H4'].value = monto
+            ws_ocio['H5'].value = "Aportado (Cetesdirecto)" if monto > 0 else "Pendiente"
+        elif tipo == "emergencia":
+            ws_ocio['H6'].value = monto
+        elif tipo == "retiro":
+            ws_ocio['H7'].value = monto
+
+        wb.save(PATH_FUTURO)
+        wb.close()
+        handler.send_json({"status": "success", "message": f"Aportación a {tipo.capitalize()} actualizada: ${monto:.2f}"})
+    except PermissionError:
+        handler.send_json({"status": "error", "message": "⚠️ Plan_Financiero_Futuro.xlsx está abierto en Excel. Ciérralo para editar."}, 423)
+    except Exception as e:
+        handler.send_json({"status": "error", "message": f"Error al actualizar aportación: {str(e)}"}, 500)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /api/futuro/cerrar_quincena  — Archivar quincena de los $2,500 en Histórico
+# ─────────────────────────────────────────────────────────────────────────────
+def handle_cerrar_quincena_futuro(handler, data):
+    try:
+        wb = load_wb_write(PATH_FUTURO)
+        ws_dash = wb['Dashboard Maestro']
+        ws_ocio = wb['Registro Ocio & Cajita Nu']
+        ws_hist = wb['Histórico Quincenas Futuro']
+
+        ingreso_base = safe_float(ws_dash["B5"].value, 5000.0)
+        pct_p7 = safe_float(ws_dash["B11"].value, 0.30)
+        pct_p3 = safe_float(ws_dash["B12"].value, 0.10)
+        pct_p6 = safe_float(ws_dash["B13"].value, 0.05)
+        pct_p1 = safe_float(ws_dash["B9"].value, 0.05)
+
+        pres_ocio = ingreso_base * pct_p7
+        pres_emergencia = ingreso_base * pct_p3
+        pres_retiro = ingreso_base * pct_p6
+        pres_cetes = ingreso_base * pct_p1
+
+        registros = []
+        for r in range(11, 111):
+            m = ws_ocio.cell(row=r, column=4).value
+            if m is not None and str(m).strip() != "":
+                try:
+                    m_num = float(m)
+                    if m_num > 0:
+                        registros.append({
+                            "id": ws_ocio.cell(row=r, column=1).value or (r - 10),
+                            "fecha": parse_fecha(ws_ocio.cell(row=r, column=2).value),
+                            "dia": str(ws_ocio.cell(row=r, column=3).value or ""),
+                            "monto": m_num,
+                            "categoria": str(ws_ocio.cell(row=r, column=5).value or ""),
+                            "concepto": str(ws_ocio.cell(row=r, column=6).value or ""),
+                            "metodo": str(ws_ocio.cell(row=r, column=7).value or "")
+                        })
+                except Exception:
+                    pass
+
+        gasto_ocio = sum(r["monto"] for r in registros)
+        remanente_ocio = max(0.0, round(pres_ocio - gasto_ocio, 2))
+
+        aporte_emergencia = safe_float(ws_ocio['H6'].value, pres_emergencia)
+        aporte_retiro = safe_float(ws_ocio['H7'].value, pres_retiro)
+        aporte_cetes = safe_float(ws_ocio['H4'].value, pres_cetes)
+        total_cajita_cierre = round(remanente_ocio + aporte_emergencia + aporte_retiro, 2)
+
+        now = datetime.now()
+        meses_es = {
+            "January":"Enero","February":"Febrero","March":"Marzo","April":"Abril",
+            "May":"Mayo","June":"Junio","July":"Julio","August":"Agosto",
+            "September":"Septiembre","October":"Octubre","November":"Noviembre","December":"Diciembre"
+        }
+        mes_ingles = now.strftime("%B")
+        mes_nombre = meses_es.get(mes_ingles, mes_ingles)
+
+        nombre_periodo = data.get("periodo") or f"{'1ra' if now.day <= 15 else '2da'} Quincena {mes_nombre} {now.year}"
+        anio_val = int(data.get("anio", now.year))
+        fecha_cierre_val = data.get("fecha_cierre", now.strftime("%Y-%m-%d"))
+
+        target_row = ws_hist.max_row + 1
+        for r in range(2, ws_hist.max_row + 2):
+            if ws_hist.cell(row=r, column=2).value is None or str(ws_hist.cell(row=r, column=2).value).strip() == "":
+                target_row = r
+                break
+
+        id_cierre = target_row - 1
+        ws_hist.cell(row=target_row, column=1, value=id_cierre)
+        ws_hist.cell(row=target_row, column=2, value=nombre_periodo)
+        ws_hist.cell(row=target_row, column=3, value=mes_nombre)
+        ws_hist.cell(row=target_row, column=4, value=anio_val)
+        ws_hist.cell(row=target_row, column=5, value=fecha_cierre_val)
+        ws_hist.cell(row=target_row, column=6, value=pres_ocio)
+        ws_hist.cell(row=target_row, column=7, value=gasto_ocio)
+        ws_hist.cell(row=target_row, column=8, value=remanente_ocio)
+        ws_hist.cell(row=target_row, column=9, value=aporte_emergencia)
+        ws_hist.cell(row=target_row, column=10, value=aporte_retiro)
+        ws_hist.cell(row=target_row, column=11, value=aporte_cetes)
+        ws_hist.cell(row=target_row, column=12, value=total_cajita_cierre)
+        ws_hist.cell(row=target_row, column=13, value=len(registros))
+        detalle_json = json.dumps({
+            "registros_ocio": registros,
+            "pres_total_otros": 2500.0,
+            "gasto_ocio": gasto_ocio,
+            "remanente_ocio": remanente_ocio
+        }, ensure_ascii=False)
+        ws_hist.cell(row=target_row, column=14, value=detalle_json)
+
+        # Resetear bitácora de ocio para la nueva quincena
+        for r in range(11, 111):
+            ws_ocio.cell(row=r, column=1).value = r - 10
+            for c in range(2, 8):
+                ws_ocio.cell(row=r, column=c).value = None
+
+        wb.save(PATH_FUTURO)
+        wb.close()
+        handler.send_json({
+            "status": "success",
+            "message": f"🎉 ¡Quincena archivada en Plan a Futuro! Remanente de Ocio: ${remanente_ocio:.2f} resguardado en Cajita Turbo."
+        })
+    except PermissionError:
+        handler.send_json({"status": "error", "message": "⚠️ Plan_Financiero_Futuro.xlsx está abierto en Excel. Ciérralo para archivar."}, 423)
+    except Exception as e:
+        handler.send_json({"status": "error", "message": f"Error al cerrar quincena: {str(e)}"}, 500)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /api/futuro/historial  — Obtener quincenas archivadas de Futuro
+# ─────────────────────────────────────────────────────────────────────────────
+def handle_get_historial_futuro(handler):
+    try:
+        wb = load_wb_readonly(PATH_FUTURO)
+        if 'Histórico Quincenas Futuro' not in wb.sheetnames:
+            wb.close()
+            handler.send_json({"status": "success", "cierres": []})
+            return
+        ws_hist = wb['Histórico Quincenas Futuro']
+        cierres = []
+        for r in range(2, ws_hist.max_row + 1):
+            id_val = ws_hist.cell(row=r, column=1).value
+            if id_val is not None and str(id_val).strip() != "":
+                detalle_raw = ws_hist.cell(row=r, column=14).value or "{}"
+                try:
+                    detalle_obj = json.loads(str(detalle_raw))
+                except Exception:
+                    detalle_obj = {}
+                cierres.append({
+                    "fila": r,
+                    "id": int(id_val),
+                    "periodo": str(ws_hist.cell(row=r, column=2).value or ""),
+                    "mes": str(ws_hist.cell(row=r, column=3).value or ""),
+                    "anio": safe_int(ws_hist.cell(row=r, column=4).value, datetime.now().year),
+                    "fecha_cierre": str(ws_hist.cell(row=r, column=5).value or ""),
+                    "presupuesto_ocio": safe_float(ws_hist.cell(row=r, column=6).value),
+                    "gasto_ocio": safe_float(ws_hist.cell(row=r, column=7).value),
+                    "remanente_ocio": safe_float(ws_hist.cell(row=r, column=8).value),
+                    "aporte_emergencia": safe_float(ws_hist.cell(row=r, column=9).value),
+                    "aporte_retiro": safe_float(ws_hist.cell(row=r, column=10).value),
+                    "aporte_cetes": safe_float(ws_hist.cell(row=r, column=11).value),
+                    "total_cajita_cierre": safe_float(ws_hist.cell(row=r, column=12).value),
+                    "num_movimientos": safe_int(ws_hist.cell(row=r, column=13).value),
+                    "detalle": detalle_obj
+                })
+        wb.close()
+        handler.send_json({"status": "success", "cierres": list(reversed(cierres))})
+    except Exception as e:
+        handler.send_json({"status": "error", "message": str(e)}, 500)
+
