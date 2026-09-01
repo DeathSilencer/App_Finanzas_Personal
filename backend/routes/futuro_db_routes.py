@@ -359,10 +359,24 @@ def handle_add_gasto_ocio(handler, data):
             INSERT INTO gastos_ocio (fecha, dia, monto, categoria, concepto, metodo_pago)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (fecha, dia, monto, categoria, concepto, metodo))
+        ocio_id = cursor.lastrowid
+
+        # Si el método de pago es TDC Nu, registrar automáticamente en compras_tdc
+        metodo_lower = metodo.lower()
+        es_tdc = "tdc" in metodo_lower or "crédito" in metodo_lower or "credito" in metodo_lower
+        if es_tdc:
+            cursor.execute('''
+                INSERT INTO compras_tdc (fecha, monto, concepto, categoria, tipo, apartado, estado, origen_tipo, origen_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'gastos_ocio', ?)
+            ''', (fecha, monto, f"{concepto} ({categoria})", "Ocio", "Gasto Ocio", "Sí (En Cajita)", "Pendiente", ocio_id))
+
         conn.commit()
         conn.close()
 
-        handler.send_json({"status": "success", "message": f"¡Gasto de ocio de ${monto:.2f} registrado en SQLite!"})
+        msg = f"¡Gasto de ocio de ${monto:.2f} registrado en SQLite!"
+        if es_tdc:
+            msg += " 💳 Compra agregada automáticamente a tu TDC Nu."
+        handler.send_json({"status": "success", "message": msg, "id": ocio_id})
     except Exception as e:
         handler.send_json({"status": "error", "message": str(e)}, 500)
 
@@ -377,6 +391,8 @@ def handle_delete_gasto_ocio(handler, data):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM gastos_ocio WHERE id = ?", (gasto_id,))
+        # Eliminar también la compra en compras_tdc si procedía de este gasto de ocio
+        cursor.execute("DELETE FROM compras_tdc WHERE origen_tipo = 'gastos_ocio' AND origen_id = ?", (gasto_id,))
         conn.commit()
         conn.close()
 

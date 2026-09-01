@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Zap, PlusCircle, List, Trash2, Eraser, CheckCircle2 } from 'lucide-react';
+import { Zap, PlusCircle, List, Trash2, Eraser, CheckCircle2, CreditCard } from 'lucide-react';
 import { fmt, getTodayDate } from '../../utils/formatters';
 
 export default function RegistroDiario({
@@ -161,6 +161,14 @@ export default function RegistroDiario({
                 </select>
               </div>
             </div>
+
+            {metodo === 'TDC Nu' && (
+              <div className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/40 text-[11px] text-purple-200 flex items-center space-x-2">
+                <CreditCard className="w-4 h-4 text-purple-400 shrink-0" />
+                <span>💳 Se registrará automáticamente en tu <b>Tarjeta de Crédito Nu</b> como compra a pagar.</span>
+              </div>
+            )}
+
             <button
               type="submit"
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition shadow-lg shadow-indigo-600/30"

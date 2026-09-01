@@ -95,6 +95,8 @@ CREATE TABLE IF NOT EXISTS compras_tdc (
     tipo TEXT NOT NULL DEFAULT 'Gasto Diario',
     apartado TEXT NOT NULL DEFAULT 'Sí (En Cajita)',
     estado TEXT NOT NULL DEFAULT 'Pendiente',
+    origen_tipo TEXT,
+    origen_id INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

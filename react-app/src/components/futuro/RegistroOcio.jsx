@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PartyPopper, Zap, PlusCircle, List, Trash2, CheckCircle2 } from 'lucide-react';
+import { PartyPopper, Zap, PlusCircle, List, Trash2, CheckCircle2, CreditCard } from 'lucide-react';
 import { fmt, getTodayDate } from '../../utils/formatters';
 
 export default function RegistroOcio({
@@ -206,6 +206,14 @@ export default function RegistroOcio({
                   <option value="TDC Nu">TDC Nu</option>
                 </select>
               </div>
+
+              {metodo === 'TDC Nu' && (
+                <div className="p-2.5 rounded-xl bg-purple-950/60 border border-purple-500/40 text-[11px] text-purple-200 flex items-center space-x-2">
+                  <CreditCard className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span>💳 Se registrará automáticamente en tu <b>Tarjeta de Crédito Nu</b> como compra a pagar.</span>
+                </div>
+              )}
+
               <button
                 type="submit"
                 className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/30"

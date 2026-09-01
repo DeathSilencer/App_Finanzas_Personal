@@ -213,10 +213,24 @@ def handle_add_gasto(handler, data):
             INSERT INTO gastos_diarios (fecha, dia, monto, categoria, concepto, metodo_pago, retirado)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (fecha, dia, monto, categoria, concepto, metodo, retirado))
+        gasto_id = cursor.lastrowid
+
+        # Si el método de pago es TDC Nu, registrar automáticamente en compras_tdc
+        metodo_lower = metodo.lower()
+        es_tdc = "tdc" in metodo_lower or "crédito" in metodo_lower or "credito" in metodo_lower
+        if es_tdc:
+            cursor.execute('''
+                INSERT INTO compras_tdc (fecha, monto, concepto, categoria, tipo, apartado, estado, origen_tipo, origen_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'gastos_diarios', ?)
+            ''', (fecha, monto, f"{concepto} ({categoria})", "Básicos", "Gasto Diario Básico", "Sí (En Cajita)", "Pendiente", gasto_id))
+
         conn.commit()
         conn.close()
 
-        handler.send_json({"status": "success", "message": f"¡Gasto de ${monto:.2f} registrado exitosamente!"})
+        msg = f"¡Gasto de ${monto:.2f} registrado exitosamente!"
+        if es_tdc:
+            msg += " 💳 Compra agregada automáticamente a tu TDC Nu."
+        handler.send_json({"status": "success", "message": msg, "id": gasto_id})
     except Exception as e:
         handler.send_json({"status": "error", "message": f"Error al guardar gasto: {str(e)}"}, 500)
 
@@ -239,6 +253,26 @@ def handle_edit_gasto(handler, data):
             SET fecha = ?, dia = ?, monto = ?, categoria = ?, concepto = ?, metodo_pago = ?, retirado = ?
             WHERE id = ?
         ''', (fecha, dia, monto, categoria, concepto, metodo, retirado, gasto_id))
+
+        metodo_lower = metodo.lower()
+        es_tdc = "tdc" in metodo_lower or "crédito" in metodo_lower or "credito" in metodo_lower
+        if es_tdc:
+            cursor.execute("SELECT id FROM compras_tdc WHERE origen_tipo = 'gastos_diarios' AND origen_id = ?", (gasto_id,))
+            row_tdc = cursor.fetchone()
+            if row_tdc:
+                cursor.execute('''
+                    UPDATE compras_tdc
+                    SET fecha = ?, monto = ?, concepto = ?, categoria = 'Básicos'
+                    WHERE id = ?
+                ''', (fecha, monto, f"{concepto} ({categoria})", row_tdc["id"]))
+            else:
+                cursor.execute('''
+                    INSERT INTO compras_tdc (fecha, monto, concepto, categoria, tipo, apartado, estado, origen_tipo, origen_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'gastos_diarios', ?)
+                ''', (fecha, monto, f"{concepto} ({categoria})", "Básicos", "Gasto Diario Básico", "Sí (En Cajita)", "Pendiente", gasto_id))
+        else:
+            cursor.execute("DELETE FROM compras_tdc WHERE origen_tipo = 'gastos_diarios' AND origen_id = ?", (gasto_id,))
+
         conn.commit()
         conn.close()
 
@@ -268,6 +302,8 @@ def handle_delete_gasto(handler, data):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM gastos_diarios WHERE id = ?", (gasto_id,))
+        # Eliminar también la compra en compras_tdc si procedía de este gasto
+        cursor.execute("DELETE FROM compras_tdc WHERE origen_tipo = 'gastos_diarios' AND origen_id = ?", (gasto_id,))
         conn.commit()
         conn.close()
 
@@ -281,6 +317,7 @@ def handle_limpiar_registro(handler, data):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("DELETE FROM gastos_diarios")
+        cursor.execute("DELETE FROM compras_tdc WHERE origen_tipo = 'gastos_diarios'")
         conn.commit()
         conn.close()
 
