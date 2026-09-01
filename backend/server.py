@@ -22,13 +22,13 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
 from config import PORT, FRONTEND_DIR
-from routes.gastos_routes import (
+from routes.gastos_db_routes import (
     handle_get_gastos, handle_get_historial,
     handle_add_gasto, handle_edit_gasto, handle_delete_gasto,
     handle_config_gastos, handle_moto_aporte, handle_cerrar_quincena,
     handle_limpiar_registro, handle_borrar_cierre
 )
-from routes.futuro_routes import (
+from routes.futuro_db_routes import (
     handle_get_futuro, handle_tdc_add, handle_tdc_edit,
     handle_tdc_delete, handle_tdc_pay, handle_config_futuro,
     handle_add_gasto_ocio, handle_delete_gasto_ocio,
@@ -48,8 +48,17 @@ class FinanzasHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", len(body))
         self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
         self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
 
     def log_message(self, fmt, *args):
         print(f"  [HTTP] {self.address_string()} - {fmt % args}")
@@ -69,7 +78,13 @@ class FinanzasHandler(http.server.SimpleHTTPRequestHandler):
         elif path == "/api/futuro/historial":
             handle_get_historial_futuro(self)
         else:
-            # Servir archivos estáticos del frontend
+            # Servir SPA de React si existe index.html y la ruta no es un archivo estático directo
+            clean_path = path.lstrip("/")
+            file_path = os.path.join(FRONTEND_DIR, clean_path)
+            if not os.path.exists(file_path) or os.path.isdir(file_path):
+                index_file = os.path.join(FRONTEND_DIR, "index.html")
+                if os.path.exists(index_file):
+                    self.path = "/index.html"
             super().do_GET()
 
     # ──────────────────────────────────────────────────────────────────────────
