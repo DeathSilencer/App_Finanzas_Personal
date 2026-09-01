@@ -149,34 +149,96 @@ def handle_get_futuro(handler):
         remanente_ocio = max(0.0, round(presupuesto_ocio - gasto_real_ocio, 2))
         pct_consumido_ocio = round((gasto_real_ocio / presupuesto_ocio) * 100, 1) if presupuesto_ocio > 0 else 0.0
 
-        # Sub-contabilidad de la Única Cajita Turbo de Nu (13% anual)
-        gran_total_cajita = round(remanente_ocio + emergencia_aportado + retiro_aportado, 2)
-        rendimiento_mensual_cajita = round(gran_total_cajita * (tasa_nu / 12.0), 2)
+        # 8. Fondos Digitales de Gastos Básicos resguardados en Cajita Nu (no se retiran en cajero)
+        cursor.execute("SELECT * FROM config_gastos WHERE id = 1")
+        row_cfg_gastos = cursor.fetchone()
+        cfg_g = row_to_dict(row_cfg_gastos) if row_cfg_gastos else {}
+        presupuesto_gastos = float(cfg_g.get("presupuesto_asignado", 2500.0))
+        m_combi = float(cfg_g.get("monto_combi", 376.0))
+        m_comida = float(cfg_g.get("monto_comida", 180.0))
+        m_copias = float(cfg_g.get("monto_copias", 50.0))
+        m_imprevistos = float(cfg_g.get("monto_imprevistos", 200.0))
 
-        pct_porcion_ocio = round((remanente_ocio / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0
-        pct_porcion_emergencia = round((emergencia_aportado / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0
-        pct_porcion_retiro = round((retiro_aportado / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0
+        fijos_gastos = m_combi + m_comida + m_copias + m_imprevistos
+        excedente_fijo_gastos = max(0.0, presupuesto_gastos - fijos_gastos)
+        monto_moto_80 = round(excedente_fijo_gastos * 0.80, 2)
+        monto_salidas_20 = round(excedente_fijo_gastos * 0.20, 2)
+
+        cursor.execute("SELECT categoria, monto FROM gastos_diarios")
+        reg_gastos = cursor.fetchall()
+        gasto_real_copias = sum(float(r["monto"]) for r in reg_gastos if "Copias" in r["categoria"])
+        gasto_real_imprevistos = sum(float(r["monto"]) for r in reg_gastos if "Imprevistos" in r["categoria"])
+        gasto_real_salidas_20 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 20%" in r["categoria"])
+
+        saldo_copias = max(0.0, round(m_copias - gasto_real_copias, 2))
+        saldo_imprevistos = max(0.0, round(m_imprevistos - gasto_real_imprevistos, 2))
+        saldo_moto_80 = monto_moto_80
+        saldo_salidas_20 = max(0.0, round(monto_salidas_20 - gasto_real_salidas_20, 2))
+        total_digital_gastos = round(saldo_copias + saldo_imprevistos + saldo_moto_80 + saldo_salidas_20, 2)
+
+        # Sub-contabilidad de la Única Cajita Turbo de Nu (13% anual)
+        # Combina: Fondos de Plan a Futuro + Fondos Digitales de Gastos Básicos (no retirados en efectivo)
+        total_futuro_cajita = round(remanente_ocio + emergencia_aportado + retiro_aportado, 2)
+        gran_total_cajita = round(total_futuro_cajita + total_digital_gastos, 2)
+        rendimiento_mensual_cajita = round(gran_total_cajita * (tasa_nu / 12.0), 2)
+        rendimiento_anual_cajita = round(gran_total_cajita * tasa_nu, 2)
 
         cajita_turbo_info = {
             "gran_total": gran_total_cajita,
             "rendimiento_mensual": rendimiento_mensual_cajita,
+            "rendimiento_anual": rendimiento_anual_cajita,
             "tasa_anual": tasa_nu,
+            "total_futuro": total_futuro_cajita,
+            "total_gastos_digital": total_digital_gastos,
             "porciones": {
                 "emergencia": {
                     "monto": emergencia_aportado,
-                    "pct": pct_porcion_emergencia,
-                    "etiqueta": "Fondo de Emergencia (Intocable)"
+                    "pct": round((emergencia_aportado / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                    "etiqueta": "Fondo de Emergencia (Intocable)",
+                    "origen": "Plan a Futuro (Paso 3 • 10%)"
                 },
                 "ocio": {
                     "monto": remanente_ocio,
-                    "pct": pct_porcion_ocio,
-                    "etiqueta": "Ocio & Salidas (Disponible para gastar)"
+                    "pct": round((remanente_ocio / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                    "etiqueta": "Ocio & Estilo de Vida (Disponible)",
+                    "origen": "Plan a Futuro (Paso 7 • 30%)"
                 },
                 "retiro": {
                     "monto": retiro_aportado,
-                    "pct": pct_porcion_retiro,
-                    "etiqueta": "Retiro Deducible SAT (Apartado)"
+                    "pct": round((retiro_aportado / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                    "etiqueta": "Retiro Deducible SAT (Apartado)",
+                    "origen": "Plan a Futuro (Paso 6 • 5%)"
+                },
+                "moto_80": {
+                    "monto": saldo_moto_80,
+                    "pct": round((saldo_moto_80 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                    "etiqueta": "Fondo Acelerador Moto (80%)",
+                    "origen": "Gastos Básicos (Excedente Base)"
+                },
+                "salidas_20": {
+                    "monto": saldo_salidas_20,
+                    "pct": round((saldo_salidas_20 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                    "etiqueta": "Refuerzo Gustos / Salidas (20%)",
+                    "origen": "Gastos Básicos (Excedente Base)"
+                },
+                "imprevistos": {
+                    "monto": saldo_imprevistos,
+                    "pct": round((saldo_imprevistos / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                    "etiqueta": "Colchón de Imprevistos",
+                    "origen": "Gastos Básicos (Fondo Digital)"
+                },
+                "copias": {
+                    "monto": saldo_copias,
+                    "pct": round((saldo_copias / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                    "etiqueta": "Copias & Papelería",
+                    "origen": "Gastos Básicos (Fondo Digital)"
                 }
+            },
+            "gastos_digitales_detalle": {
+                "copias": { "presupuesto": m_copias, "gasto_real": gasto_real_copias, "saldo": saldo_copias },
+                "imprevistos": { "presupuesto": m_imprevistos, "gasto_real": gasto_real_imprevistos, "saldo": saldo_imprevistos },
+                "moto_80": { "presupuesto": monto_moto_80, "saldo": saldo_moto_80 },
+                "salidas_20": { "presupuesto": monto_salidas_20, "gasto_real": gasto_real_salidas_20, "saldo": saldo_salidas_20 }
             }
         }
 
