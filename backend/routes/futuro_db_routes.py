@@ -144,12 +144,29 @@ def handle_get_futuro(handler):
         for r in registros_ocio:
             r["fila"] = r["id"]  # Compatibilidad con frontend
 
-        presupuesto_ocio = ingreso_base * pct_p7
+        # 7.1 Fondos históricos archivados en historico_quincenas_futuro (Acumulativo)
+        cursor.execute("""
+            SELECT 
+                COALESCE(SUM(remanente_ocio), 0.0) as hist_rem_ocio,
+                COALESCE(SUM(aporte_emergencia), 0.0) as hist_emg
+            FROM historico_quincenas_futuro
+        """)
+        row_hf = cursor.fetchone()
+        hist_rem_ocio = float(row_hf["hist_rem_ocio"] or 0.0) if row_hf else 0.0
+        hist_emg = float(row_hf["hist_emg"] or 0.0) if row_hf else 0.0
+
+        # Fondo de Emergencia: Aporte activo acumulado (suma quincenas cerradas + activa)
+        aporte_emergencia_quincenal = ingreso_base * pct_p3
+        saldo_emergencia = max(emergencia_aportado, round(hist_emg + aporte_emergencia_quincenal, 2))
+
+        # Presupuesto Ocio: Presupuesto base nuevo ($1,500) + Remanente no gastado acumulado
+        presupuesto_ocio_base = ingreso_base * pct_p7
+        presupuesto_ocio = round(presupuesto_ocio_base + hist_rem_ocio, 2)
         gasto_real_ocio = sum(r["monto"] for r in registros_ocio)
         remanente_ocio = max(0.0, round(presupuesto_ocio - gasto_real_ocio, 2))
         pct_consumido_ocio = round((gasto_real_ocio / presupuesto_ocio) * 100, 1) if presupuesto_ocio > 0 else 0.0
 
-        # 8. Fondos Digitales de Gastos Básicos resguardados en Cajita Nu (no se retiran en cajero)
+        # 8. Fondos Digitales de Gastos Básicos resguardados en Cajita Nu (Acumulativo de quincenas)
         cursor.execute("SELECT * FROM config_gastos WHERE id = 1")
         row_cfg_gastos = cursor.fetchone()
         cfg_g = row_to_dict(row_cfg_gastos) if row_cfg_gastos else {}
@@ -158,11 +175,38 @@ def handle_get_futuro(handler):
         m_comida = float(cfg_g.get("monto_comida", 180.0))
         m_copias = float(cfg_g.get("monto_copias", 50.0))
         m_imprevistos = float(cfg_g.get("monto_imprevistos", 200.0))
+        aporte_dir_moto = float(cfg_g.get("aportaciones_directas_moto", 0.0))
 
         fijos_gastos = m_combi + m_comida + m_copias + m_imprevistos
         excedente_fijo_gastos = max(0.0, presupuesto_gastos - fijos_gastos)
         monto_moto_80 = round(excedente_fijo_gastos * 0.80, 2)
         monto_salidas_20 = round(excedente_fijo_gastos * 0.20, 2)
+
+        # Fondos históricos archivados en historico_quincenas_gastos
+        cursor.execute("""
+            SELECT 
+                ahorro_moto_80,
+                refuerzo_gustos_20,
+                detalle_json
+            FROM historico_quincenas_gastos
+        """)
+        rows_hg = cursor.fetchall()
+        hist_moto = sum(float(r["ahorro_moto_80"] or 0.0) for r in rows_hg)
+        hist_salidas = 0.0
+        hist_imprevistos = 0.0
+        hist_copias = 0.0
+        for r in rows_hg:
+            try:
+                det = json.loads(r["detalle_json"]) if r["detalle_json"] else {}
+                cat_g = det.get("desglose_categorias", {})
+                g_cop = float(cat_g.get("📄 Copias, Material & Papelería", 0.0))
+                g_imp = float(cat_g.get("🛡️ Imprevistos / Por si acaso", 0.0))
+                g_sal = float(cat_g.get("🍕 Excedente 20%: Refuerzo Gustos / Salidas", 0.0))
+                hist_copias += max(0.0, float(det.get("monto_copias", m_copias)) - g_cop)
+                hist_imprevistos += max(0.0, float(det.get("monto_imprevistos", m_imprevistos)) - g_imp)
+                hist_salidas += max(0.0, float(r["refuerzo_gustos_20"] or 0.0) - g_sal)
+            except Exception:
+                hist_salidas += float(r["refuerzo_gustos_20"] or 0.0)
 
         cursor.execute("SELECT categoria, monto FROM gastos_diarios")
         reg_gastos = cursor.fetchall()
@@ -171,15 +215,16 @@ def handle_get_futuro(handler):
         gasto_real_salidas_20 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 20%" in r["categoria"])
         gasto_real_moto_80 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 80%" in r["categoria"])
 
-        saldo_copias = max(0.0, round(m_copias - gasto_real_copias, 2))
-        saldo_imprevistos = max(0.0, round(m_imprevistos - gasto_real_imprevistos, 2))
-        saldo_moto_80 = max(0.0, round(monto_moto_80 - gasto_real_moto_80, 2))
-        saldo_salidas_20 = max(0.0, round(monto_salidas_20 - gasto_real_salidas_20, 2))
+        saldo_copias = max(0.0, round(hist_copias + m_copias - gasto_real_copias, 2))
+        saldo_imprevistos = max(0.0, round(hist_imprevistos + m_imprevistos - gasto_real_imprevistos, 2))
+        saldo_moto_80 = max(0.0, round(hist_moto + monto_moto_80 + aporte_dir_moto - gasto_real_moto_80, 2))
+        saldo_salidas_20 = max(0.0, round(hist_salidas + monto_salidas_20 - gasto_real_salidas_20, 2))
         total_digital_gastos = round(saldo_copias + saldo_imprevistos + saldo_moto_80 + saldo_salidas_20, 2)
 
         # Sub-contabilidad de la Única Cajita Turbo de Nu (13% anual)
-        # Combina: Fondos de Plan a Futuro + Fondos Digitales de Gastos Básicos (no retirados en efectivo)
-        total_futuro_cajita = round(remanente_ocio + emergencia_aportado + retiro_aportado, 2)
+        # DESCONTADOS CETES ($250) Y AFORE BANORTE ($250) ya que están en plataformas externas.
+        # En Cajita Turbo de Nu conviven solo los 6 fondos de Nu acumulativos:
+        total_futuro_cajita = round(remanente_ocio + saldo_emergencia, 2)
         gran_total_cajita = round(total_futuro_cajita + total_digital_gastos, 2)
         rendimiento_mensual_cajita = round(gran_total_cajita * (tasa_nu / 12.0), 2)
         rendimiento_anual_cajita = round(gran_total_cajita * tasa_nu, 2)
@@ -193,12 +238,12 @@ def handle_get_futuro(handler):
             "total_gastos_digital": total_digital_gastos,
             "porciones": {
                 "emergencia": {
-                    "presupuesto": emergencia_aportado,
+                    "presupuesto": saldo_emergencia,
                     "gasto_real": 0.0,
-                    "monto": emergencia_aportado,
-                    "pct": round((emergencia_aportado / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                    "monto": saldo_emergencia,
+                    "pct": round((saldo_emergencia / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Fondo de Emergencia (Intocable)",
-                    "origen": "Plan a Futuro (Paso 3 • 10%)"
+                    "origen": "Plan a Futuro • Acumulativo"
                 },
                 "ocio": {
                     "presupuesto": presupuesto_ocio,
@@ -206,54 +251,51 @@ def handle_get_futuro(handler):
                     "monto": remanente_ocio,
                     "pct": round((remanente_ocio / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Ocio & Estilo de Vida (Disponible)",
-                    "origen": "Plan a Futuro (Paso 7 • 30%)"
-                },
-                "retiro": {
-                    "presupuesto": retiro_aportado,
-                    "gasto_real": 0.0,
-                    "monto": retiro_aportado,
-                    "pct": round((retiro_aportado / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                    "etiqueta": "Retiro Deducible SAT (Apartado)",
-                    "origen": "Plan a Futuro (Paso 6 • 5%)"
+                    "origen": "Plan a Futuro • Acumulativo"
                 },
                 "moto_80": {
-                    "presupuesto": monto_moto_80,
+                    "presupuesto": round(hist_moto + monto_moto_80, 2),
                     "gasto_real": gasto_real_moto_80,
                     "monto": saldo_moto_80,
                     "pct": round((saldo_moto_80 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Fondo Acelerador Moto (80%)",
-                    "origen": "Gastos Básicos (Excedente Base)"
+                    "origen": "Gastos Básicos • Acumulativo"
                 },
                 "salidas_20": {
-                    "presupuesto": monto_salidas_20,
+                    "presupuesto": round(hist_salidas + monto_salidas_20, 2),
                     "gasto_real": gasto_real_salidas_20,
                     "monto": saldo_salidas_20,
                     "pct": round((saldo_salidas_20 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Refuerzo Gustos / Salidas (20%)",
-                    "origen": "Gastos Básicos (Excedente Base)"
+                    "origen": "Gastos Básicos • Acumulativo"
                 },
                 "imprevistos": {
-                    "presupuesto": m_imprevistos,
+                    "presupuesto": round(hist_imprevistos + m_imprevistos, 2),
                     "gasto_real": gasto_real_imprevistos,
                     "monto": saldo_imprevistos,
                     "pct": round((saldo_imprevistos / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Colchón de Imprevistos",
-                    "origen": "Gastos Básicos (Fondo Digital)"
+                    "origen": "Gastos Básicos • Acumulativo"
                 },
                 "copias": {
-                    "presupuesto": m_copias,
+                    "presupuesto": round(hist_copias + m_copias, 2),
                     "gasto_real": gasto_real_copias,
                     "monto": saldo_copias,
                     "pct": round((saldo_copias / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Copias & Papelería",
-                    "origen": "Gastos Básicos (Fondo Digital)"
+                    "origen": "Gastos Básicos • Acumulativo"
                 }
             },
             "gastos_digitales_detalle": {
-                "copias": { "presupuesto": m_copias, "gasto_real": gasto_real_copias, "saldo": saldo_copias },
-                "imprevistos": { "presupuesto": m_imprevistos, "gasto_real": gasto_real_imprevistos, "saldo": saldo_imprevistos },
-                "moto_80": { "presupuesto": monto_moto_80, "gasto_real": gasto_real_moto_80, "saldo": saldo_moto_80 },
-                "salidas_20": { "presupuesto": monto_salidas_20, "gasto_real": gasto_real_salidas_20, "saldo": saldo_salidas_20 }
+                "copias": { "presupuesto": round(hist_copias + m_copias, 2), "gasto_real": gasto_real_copias, "saldo": saldo_copias },
+                "imprevistos": { "presupuesto": round(hist_imprevistos + m_imprevistos, 2), "gasto_real": gasto_real_imprevistos, "saldo": saldo_imprevistos },
+                "moto_80": { "presupuesto": round(hist_moto + monto_moto_80, 2), "gasto_real": gasto_real_moto_80, "saldo": saldo_moto_80 },
+                "salidas_20": { "presupuesto": round(hist_salidas + monto_salidas_20, 2), "gasto_real": gasto_real_salidas_20, "saldo": saldo_salidas_20 }
+            },
+            "fondos_externos": {
+                "cetes": { "nombre": "Cetesdirecto (3 Meses)", "monto": cetes_aportado, "destino": "Cetesdirecto Gubernamental" },
+                "retiro": { "nombre": "AFORE XXI Banorte (Art. 151)", "monto": retiro_aportado, "destino": "AFORE XXI Banorte" },
+                "total_externo": round(cetes_aportado + retiro_aportado, 2)
             }
         }
 
@@ -438,16 +480,24 @@ def handle_cerrar_quincena_futuro(handler, data):
         cursor.execute("SELECT * FROM config_futuro WHERE id = 1")
         cfg = row_to_dict(cursor.fetchone())
 
-        pres_ocio = float(cfg["ingreso_base"]) * float(cfg["pct_p7"])
+        pres_ocio_base = float(cfg["ingreso_base"]) * float(cfg["pct_p7"])
         emg = float(cfg["emergencia_aportado_activo"])
         ret = float(cfg["retiro_aportado_activo"])
         cet = float(cfg["cetes_aportado_activo"])
+
+        # Considerar remanente histórico previo de ocio
+        cursor.execute("SELECT COALESCE(SUM(remanente_ocio), 0.0) as s FROM historico_quincenas_futuro")
+        prev_ocio_rem = float(cursor.fetchone()["s"] or 0.0)
+        pres_ocio = pres_ocio_base + prev_ocio_rem
 
         cursor.execute("SELECT * FROM gastos_ocio ORDER BY id ASC")
         registros = rows_to_dict_list(cursor.fetchall())
         gasto_ocio = sum(r["monto"] for r in registros)
         rem_ocio = max(0.0, round(pres_ocio - gasto_ocio, 2))
-        total_cajita_cierre = round(rem_ocio + emg + ret, 2)
+
+        # En Cajita Turbo Nu SOLO se suma lo que realmente vive en Nu (ocio + emergencia).
+        # Cetes y AFORE quedan descontados ya que están en plataformas externas.
+        total_cajita_cierre = round(rem_ocio + emg, 2)
 
         now = datetime.now()
         meses_es = {
@@ -462,6 +512,8 @@ def handle_cerrar_quincena_futuro(handler, data):
 
         detalle_obj = {
             "presupuesto_ocio": pres_ocio,
+            "presupuesto_ocio_base": pres_ocio_base,
+            "remanente_anterior_ocio": prev_ocio_rem,
             "gasto_ocio": gasto_ocio,
             "remanente_ocio": rem_ocio,
             "aporte_emergencia": emg,
@@ -483,14 +535,19 @@ def handle_cerrar_quincena_futuro(handler, data):
             len(registros), json.dumps(detalle_obj, ensure_ascii=False)
         ))
 
-        # Resetear bitácora de ocio
+        # Resetear bitácora de ocio de la quincena cerrada
         cursor.execute("DELETE FROM gastos_ocio")
+
+        # Sumar el nuevo aporte quincenal al Fondo de Emergencia para la nueva quincena
+        nuevo_emg = round(emg + (float(cfg["ingreso_base"]) * float(cfg["pct_p3"])), 2)
+        cursor.execute("UPDATE config_futuro SET emergencia_aportado_activo = ? WHERE id = 1", (nuevo_emg,))
+
         conn.commit()
         conn.close()
 
         handler.send_json({
             "status": "success",
-            "message": f"🎉 ¡Quincena archivada con éxito! Remanente de ocio (${rem_ocio:.2f}) resguardado en Cajita Nu."
+            "message": f"🎉 ¡Quincena archivada! Remanente de ocio (${rem_ocio:.2f}) y nuevo aporte de emergencia sumados a tu Cajita Nu."
         })
     except Exception as e:
         handler.send_json({"status": "error", "message": str(e)}, 500)

@@ -458,6 +458,13 @@ def handle_cerrar_quincena(handler, data):
             c = r["categoria"]
             categorias_gasto[c] = categorias_gasto.get(c, 0.0) + float(r["monto"])
 
+        m_cop = float(cfg.get("monto_copias", 50.0))
+        m_imp = float(cfg.get("monto_imprevistos", 200.0))
+        rem_copias = max(0.0, round(m_cop - categorias_gasto.get("📄 Copias, Material & Papelería", 0.0), 2))
+        rem_imprevistos = max(0.0, round(m_imp - categorias_gasto.get("🛡️ Imprevistos / Por si acaso", 0.0), 2))
+        rem_salidas = max(0.0, round(refuerzo_gustos - categorias_gasto.get("🍕 Excedente 20%: Refuerzo Gustos / Salidas", 0.0), 2))
+        rem_moto = max(0.0, round(ahorro_moto - categorias_gasto.get("🛡️ Excedente 80%: Fondo Emergencia / Moto", 0.0), 2))
+
         detalle_obj = {
             "presupuesto_asignado": presupuesto,
             "gastos_fijos": fijos,
@@ -465,6 +472,12 @@ def handle_cerrar_quincena(handler, data):
             "remanente": remanente,
             "ahorro_moto": ahorro_moto,
             "refuerzo_gustos": refuerzo_gustos,
+            "monto_copias": m_cop,
+            "monto_imprevistos": m_imp,
+            "remanente_copias": rem_copias,
+            "remanente_imprevistos": rem_imprevistos,
+            "remanente_salidas": rem_salidas,
+            "remanente_moto": rem_moto,
             "movimientos": registros,
             "desglose_categorias": categorias_gasto
         }
