@@ -38,15 +38,34 @@ export default function GeneralCajitaTurbo({
   const totalGastosDigital = cajita.total_gastos_digital || 1944;
 
   const porciones = cajita.porciones || {};
-  const porcOcio = porciones.ocio || { monto: 1250, pct: 31.7 };
-  const porcEmg = porciones.emergencia || { monto: 500, pct: 12.7 };
-  const porcRet = porciones.retiro || { monto: 250, pct: 6.3 };
-  const porcMoto = porciones.moto_80 || { monto: 1355.2, pct: 34.4 };
-  const porcSalidas = porciones.salidas_20 || { monto: 338.8, pct: 8.6 };
-  const porcImp = porciones.imprevistos || { monto: 200, pct: 5.1 };
-  const porcCopias = porciones.copias || { monto: 50, pct: 1.3 };
+  const porcOcio = porciones.ocio || { presupuesto: 1500, gasto_real: ocio.gasto_real || 0, monto: ocio.remanente || 1500, pct: 36.0 };
+  const porcEmg = porciones.emergencia || { presupuesto: 500, gasto_real: 0, monto: emg.aportado || 500, pct: 12.0 };
+  const porcRet = porciones.retiro || { presupuesto: 250, gasto_real: 0, monto: ret.aportado || 250, pct: 6.0 };
+  const porcMoto = porciones.moto_80 || { presupuesto: 1355.2, gasto_real: 0, monto: 1355.2, pct: 32.5 };
+  const porcSalidas = porciones.salidas_20 || { presupuesto: 338.8, gasto_real: 0, monto: 338.8, pct: 8.1 };
+  const porcImp = porciones.imprevistos || { presupuesto: 200, gasto_real: 0, monto: 200, pct: 4.8 };
+  const porcCopias = porciones.copias || { presupuesto: 50, gasto_real: 0, monto: 50, pct: 1.2 };
 
-  const detGastos = cajita.gastos_digitales_detalle || {};
+  // Totales presupuestados y gastados en Cajita
+  const totalPresupuestoCajita = (
+    (porcOcio.presupuesto || 0) +
+    (porcEmg.presupuesto || 0) +
+    (porcRet.presupuesto || 0) +
+    (porcMoto.presupuesto || 0) +
+    (porcSalidas.presupuesto || 0) +
+    (porcImp.presupuesto || 0) +
+    (porcCopias.presupuesto || 0)
+  );
+
+  const totalGastadoCajita = (
+    (porcOcio.gasto_real || 0) +
+    (porcEmg.gasto_real || 0) +
+    (porcRet.gasto_real || 0) +
+    (porcMoto.gasto_real || 0) +
+    (porcSalidas.gasto_real || 0) +
+    (porcImp.gasto_real || 0) +
+    (porcCopias.gasto_real || 0)
+  );
 
   return (
     <div className="space-y-6">
@@ -63,7 +82,7 @@ export default function GeneralCajitaTurbo({
                 <span>Cajita Turbo Nu • {tasaNu.toFixed(1)}% Anual Compuesto</span>
               </span>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[11px] font-bold">
-                🛡️ Sub-contabilidad Consolidada al 100%
+                🛡️ Conectado en Tiempo Real con Gastos
               </span>
               <span className="px-2.5 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800 text-[11px] font-bold">
                 ⚡ 7 Fondos en 1 Sola Cajita
@@ -78,7 +97,7 @@ export default function GeneralCajitaTurbo({
             </h2>
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Nu solo permite tener <b className="text-white font-semibold">1 sola Cajita Turbo</b>. Aquí conviven físicamente tanto tus fondos de <b className="text-purple-300">Plan a Futuro ({fmt(totalFuturo)})</b> como los fondos digitales de <b className="text-emerald-300">Gastos Básicos ({fmt(totalGastosDigital)})</b> que no se retiran en efectivo. Todo tu capital resguardado genera <b className="text-emerald-400 text-sm">+{fmt(rendMensual)}/mes</b> en rendimientos pasivos manteniendo el blindaje exacto de cada rubro.
+              Nu solo permite tener <b className="text-white font-semibold">1 sola Cajita Turbo</b>. Aquí conviven físicamente tus fondos de <b className="text-purple-300">Plan a Futuro ({fmt(totalFuturo)})</b> y los fondos digitales de <b className="text-emerald-300">Gastos Básicos ({fmt(totalGastosDigital)})</b> restando automáticamente lo que hayas consumido. Todo tu saldo real genera <b className="text-emerald-400 text-sm">+{fmt(rendMensual)}/mes</b> en rendimientos pasivos.
             </p>
           </div>
 
@@ -231,12 +250,12 @@ export default function GeneralCajitaTurbo({
                   <span>🍕 Ocio &amp; Salidas (Paso 7 • 30%)</span>
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Presupuesto: {fmt(ocio.presupuesto || 1500)} | Gastado: -{fmt(ocio.gasto_real || 250)}
+                  Presupuesto: {fmt(porcOcio.presupuesto || 1500)} | Gastado: <b className="text-rose-400">-{fmt(porcOcio.gasto_real || 0)}</b>
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-black text-amber-400">{fmt(ocio.remanente || 1250)}</p>
-                <span className="text-[9px] text-emerald-400 font-bold">🟢 Disponible</span>
+                <p className="text-sm font-black text-amber-400">{fmt(porcOcio.monto)}</p>
+                <span className="text-[9px] text-emerald-400 font-bold">🟢 En Cajita Nu</span>
               </div>
             </div>
 
@@ -248,11 +267,11 @@ export default function GeneralCajitaTurbo({
                   <span>🛡️ Fondo de Emergencia (Paso 3 • 10%)</span>
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Asignación fija: {fmt(emg.presupuesto || 500)}/quincena (Meta $15,000)
+                  Asignación fija: {fmt(porcEmg.presupuesto || 500)}/quincena (Meta $15,000)
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-black text-emerald-400">{fmt(emg.aportado || 500)}</p>
+                <p className="text-sm font-black text-emerald-400">{fmt(porcEmg.monto)}</p>
                 <span className="text-[9px] text-emerald-400 font-bold">🔒 Blindado</span>
               </div>
             </div>
@@ -265,18 +284,18 @@ export default function GeneralCajitaTurbo({
                   <span>🚀 Retiro Deducible SAT (Paso 6 • 5%)</span>
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Asignación fija: {fmt(ret.presupuesto || 250)}/quincena (AFORE XXI Banorte)
+                  Asignación fija: {fmt(porcRet.presupuesto || 250)}/quincena (AFORE XXI Banorte)
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-black text-indigo-300">{fmt(ret.aportado || 250)}</p>
+                <p className="text-sm font-black text-indigo-300">{fmt(porcRet.monto)}</p>
                 <span className="text-[9px] text-indigo-300 font-bold">📈 Deducible</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* BLOQUE B: FONDOS DIGITALES DE GASTOS BÁSICOS EN NU ($1,944.00) */}
+        {/* BLOQUE B: FONDOS DIGITALES DE GASTOS BÁSICOS EN NU (CONECTADOS) */}
         <div className="glass-panel p-5 sm:p-6 rounded-2xl border-emerald-500/30 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
             <div>
@@ -285,11 +304,11 @@ export default function GeneralCajitaTurbo({
               </span>
               <h3 className="text-base font-bold text-white mt-1 flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Fondos no Retirados en Efectivo</span>
+                <span>Saldo Disponible tras Gastos Reales</span>
               </h3>
             </div>
             <div className="text-right">
-              <span className="text-xs text-slate-400">Subtotal en Nu</span>
+              <span className="text-xs text-slate-400">Saldo Restante en Nu</span>
               <p className="text-xl font-black text-emerald-400">{fmt(totalGastosDigital)}</p>
             </div>
           </div>
@@ -303,7 +322,7 @@ export default function GeneralCajitaTurbo({
                   <span>🏍️ Fondo Acelerador Moto (80%)</span>
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  80% del Excedente Base Fijo ($1,694.00 × 0.80) protegido en Cajita Nu
+                  Presupuesto: {fmt(porcMoto.presupuesto || 1355.2)} {porcMoto.gasto_real > 0 ? `| Gastado: -${fmt(porcMoto.gasto_real)}` : '| Protegido al 100%'}
                 </p>
               </div>
               <div className="text-right">
@@ -320,12 +339,12 @@ export default function GeneralCajitaTurbo({
                   <span>🍦 Refuerzo Gustos / Salidas (20%)</span>
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  20% del Excedente Base Fijo ($1,694.00 × 0.20) en Débito Nu
+                  Presupuesto: {fmt(porcSalidas.presupuesto || 338.8)} | Gastado: <b className="text-rose-400">-{fmt(porcSalidas.gasto_real || 0)}</b>
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-black text-pink-400">{fmt(porcSalidas.monto)}</p>
-                <span className="text-[9px] text-pink-300 font-bold">🍕 Salidas</span>
+                <span className="text-[9px] text-pink-300 font-bold">🍕 En Cuenta Nu</span>
               </div>
             </div>
 
@@ -337,9 +356,14 @@ export default function GeneralCajitaTurbo({
                     <span className="w-2 h-2 rounded-full bg-teal-400"></span>
                     <span>🛡️ Imprevistos</span>
                   </p>
-                  <p className="text-[9px] text-slate-400">Presupuesto: $200</p>
+                  <p className="text-[9px] text-slate-400">
+                    {porcImp.gasto_real > 0 ? `Gastado: -${fmt(porcImp.gasto_real)}` : `Base: ${fmt(porcImp.presupuesto || 200)}`}
+                  </p>
                 </div>
-                <p className="text-xs font-black text-teal-400">{fmt(porcImp.monto)}</p>
+                <div className="text-right">
+                  <p className="text-xs font-black text-teal-400">{fmt(porcImp.monto)}</p>
+                  <span className="text-[8px] text-slate-400 font-semibold">Quedan en Cajita</span>
+                </div>
               </div>
 
               <div className="p-2.5 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between">
@@ -348,9 +372,18 @@ export default function GeneralCajitaTurbo({
                     <span className="w-2 h-2 rounded-full bg-sky-400"></span>
                     <span>📄 Copias / Papelería</span>
                   </p>
-                  <p className="text-[9px] text-slate-400">Presupuesto: $50</p>
+                  <p className="text-[9px] text-slate-400">
+                    {porcCopias.gasto_real > 0 ? (
+                      <span className="text-rose-400 font-bold">Gastado: -{fmt(porcCopias.gasto_real)}</span>
+                    ) : (
+                      `Base: ${fmt(porcCopias.presupuesto || 50)}`
+                    )}
+                  </p>
                 </div>
-                <p className="text-xs font-black text-sky-400">{fmt(porcCopias.monto)}</p>
+                <div className="text-right">
+                  <p className="text-xs font-black text-sky-400">{fmt(porcCopias.monto)}</p>
+                  <span className="text-[8px] text-slate-400 font-semibold">Quedan en Cajita</span>
+                </div>
               </div>
             </div>
           </div>
@@ -362,10 +395,10 @@ export default function GeneralCajitaTurbo({
         <Wallet className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
         <div className="text-slate-300 space-y-1">
           <p className="font-bold text-white">
-            ¿Por qué solo estos $1,944.00 de Gastos Básicos se suman a Cajita Turbo Nu?
+            ¿Cómo se actualiza en automático tu saldo en Nu al registrar gastos?
           </p>
           <p>
-            De tu presupuesto quincenal de gastos ($2,500.00), lo <b className="text-white">único que retiras en físico del cajero son $556.00</b> ($376 de Pasajes + $180 de Comidas). El resto (<b className="text-emerald-400">$1,944.00</b>) permanece resguardado dentro de tu cuenta Nu generando el <b className="text-purple-300">13% anual de rendimiento pasivo</b> hasta que decidas ocuparlo o transferirlo a tus metas.
+            Al registrar cualquier gasto en <b className="text-white">Copias</b>, <b className="text-white">Imprevistos</b> o <b className="text-white">Refuerzo Salidas</b> desde el módulo de Gastos Básicos, el sistema <b className="text-emerald-400">descuenta inmediatamente el dinero gastado</b> de su saldo y actualiza el <b className="text-purple-300">Total en Cajita Turbo Nu</b> y su rendimiento pasivo al 13%. Lo que no gastes se queda generando dinero.
           </p>
         </div>
       </div>
@@ -396,9 +429,10 @@ export default function GeneralCajitaTurbo({
               <tr>
                 <th className="p-3.5">Fondo / Destino</th>
                 <th className="p-3.5">Origen / Bloque</th>
+                <th className="p-3.5 text-right">Presupuesto ($)</th>
+                <th className="p-3.5 text-right">Gasto Real ($)</th>
+                <th className="p-3.5 text-right font-black text-white">Saldo en Nu ($)</th>
                 <th className="p-3.5 text-center">% en Cajita</th>
-                <th className="p-3.5 text-right">Saldo Actual</th>
-                <th className="p-3.5">Ubicación Física</th>
                 <th className="p-3.5 text-right">Rendimiento Mensual</th>
                 <th className="p-3.5 text-center">Estado</th>
               </tr>
@@ -408,9 +442,12 @@ export default function GeneralCajitaTurbo({
               <tr className="hover:bg-slate-800/40 transition">
                 <td className="p-3.5 font-bold text-white">🍕 Gustos / Ocio</td>
                 <td className="p-3.5 text-slate-300">Plan a Futuro (Paso 7 • 30%)</td>
-                <td className="p-3.5 text-center font-bold text-amber-400">{porcOcio.pct}%</td>
+                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcOcio.presupuesto || 1500)}</td>
+                <td className={`p-3.5 text-right font-bold ${porcOcio.gasto_real > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                  {porcOcio.gasto_real > 0 ? '-' + fmt(porcOcio.gasto_real) : '$0.00'}
+                </td>
                 <td className="p-3.5 text-right font-black text-amber-300 text-sm">{fmt(porcOcio.monto)}</td>
-                <td className="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Líquido)</td>
+                <td className="p-3.5 text-center font-bold text-amber-400">{porcOcio.pct}%</td>
                 <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcOcio.monto * (0.13 / 12))}</td>
                 <td className="p-3.5 text-center">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
@@ -423,9 +460,12 @@ export default function GeneralCajitaTurbo({
               <tr className="hover:bg-slate-800/40 transition">
                 <td className="p-3.5 font-bold text-white">🏍️ Fondo Acelerador Moto (80%)</td>
                 <td className="p-3.5 text-slate-300">Gastos Básicos (Excedente Base)</td>
-                <td className="p-3.5 text-center font-bold text-purple-400">{porcMoto.pct}%</td>
+                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcMoto.presupuesto || 1355.2)}</td>
+                <td className={`p-3.5 text-right font-bold ${porcMoto.gasto_real > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                  {porcMoto.gasto_real > 0 ? '-' + fmt(porcMoto.gasto_real) : '$0.00'}
+                </td>
                 <td className="p-3.5 text-right font-black text-purple-300 text-sm">{fmt(porcMoto.monto)}</td>
-                <td className="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Acelerador)</td>
+                <td className="p-3.5 text-center font-bold text-purple-400">{porcMoto.pct}%</td>
                 <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcMoto.monto * (0.13 / 12))}</td>
                 <td className="p-3.5 text-center">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-800">
@@ -438,9 +478,10 @@ export default function GeneralCajitaTurbo({
               <tr className="hover:bg-slate-800/40 transition">
                 <td className="p-3.5 font-bold text-white">🛡️ Fondo de Emergencia</td>
                 <td className="p-3.5 text-slate-300">Plan a Futuro (Paso 3 • 10%)</td>
-                <td className="p-3.5 text-center font-bold text-emerald-400">{porcEmg.pct}%</td>
+                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcEmg.presupuesto || 500)}</td>
+                <td className="p-3.5 text-right text-slate-500 font-bold">$0.00</td>
                 <td className="p-3.5 text-right font-black text-emerald-400 text-sm">{fmt(porcEmg.monto)}</td>
-                <td className="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Intocable)</td>
+                <td className="p-3.5 text-center font-bold text-emerald-400">{porcEmg.pct}%</td>
                 <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcEmg.monto * (0.13 / 12))}</td>
                 <td className="p-3.5 text-center">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800">
@@ -453,13 +494,16 @@ export default function GeneralCajitaTurbo({
               <tr className="hover:bg-slate-800/40 transition">
                 <td className="p-3.5 font-bold text-white">🍦 Refuerzo Gustos / Salidas (20%)</td>
                 <td className="p-3.5 text-slate-300">Gastos Básicos (Excedente Base)</td>
-                <td className="p-3.5 text-center font-bold text-pink-400">{porcSalidas.pct}%</td>
+                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcSalidas.presupuesto || 338.8)}</td>
+                <td className={`p-3.5 text-right font-bold ${porcSalidas.gasto_real > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                  {porcSalidas.gasto_real > 0 ? '-' + fmt(porcSalidas.gasto_real) : '$0.00'}
+                </td>
                 <td className="p-3.5 text-right font-black text-pink-300 text-sm">{fmt(porcSalidas.monto)}</td>
-                <td className="p-3.5 text-purple-300 font-medium">🟣 Cuenta Nu (Débito)</td>
+                <td className="p-3.5 text-center font-bold text-pink-400">{porcSalidas.pct}%</td>
                 <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcSalidas.monto * (0.13 / 12))}</td>
                 <td className="p-3.5 text-center">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-950 text-pink-300 border border-pink-800">
-                    Disponible
+                    En Cuenta Nu
                   </span>
                 </td>
               </tr>
@@ -468,9 +512,10 @@ export default function GeneralCajitaTurbo({
               <tr className="hover:bg-slate-800/40 transition">
                 <td className="p-3.5 font-bold text-white">🚀 Retiro SAT (AFORE)</td>
                 <td className="p-3.5 text-slate-300">Plan a Futuro (Paso 6 • 5%)</td>
-                <td className="p-3.5 text-center font-bold text-indigo-400">{porcRet.pct}%</td>
+                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcRet.presupuesto || 250)}</td>
+                <td className="p-3.5 text-right text-slate-500 font-bold">$0.00</td>
                 <td className="p-3.5 text-right font-black text-indigo-300 text-sm">{fmt(porcRet.monto)}</td>
-                <td className="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Apartado)</td>
+                <td className="p-3.5 text-center font-bold text-indigo-400">{porcRet.pct}%</td>
                 <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcRet.monto * (0.13 / 12))}</td>
                 <td className="p-3.5 text-center">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-950 text-indigo-300 border border-indigo-800">
@@ -483,9 +528,12 @@ export default function GeneralCajitaTurbo({
               <tr className="hover:bg-slate-800/40 transition">
                 <td className="p-3.5 font-bold text-white">🛡️ Colchón de Imprevistos</td>
                 <td className="p-3.5 text-slate-300">Gastos Básicos (Fondo Digital)</td>
-                <td className="p-3.5 text-center font-bold text-teal-400">{porcImp.pct}%</td>
+                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcImp.presupuesto || 200)}</td>
+                <td className={`p-3.5 text-right font-bold ${porcImp.gasto_real > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                  {porcImp.gasto_real > 0 ? '-' + fmt(porcImp.gasto_real) : '$0.00'}
+                </td>
                 <td className="p-3.5 text-right font-black text-teal-300 text-sm">{fmt(porcImp.monto)}</td>
-                <td className="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Reserva)</td>
+                <td className="p-3.5 text-center font-bold text-teal-400">{porcImp.pct}%</td>
                 <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcImp.monto * (0.13 / 12))}</td>
                 <td className="p-3.5 text-center">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-950 text-teal-300 border border-teal-800">
@@ -498,9 +546,12 @@ export default function GeneralCajitaTurbo({
               <tr className="hover:bg-slate-800/40 transition">
                 <td className="p-3.5 font-bold text-white">📄 Copias, Material &amp; Papelería</td>
                 <td className="p-3.5 text-slate-300">Gastos Básicos (Fondo Digital)</td>
-                <td className="p-3.5 text-center font-bold text-sky-400">{porcCopias.pct}%</td>
+                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcCopias.presupuesto || 50)}</td>
+                <td className={`p-3.5 text-right font-bold ${porcCopias.gasto_real > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                  {porcCopias.gasto_real > 0 ? '-' + fmt(porcCopias.gasto_real) : '$0.00'}
+                </td>
                 <td className="p-3.5 text-right font-black text-sky-300 text-sm">{fmt(porcCopias.monto)}</td>
-                <td className="p-3.5 text-purple-300 font-medium">🟣 Cajita Turbo Nu (Reserva)</td>
+                <td className="p-3.5 text-center font-bold text-sky-400">{porcCopias.pct}%</td>
                 <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcCopias.monto * (0.13 / 12))}</td>
                 <td className="p-3.5 text-center">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-950 text-sky-300 border border-sky-800">
@@ -513,9 +564,10 @@ export default function GeneralCajitaTurbo({
               <tr className="hover:bg-slate-800/40 transition bg-blue-950/20">
                 <td className="p-3.5 font-bold text-white">🔒 Ahorro Involuntario (Cetes)</td>
                 <td className="p-3.5 text-slate-300">Plan a Futuro (Paso 1 • 5%)</td>
-                <td className="p-3.5 text-center font-bold text-blue-400">— (Externo)</td>
+                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(cetes.presupuesto || 250)}</td>
+                <td className="p-3.5 text-right text-slate-500 font-bold">$0.00</td>
                 <td className="p-3.5 text-right font-black text-blue-300 text-sm">{fmt(cetes.aportado || 250)}</td>
-                <td className="p-3.5 text-blue-300 font-medium">🔵 Cetesdirecto (3 Meses)</td>
+                <td className="p-3.5 text-center font-bold text-blue-400">— (Externo)</td>
                 <td className="p-3.5 text-right text-blue-400 font-bold">+{fmt((cetes.aportado || 250) * (0.0645 / 12))}</td>
                 <td className="p-3.5 text-center">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800">
@@ -531,11 +583,16 @@ export default function GeneralCajitaTurbo({
                 <td colSpan="2" className="p-3.5 text-white uppercase font-extrabold">
                   TOTAL EN CAJITA TURBO NU (13%):
                 </td>
-                <td className="p-3.5 text-center text-purple-300 font-black">100.0%</td>
+                <td className="p-3.5 text-right text-slate-400 font-black">
+                  {fmt(totalPresupuestoCajita)}
+                </td>
+                <td className="p-3.5 text-right text-rose-400 font-black">
+                  {totalGastadoCajita > 0 ? '-' + fmt(totalGastadoCajita) : '$0.00'}
+                </td>
                 <td className="p-3.5 text-right text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-emerald-300 font-black text-base">
                   {fmt(granTotal)}
                 </td>
-                <td className="p-3.5 text-purple-300 font-medium">1 Sola Cajita Turbo Nu</td>
+                <td className="p-3.5 text-center text-purple-300 font-black">100.0%</td>
                 <td className="p-3.5 text-right text-emerald-400 font-black text-sm">
                   +{fmt(rendMensual)} / mes
                 </td>

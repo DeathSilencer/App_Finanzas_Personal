@@ -136,7 +136,7 @@ export default function App() {
     try {
       const res = await api.addGasto(payload);
       addToast(res.message || 'Gasto guardado en SQLite', 'success');
-      await loadGastos();
+      await Promise.all([loadGastos(), loadFuturo()]);
     } catch (err) {
       addToast(err.message || 'Error al guardar gasto', 'error');
     }
@@ -146,7 +146,7 @@ export default function App() {
     try {
       const res = await api.deleteGasto(id);
       addToast(res.message || 'Gasto eliminado', 'warning');
-      await loadGastos();
+      await Promise.all([loadGastos(), loadFuturo()]);
     } catch (err) {
       addToast(err.message || 'Error al eliminar', 'error');
     }
@@ -157,7 +157,7 @@ export default function App() {
     try {
       const res = await api.limpiarRegistroGastos();
       addToast(res.message || 'Bitácora en blanco', 'info');
-      await loadGastos();
+      await Promise.all([loadGastos(), loadFuturo()]);
     } catch (err) {
       addToast(err.message, 'error');
     }
@@ -167,8 +167,7 @@ export default function App() {
     try {
       const res = await api.cerrarQuincenaGastos(payload);
       addToast(res.message, 'success');
-      await loadGastos();
-      await loadHistorialGastosData();
+      await Promise.all([loadGastos(), loadHistorialGastosData(), loadFuturo()]);
     } catch (err) {
       addToast(err.message, 'error');
     }
@@ -179,8 +178,7 @@ export default function App() {
     try {
       const res = await api.borrarCierreGastos(id);
       addToast(res.message, 'warning');
-      await loadHistorialGastosData();
-      await loadGastos();
+      await Promise.all([loadHistorialGastosData(), loadGastos(), loadFuturo()]);
     } catch (err) {
       addToast(err.message, 'error');
     }
@@ -190,7 +188,7 @@ export default function App() {
     try {
       const res = await api.motoAporte(monto, modo);
       addToast(res.message, 'success');
-      await loadGastos();
+      await Promise.all([loadGastos(), loadFuturo()]);
     } catch (err) {
       addToast(err.message, 'error');
     }
@@ -200,7 +198,7 @@ export default function App() {
     try {
       const res = await api.saveConfigGastos(payload);
       addToast(res.message, 'success');
-      await loadGastos();
+      await Promise.all([loadGastos(), loadFuturo()]);
     } catch (err) {
       addToast(err.message, 'error');
     }
@@ -308,7 +306,11 @@ export default function App() {
       {/* Barra de Navegación Principal */}
       <Navbar
         activeModule={activeModule}
-        setActiveModule={setActiveModule}
+        setActiveModule={(mod) => {
+          setActiveModule(mod);
+          loadGastos();
+          loadFuturo();
+        }}
         onOpenCerrarQuincena={() => {
           if (activeModule === 'gastos') {
             setIsCerrarQuincenaGastosOpen(true);

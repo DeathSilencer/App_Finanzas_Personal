@@ -169,10 +169,11 @@ def handle_get_futuro(handler):
         gasto_real_copias = sum(float(r["monto"]) for r in reg_gastos if "Copias" in r["categoria"])
         gasto_real_imprevistos = sum(float(r["monto"]) for r in reg_gastos if "Imprevistos" in r["categoria"])
         gasto_real_salidas_20 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 20%" in r["categoria"])
+        gasto_real_moto_80 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 80%" in r["categoria"])
 
         saldo_copias = max(0.0, round(m_copias - gasto_real_copias, 2))
         saldo_imprevistos = max(0.0, round(m_imprevistos - gasto_real_imprevistos, 2))
-        saldo_moto_80 = monto_moto_80
+        saldo_moto_80 = max(0.0, round(monto_moto_80 - gasto_real_moto_80, 2))
         saldo_salidas_20 = max(0.0, round(monto_salidas_20 - gasto_real_salidas_20, 2))
         total_digital_gastos = round(saldo_copias + saldo_imprevistos + saldo_moto_80 + saldo_salidas_20, 2)
 
@@ -192,42 +193,56 @@ def handle_get_futuro(handler):
             "total_gastos_digital": total_digital_gastos,
             "porciones": {
                 "emergencia": {
+                    "presupuesto": emergencia_aportado,
+                    "gasto_real": 0.0,
                     "monto": emergencia_aportado,
                     "pct": round((emergencia_aportado / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Fondo de Emergencia (Intocable)",
                     "origen": "Plan a Futuro (Paso 3 • 10%)"
                 },
                 "ocio": {
+                    "presupuesto": presupuesto_ocio,
+                    "gasto_real": gasto_real_ocio,
                     "monto": remanente_ocio,
                     "pct": round((remanente_ocio / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Ocio & Estilo de Vida (Disponible)",
                     "origen": "Plan a Futuro (Paso 7 • 30%)"
                 },
                 "retiro": {
+                    "presupuesto": retiro_aportado,
+                    "gasto_real": 0.0,
                     "monto": retiro_aportado,
                     "pct": round((retiro_aportado / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Retiro Deducible SAT (Apartado)",
                     "origen": "Plan a Futuro (Paso 6 • 5%)"
                 },
                 "moto_80": {
+                    "presupuesto": monto_moto_80,
+                    "gasto_real": gasto_real_moto_80,
                     "monto": saldo_moto_80,
                     "pct": round((saldo_moto_80 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Fondo Acelerador Moto (80%)",
                     "origen": "Gastos Básicos (Excedente Base)"
                 },
                 "salidas_20": {
+                    "presupuesto": monto_salidas_20,
+                    "gasto_real": gasto_real_salidas_20,
                     "monto": saldo_salidas_20,
                     "pct": round((saldo_salidas_20 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Refuerzo Gustos / Salidas (20%)",
                     "origen": "Gastos Básicos (Excedente Base)"
                 },
                 "imprevistos": {
+                    "presupuesto": m_imprevistos,
+                    "gasto_real": gasto_real_imprevistos,
                     "monto": saldo_imprevistos,
                     "pct": round((saldo_imprevistos / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Colchón de Imprevistos",
                     "origen": "Gastos Básicos (Fondo Digital)"
                 },
                 "copias": {
+                    "presupuesto": m_copias,
+                    "gasto_real": gasto_real_copias,
                     "monto": saldo_copias,
                     "pct": round((saldo_copias / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Copias & Papelería",
@@ -237,7 +252,7 @@ def handle_get_futuro(handler):
             "gastos_digitales_detalle": {
                 "copias": { "presupuesto": m_copias, "gasto_real": gasto_real_copias, "saldo": saldo_copias },
                 "imprevistos": { "presupuesto": m_imprevistos, "gasto_real": gasto_real_imprevistos, "saldo": saldo_imprevistos },
-                "moto_80": { "presupuesto": monto_moto_80, "saldo": saldo_moto_80 },
+                "moto_80": { "presupuesto": monto_moto_80, "gasto_real": gasto_real_moto_80, "saldo": saldo_moto_80 },
                 "salidas_20": { "presupuesto": monto_salidas_20, "gasto_real": gasto_real_salidas_20, "saldo": saldo_salidas_20 }
             }
         }
