@@ -43,3 +43,6 @@ yarn-error.log*
 # SO
 .DS_Store
 Thumbs.db
+
+# Firebase CLI cache
+.firebase/

@@ -116,27 +116,26 @@ export default function App() {
     }
   }, []);
 
-  // Carga inicial
+  // Carga inicial y suscripción reactiva en tiempo real (Cloud Firestore)
   useEffect(() => {
-    async function init() {
-      setLoading(true);
-      await Promise.all([
-        loadGastos(),
-        loadHistorialGastosData(),
-        loadFuturo(),
-        loadHistorialFuturoData()
-      ]);
+    setLoading(true);
+    const unsubscribe = api.subscribeFinancialData(({ gastos, futuro, historialGastos: hGastos, historialFuturo: hFuturo }) => {
+      setGastosData(gastos);
+      setFuturoData(futuro);
+      setHistorialGastos(hGastos || { meses: [], cierres: [] });
+      setHistorialFuturo(hFuturo || []);
       setLoading(false);
-    }
-    init();
-  }, [loadGastos, loadHistorialGastosData, loadFuturo, loadHistorialFuturoData]);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
 
   // Manejadores Gastos Básicos
   const handleAddGasto = async (payload) => {
     try {
       const res = await api.addGasto(payload);
-      addToast(res.message || 'Gasto guardado en SQLite', 'success');
-      await Promise.all([loadGastos(), loadFuturo()]);
+      addToast(res.message || 'Gasto sincronizado en la nube', 'success');
     } catch (err) {
       addToast(err.message || 'Error al guardar gasto', 'error');
     }

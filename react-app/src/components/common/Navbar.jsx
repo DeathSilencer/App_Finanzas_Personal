@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, TrendingUp, CreditCard, CheckCircle2, Database } from 'lucide-react';
+import { Wallet, TrendingUp, CreditCard, CheckCircle2, Database, Cloud } from 'lucide-react';
 
 export default function Navbar({
   activeModule,
@@ -19,11 +19,11 @@ export default function Navbar({
             <h1 className="text-xs sm:text-base font-extrabold bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent truncate max-w-[140px] sm:max-w-none">
               {activeModule === 'gastos' ? 'Gastos Básicos' : 'Plan a Futuro'}
             </h1>
-            <p className="text-[10px] sm:text-xs text-slate-400 flex items-center space-x-1 truncate">
-              <span className="hidden xs:inline">Conectado a</span>
-              <span className="text-indigo-400 font-semibold flex items-center space-x-0.5">
-                <Database className="w-2.5 h-2.5 sm:w-3 sm:h-3 inline shrink-0" />
-                <span>SQLite</span>
+            <p className="text-[10px] sm:text-xs text-slate-400 flex items-center space-x-1.5 truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span className="text-emerald-400 font-semibold flex items-center space-x-1">
+                <Cloud className="w-3 h-3 inline shrink-0" />
+                <span>Nube 24/7</span>
               </span>
             </p>
           </div>
