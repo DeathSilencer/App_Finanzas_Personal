@@ -41,6 +41,7 @@ export const updateAportacionFuturo = (tipo, monto) => request('/futuro/aportaci
 export const cerrarQuincenaFuturo = (data) => request('/futuro/cerrar_quincena', { method: 'POST', body: JSON.stringify(data) });
 export const getHistorialFuturo = () => request('/futuro/historial');
 export const borrarCierreFuturo = (id) => request('/futuro/borrar_cierre', { method: 'POST', body: JSON.stringify({ id }) });
+export const ajustarCajitaTurbo = (data) => request('/futuro/cajita/ajuste', { method: 'POST', body: JSON.stringify(data) });
 
 // ── Tarjeta de Crédito Nu ───────────────────────────────────────────────────
 export const addTDC = (data) => request('/futuro/tdc_add', { method: 'POST', body: JSON.stringify(data) });

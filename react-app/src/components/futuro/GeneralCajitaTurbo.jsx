@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Landmark,
   ShieldCheck,
@@ -14,15 +14,20 @@ import {
   Receipt,
   FileText,
   ExternalLink,
-  Banknote
+  Banknote,
+  X,
+  RefreshCw
 } from 'lucide-react';
 import { fmt } from '../../utils/formatters';
+import { ajustarCajitaTurbo } from '../../services/api';
 
 export default function GeneralCajitaTurbo({
   futuroData = {},
   onGoToOcio,
   onOpenCerrarQuincena,
-  onOpenAjusteAporte
+  onOpenAjusteAporte,
+  onReloadFuturo,
+  addToast
 }) {
   const of = futuroData?.otros_fondos || {};
   const cajita = of.cajita_turbo || {};
@@ -46,15 +51,62 @@ export default function GeneralCajitaTurbo({
   const porcSalidas = porciones.salidas_20 || { presupuesto: 338.8, gasto_real: 0, monto: 338.8, pct: 9.3 };
   const porcImp = porciones.imprevistos || { presupuesto: 200, gasto_real: 0, monto: 200, pct: 5.5 };
   const porcCopias = porciones.copias || { presupuesto: 50, gasto_real: 0, monto: 50, pct: 1.4 };
+  const porcRendimientos = porciones.rendimientos || {
+    presupuesto: cajita.rendimientos_ganados_nu || 0,
+    gasto_real: 0,
+    monto: cajita.rendimientos_ganados_nu || 0,
+    pct: granTotal > 0 ? (((cajita.rendimientos_ganados_nu || 0) / granTotal) * 100) : 0
+  };
+  const tieneRendimientos = (porcRendimientos.monto || 0) > 0;
 
-  // Totales presupuestados y gastados en los 6 fondos de Cajita Nu (esta quincena actual)
+  // Estado y lógica para modal de conciliación con Nu
+  const [showModalConciliar, setShowModalConciliar] = useState(false);
+  const [inputSaldoReal, setInputSaldoReal] = useState(cajita.gran_total || 3682.95);
+  const [inputRendimiento, setInputRendimiento] = useState(cajita.rendimiento_real_ganado || 5.88);
+  const [savingAjuste, setSavingAjuste] = useState(false);
+
+  useEffect(() => {
+    if (cajita.gran_total) {
+      setInputSaldoReal(cajita.gran_total);
+    }
+    if (cajita.rendimiento_real_ganado !== undefined) {
+      setInputRendimiento(cajita.rendimiento_real_ganado);
+    }
+  }, [cajita.gran_total, cajita.rendimiento_real_ganado]);
+
+  const handleGuardarConciliacion = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingAjuste(true);
+      const res = await ajustarCajitaTurbo({
+        saldo_real: parseFloat(inputSaldoReal),
+        rendimiento_real: parseFloat(inputRendimiento)
+      });
+      if (addToast) {
+        addToast(res.message || 'Cajita Turbo sincronizada con Nu', 'success');
+      }
+      if (onReloadFuturo) {
+        await onReloadFuturo();
+      }
+      setShowModalConciliar(false);
+    } catch (err) {
+      if (addToast) {
+        addToast(err.message || 'Error al conciliar saldo', 'error');
+      }
+    } finally {
+      setSavingAjuste(false);
+    }
+  };
+
+  // Totales presupuestados y gastados en los fondos de Cajita Nu (esta quincena actual)
   const totalPresupuestoCajita = (
     (porcOcio.presupuesto || 0) +
     (porcEmg.presupuesto || 0) +
     (porcMoto.presupuesto || 0) +
     (porcSalidas.presupuesto || 0) +
     (porcImp.presupuesto || 0) +
-    (porcCopias.presupuesto || 0)
+    (porcCopias.presupuesto || 0) +
+    (tieneRendimientos ? porcRendimientos.monto : 0)
   );
 
   const totalGastadoCajita = (
@@ -98,6 +150,12 @@ export default function GeneralCajitaTurbo({
               <span className="px-2.5 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800 text-[11px] font-bold">
                 ⚡ 6 Fondos en Nu (Quincena Actual)
               </span>
+              {tieneRendimientos && (
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-950/90 text-amber-300 border border-amber-600/60 text-[11px] font-black flex items-center space-x-1 shadow-sm">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
+                  <span>+{fmt(cajita.rendimientos_ganados_nu)} ganados en Nu (13%)</span>
+                </span>
+              )}
             </div>
 
             <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
@@ -123,17 +181,25 @@ export default function GeneralCajitaTurbo({
               </p>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setShowModalConciliar(true)}
+                className="px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-purple-300 border border-purple-500/40 text-xs font-bold transition shadow-lg flex items-center justify-center space-x-1.5"
+                title="Ajustar o sincronizar saldo exacto con tu App Nu"
+              >
+                <Sliders className="w-4 h-4 text-purple-400" />
+                <span>Conciliar con Nu</span>
+              </button>
               <button
                 onClick={onGoToOcio}
-                className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2"
+                className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-1.5"
               >
                 <PartyPopper className="w-4 h-4" />
                 <span>Registrar Ocio</span>
               </button>
               <button
                 onClick={onOpenCerrarQuincena}
-                className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2"
+                className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-1.5"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Cerrar Quincena</span>
@@ -188,10 +254,18 @@ export default function GeneralCajitaTurbo({
               style={{ width: `${porcCopias.pct}%` }}
               title={`Copias: ${fmt(porcCopias.monto)} (${porcCopias.pct}%)`}
             ></div>
+            {/* Rendimientos Ganados */}
+            {tieneRendimientos && (
+              <div
+                className="bg-yellow-400 transition-all duration-500 hover:opacity-80 animate-pulse"
+                style={{ width: `${porcRendimientos.pct}%` }}
+                title={`Rendimientos Ganados Nu: ${fmt(porcRendimientos.monto)} (${porcRendimientos.pct.toFixed(1)}%)`}
+              ></div>
+            )}
           </div>
 
-          {/* Leyenda de los 6 colores */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-2 text-[11px] text-slate-300">
+          {/* Leyenda de los 6 o 7 colores */}
+          <div className={`grid grid-cols-2 sm:grid-cols-3 ${tieneRendimientos ? 'lg:grid-cols-7' : 'lg:grid-cols-6'} gap-2 pt-2 text-[11px] text-slate-300`}>
             <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
               <span className="truncate">🍕 Ocio: <b>{fmt(porcOcio.monto)}</b></span>
@@ -216,6 +290,12 @@ export default function GeneralCajitaTurbo({
               <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0"></span>
               <span className="truncate">📄 Copias: <b>{fmt(porcCopias.monto)}</b></span>
             </div>
+            {tieneRendimientos && (
+              <div className="flex items-center space-x-1.5 bg-yellow-950/60 p-1.5 rounded-lg border border-yellow-600/50 text-yellow-300">
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 shrink-0 animate-pulse"></span>
+                <span className="truncate">✨ Rendim.: <b>+{fmt(porcRendimientos.monto)}</b></span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -571,9 +651,30 @@ export default function GeneralCajitaTurbo({
                   </span>
                 </td>
               </tr>
+
+              {/* Rendimientos Ganados Nu (13%) */}
+              {tieneRendimientos && (
+                <tr className="hover:bg-yellow-950/20 transition bg-yellow-950/10">
+                  <td className="p-3.5 font-bold text-yellow-300 flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
+                    <span>Rendimientos Ganados Nu (13%)</span>
+                  </td>
+                  <td className="p-3.5 text-yellow-200/80">Crecimiento Pasivo Diario Acreditado</td>
+                  <td className="p-3.5 text-right text-yellow-300/70 font-semibold">{fmt(porcRendimientos.monto)}</td>
+                  <td className="p-3.5 text-right font-bold text-slate-500">$0.00</td>
+                  <td className="p-3.5 text-right font-black text-yellow-300 text-sm">+{fmt(porcRendimientos.monto)}</td>
+                  <td className="p-3.5 text-center font-bold text-yellow-400">{porcRendimientos.pct.toFixed(1)}%</td>
+                  <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcRendimientos.monto * (0.13 / 12))}</td>
+                  <td className="p-3.5 text-center">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-yellow-950 text-yellow-300 border border-yellow-700">
+                      Ganancia Real
+                    </span>
+                  </td>
+                </tr>
+              )}
             </tbody>
 
-            {/* Footer con Totales de los 6 Fondos en Nu */}
+            {/* Footer con Totales de los Fondos en Nu */}
             <tfoot className="bg-slate-900 font-bold border-t-2 border-slate-700 text-xs">
               <tr>
                 <td colSpan="2" className="p-3.5 text-white uppercase font-extrabold">
@@ -602,6 +703,107 @@ export default function GeneralCajitaTurbo({
           </table>
         </div>
       </div>
+
+      {/* ────────────────────────────────────────────────────────────────── */}
+      {/* MODAL: CONCILIAR SALDO REAL Y RENDIMIENTOS CON APP NU */}
+      {/* ────────────────────────────────────────────────────────────────── */}
+      {showModalConciliar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel p-6 rounded-3xl border border-purple-500/40 shadow-2xl max-w-lg w-full bg-slate-900/95 relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center">
+                  <Sliders className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Conciliar con App Nu</h3>
+                  <p className="text-xs text-slate-400">Sincroniza tus rendimientos diarios y saldo real</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowModalConciliar(false)}
+                className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarConciliacion} className="space-y-4 text-xs">
+              <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 space-y-2">
+                <div className="flex items-center justify-between text-slate-300">
+                  <span>Capital Base Presupuestado:</span>
+                  <b className="text-white font-mono text-sm">{fmt(cajita.capital_base || 3678)}</b>
+                </div>
+                <div className="flex items-center justify-between text-slate-300">
+                  <span>Rendimientos Netos Acreditados:</span>
+                  <b className="text-emerald-400 font-mono text-sm">
+                    +{fmt(Math.max(0, (parseFloat(inputSaldoReal) || 0) - (cajita.capital_base || 3678)))}
+                  </b>
+                </div>
+                <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between text-xs">
+                  <span className="font-bold text-purple-200">Total Sincronizado en App:</span>
+                  <b className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-emerald-300">
+                    {fmt(parseFloat(inputSaldoReal) || 0)}
+                  </b>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  📱 Saldo Total Real en Cajitas Nu ($ MXN):
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={inputSaldoReal}
+                  onChange={(e) => setInputSaldoReal(e.target.value)}
+                  placeholder="Ej. 3682.95"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-bold text-base focus:border-purple-500 transition"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Copia exactamente el número de "Total en Cajitas" de tu app Nu (ej. $3,682.95).
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">
+                  📈 Rendimiento Reportado por Nu ($ MXN):
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={inputRendimiento}
+                  onChange={(e) => setInputRendimiento(e.target.value)}
+                  placeholder="Ej. 5.88"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-sm focus:border-purple-500 transition"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Monto verde de "Así ha crecido tu saldo en Cajitas: ↗ $5.88".
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end space-x-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowModalConciliar(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingAjuste}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white font-bold transition shadow-lg shadow-purple-600/30 flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {savingAjuste ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  <span>Guardar y Sincronizar</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

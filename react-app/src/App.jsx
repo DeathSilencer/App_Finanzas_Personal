@@ -554,6 +554,8 @@ export default function App() {
                 onGoToOcio={() => setFuturoTab('ocio')}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaFuturoOpen(true)}
                 onOpenAjusteAporte={(tipo) => setAjusteAporteTipo(tipo)}
+                onReloadFuturo={loadFuturo}
+                addToast={addToast}
               />
             )}
 

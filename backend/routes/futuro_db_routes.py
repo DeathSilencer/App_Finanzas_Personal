@@ -53,6 +53,8 @@ def handle_get_futuro(handler):
         cetes_estado = str(cfg["cetes_estado"])
         emergencia_aportado = float(cfg["emergencia_aportado_activo"])
         retiro_aportado = float(cfg["retiro_aportado_activo"])
+        rendimiento_real_nu = float(cfg.get("rendimiento_real_nu") or 0.0)
+        saldo_real_ajustado = float(cfg["saldo_real_ajustado"]) if cfg.get("saldo_real_ajustado") is not None else None
 
         # 2. Distribución de Ingresos
         distribucion = {
@@ -208,12 +210,14 @@ def handle_get_futuro(handler):
             except Exception:
                 hist_salidas += float(r["refuerzo_gustos_20"] or 0.0)
 
-        cursor.execute("SELECT categoria, monto FROM gastos_diarios")
+        cursor.execute("SELECT categoria, monto, metodo_pago FROM gastos_diarios")
         reg_gastos = cursor.fetchall()
-        gasto_real_copias = sum(float(r["monto"]) for r in reg_gastos if "Copias" in r["categoria"])
-        gasto_real_imprevistos = sum(float(r["monto"]) for r in reg_gastos if "Imprevistos" in r["categoria"])
-        gasto_real_salidas_20 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 20%" in r["categoria"])
-        gasto_real_moto_80 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 80%" in r["categoria"])
+        # Solo los gastos pagados con dinero digital (Débito Nu o no Efectivo) reducen el saldo de Cajita Nu.
+        # Si se pagó con 'Efectivo', el dinero salió de la cartera física en mano, por lo que NO se descuenta de Nu.
+        gasto_real_copias = sum(float(r["monto"]) for r in reg_gastos if "Copias" in r["categoria"] and r["metodo_pago"] != "Efectivo")
+        gasto_real_imprevistos = sum(float(r["monto"]) for r in reg_gastos if "Imprevistos" in r["categoria"] and r["metodo_pago"] != "Efectivo")
+        gasto_real_salidas_20 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 20%" in r["categoria"] and r["metodo_pago"] != "Efectivo")
+        gasto_real_moto_80 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 80%" in r["categoria"] and r["metodo_pago"] != "Efectivo")
 
         saldo_copias = max(0.0, round(hist_copias + m_copias - gasto_real_copias, 2))
         saldo_imprevistos = max(0.0, round(hist_imprevistos + m_imprevistos - gasto_real_imprevistos, 2))
@@ -225,70 +229,96 @@ def handle_get_futuro(handler):
         # Sub-contabilidad de la Única Cajita Turbo de Nu (13% anual)
         # DESCONTADOS CETES ($250) Y AFORE BANORTE ($250) ya que están en plataformas externas.
         total_futuro_cajita = round(remanente_ocio + saldo_emergencia, 2)
-        gran_total_cajita = round(total_futuro_cajita + total_digital_gastos, 2)
+        capital_base_cajita = round(total_futuro_cajita + total_digital_gastos, 2)
+
+        # Sincronización con el saldo real de la App Nu y Rendimientos Acreditados
+        if saldo_real_ajustado is not None and saldo_real_ajustado > 0:
+            gran_total_cajita = round(saldo_real_ajustado, 2)
+            rendimientos_ganados_nu = max(0.0, round(gran_total_cajita - capital_base_cajita, 2))
+        else:
+            rendimientos_ganados_nu = round(rendimiento_real_nu, 2)
+            gran_total_cajita = round(capital_base_cajita + rendimientos_ganados_nu, 2)
+
         rendimiento_mensual_cajita = round(gran_total_cajita * (tasa_nu / 12.0), 2)
         rendimiento_anual_cajita = round(gran_total_cajita * tasa_nu, 2)
 
         presupuesto_efectivo_actual = round(m_combi + m_comida, 2)
         proximo_presupuesto_efectivo = round(m_combi + m_comida + m_copias, 2)
 
+        porciones_cajita = {
+            "emergencia": {
+                "presupuesto": saldo_emergencia,
+                "gasto_real": 0.0,
+                "monto": saldo_emergencia,
+                "pct": round((saldo_emergencia / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                "etiqueta": "Fondo de Emergencia (Intocable)",
+                "origen": "Plan a Futuro • Acumulativo"
+            },
+            "ocio": {
+                "presupuesto": presupuesto_ocio,
+                "gasto_real": gasto_real_ocio,
+                "monto": remanente_ocio,
+                "pct": round((remanente_ocio / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                "etiqueta": "Ocio & Estilo de Vida (Disponible)",
+                "origen": "Plan a Futuro • Acumulativo"
+            },
+            "moto_80": {
+                "presupuesto": round(hist_moto + monto_moto_80, 2),
+                "gasto_real": gasto_real_moto_80,
+                "monto": saldo_moto_80,
+                "pct": round((saldo_moto_80 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                "etiqueta": "Fondo Acelerador Moto (80%)",
+                "origen": "Gastos Básicos • Acumulativo"
+            },
+            "salidas_20": {
+                "presupuesto": round(hist_salidas + monto_salidas_20, 2),
+                "gasto_real": gasto_real_salidas_20,
+                "monto": saldo_salidas_20,
+                "pct": round((saldo_salidas_20 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                "etiqueta": "Refuerzo Gustos / Salidas (20%)",
+                "origen": "Gastos Básicos • Acumulativo"
+            },
+            "imprevistos": {
+                "presupuesto": round(hist_imprevistos + m_imprevistos, 2),
+                "gasto_real": gasto_real_imprevistos,
+                "monto": saldo_imprevistos,
+                "pct": round((saldo_imprevistos / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                "etiqueta": "Colchón de Imprevistos",
+                "origen": "Gastos Básicos • Acumulativo"
+            },
+            "copias": {
+                "presupuesto": round(hist_copias + m_copias, 2),
+                "gasto_real": gasto_real_copias,
+                "monto": saldo_copias,
+                "pct": round((saldo_copias / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                "etiqueta": "Copias & Papelería (En Cajita)",
+                "origen": "Gastos Básicos • Quincena Actual"
+            }
+        }
+
+        # Si hay rendimientos ganados acreditados, sumarlos como porción proporcional
+        if rendimientos_ganados_nu > 0:
+            porciones_cajita["rendimientos"] = {
+                "presupuesto": rendimientos_ganados_nu,
+                "gasto_real": 0.0,
+                "monto": rendimientos_ganados_nu,
+                "pct": round((rendimientos_ganados_nu / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
+                "etiqueta": "Rendimientos Ganados Nu (13%)",
+                "origen": "Crecimiento Pasivo Diario"
+            }
+
         cajita_turbo_info = {
             "gran_total": gran_total_cajita,
+            "capital_base": capital_base_cajita,
+            "rendimiento_real_ganado": rendimiento_real_nu,
+            "rendimientos_ganados_nu": rendimientos_ganados_nu,
+            "saldo_real_ajustado": saldo_real_ajustado,
             "rendimiento_mensual": rendimiento_mensual_cajita,
             "rendimiento_anual": rendimiento_anual_cajita,
             "tasa_anual": tasa_nu,
             "total_futuro": total_futuro_cajita,
             "total_gastos_digital": total_digital_gastos,
-            "porciones": {
-                "emergencia": {
-                    "presupuesto": saldo_emergencia,
-                    "gasto_real": 0.0,
-                    "monto": saldo_emergencia,
-                    "pct": round((saldo_emergencia / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                    "etiqueta": "Fondo de Emergencia (Intocable)",
-                    "origen": "Plan a Futuro • Acumulativo"
-                },
-                "ocio": {
-                    "presupuesto": presupuesto_ocio,
-                    "gasto_real": gasto_real_ocio,
-                    "monto": remanente_ocio,
-                    "pct": round((remanente_ocio / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                    "etiqueta": "Ocio & Estilo de Vida (Disponible)",
-                    "origen": "Plan a Futuro • Acumulativo"
-                },
-                "moto_80": {
-                    "presupuesto": round(hist_moto + monto_moto_80, 2),
-                    "gasto_real": gasto_real_moto_80,
-                    "monto": saldo_moto_80,
-                    "pct": round((saldo_moto_80 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                    "etiqueta": "Fondo Acelerador Moto (80%)",
-                    "origen": "Gastos Básicos • Acumulativo"
-                },
-                "salidas_20": {
-                    "presupuesto": round(hist_salidas + monto_salidas_20, 2),
-                    "gasto_real": gasto_real_salidas_20,
-                    "monto": saldo_salidas_20,
-                    "pct": round((saldo_salidas_20 / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                    "etiqueta": "Refuerzo Gustos / Salidas (20%)",
-                    "origen": "Gastos Básicos • Acumulativo"
-                },
-                "imprevistos": {
-                    "presupuesto": round(hist_imprevistos + m_imprevistos, 2),
-                    "gasto_real": gasto_real_imprevistos,
-                    "monto": saldo_imprevistos,
-                    "pct": round((saldo_imprevistos / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                    "etiqueta": "Colchón de Imprevistos",
-                    "origen": "Gastos Básicos • Acumulativo"
-                },
-                "copias": {
-                    "presupuesto": round(hist_copias + m_copias, 2),
-                    "gasto_real": gasto_real_copias,
-                    "monto": saldo_copias,
-                    "pct": round((saldo_copias / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                    "etiqueta": "Copias & Papelería (En Cajita)",
-                    "origen": "Gastos Básicos • Quincena Actual"
-                }
-            },
+            "porciones": porciones_cajita,
             "gastos_digitales_detalle": {
                 "copias": { "presupuesto": round(hist_copias + m_copias, 2), "gasto_real": gasto_real_copias, "saldo": saldo_copias },
                 "imprevistos": { "presupuesto": round(hist_imprevistos + m_imprevistos, 2), "gasto_real": gasto_real_imprevistos, "saldo": saldo_imprevistos },
@@ -386,7 +416,9 @@ def handle_get_futuro(handler):
                 "pct_p6": pct_p6,
                 "tdc_limite": tdc_limite,
                 "tdc_corte": tdc_corte,
-                "tdc_pago": tdc_pago
+                "tdc_pago": tdc_pago,
+                "rendimiento_real_nu": rendimiento_real_nu,
+                "saldo_real_ajustado": saldo_real_ajustado
             },
             "otros_fondos": otros_fondos
         })
@@ -742,5 +774,36 @@ def handle_config_futuro(handler, data):
         conn.close()
 
         handler.send_json({"status": "success", "message": "Parámetros maestros actualizados en la base de datos."})
+    except Exception as e:
+        handler.send_json({"status": "error", "message": str(e)}, 500)
+
+
+def handle_ajustar_cajita_turbo(handler, data):
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM config_futuro WHERE id = 1")
+        cfg = row_to_dict(cursor.fetchone())
+
+        rendimiento_real = safe_float(data.get("rendimiento_real"), cfg.get("rendimiento_real_nu", 0.0))
+        saldo_real = data.get("saldo_real")
+        saldo_real_val = safe_float(saldo_real, None) if saldo_real not in (None, "", "null") else None
+
+        cursor.execute('''
+            UPDATE config_futuro SET
+                rendimiento_real_nu = ?,
+                saldo_real_ajustado = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = 1
+        ''', (rendimiento_real, saldo_real_val))
+        conn.commit()
+        conn.close()
+
+        handler.send_json({
+            "status": "success",
+            "message": "Saldo real y rendimientos de Cajita Turbo Nu sincronizados exitosamente.",
+            "rendimiento_real": rendimiento_real,
+            "saldo_real": saldo_real_val
+        })
     except Exception as e:
         handler.send_json({"status": "error", "message": str(e)}, 500)

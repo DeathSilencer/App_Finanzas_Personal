@@ -70,6 +70,8 @@ CREATE TABLE IF NOT EXISTS config_futuro (
     cetes_estado TEXT NOT NULL DEFAULT 'Aportado (Cetesdirecto)',
     emergencia_aportado_activo REAL NOT NULL DEFAULT 500.0,
     retiro_aportado_activo REAL NOT NULL DEFAULT 250.0,
+    rendimiento_real_nu REAL NOT NULL DEFAULT 0.0,
+    saldo_real_ajustado REAL DEFAULT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
