@@ -23,17 +23,18 @@ export default function ResumenPresupuesto({
   const montoCombi = resumen.monto_combi || 376;
   const montoComida = resumen.monto_comida || 180;
   const montoCopias = resumen.monto_copias || 50;
-  const presupuestoEfectivoBase = resumen.presupuesto_efectivo_base || (montoCombi + montoComida + montoCopias);
+  const presupuestoEfectivoBase = resumen.presupuesto_efectivo_base || (montoCombi + montoComida);
   const sobranteEfectivoMano = resumen.sobrante_efectivo_mano || 0;
   const efectivoNetoRetirar = resumen.efectivo_neto_retirar ?? (presupuestoEfectivoBase - sobranteEfectivoMano);
 
   const sobranteCombi = resumen.sobrante_combi ?? 0;
   const sobranteComida = resumen.sobrante_comida ?? 0;
-  const sobranteCopias = resumen.sobrante_copias ?? 0;
   const sacarCombi = resumen.sacar_combi ?? Math.max(0, montoCombi - sobranteCombi);
   const sacarComida = resumen.sacar_comida ?? Math.max(0, montoComida - sobranteComida);
-  const sacarCopias = resumen.sacar_copias ?? Math.max(0, montoCopias - sobranteCopias);
-  const gastoCopiasDigital = resumen.gasto_copias_digital || 0;
+  const saldoCopiasNu = resumen.saldo_copias_nu ?? (resumen.monto_copias || 50);
+  const fondearCopias = resumen.fondear_copias ?? Math.max(0, (resumen.monto_copias || 50) - saldoCopiasNu);
+  const proximoPresupuestoBase = resumen.proximo_presupuesto_efectivo_base || (montoCombi + montoComida + montoCopias);
+  const proximoEfectivoNeto = resumen.proximo_efectivo_neto_retirar ?? (sacarCombi + sacarComida + montoCopias);
 
   const saldoImpNu = resumen.saldo_imprevistos_nu ?? (resumen.monto_imprevistos || 200);
   const fondearImp = resumen.fondear_imprevistos ?? Math.max(0, (resumen.monto_imprevistos || 200) - saldoImpNu);
@@ -70,7 +71,7 @@ export default function ResumenPresupuesto({
                 Base: {fmt(presupuestoEfectivoBase)} | <b className="text-amber-300">En mano: -{fmt(sobranteEfectivoMano)}</b>
               </span>
             ) : (
-              <span>{fmt(montoCombi)} Combi + {fmt(montoComida)} Comidas + {fmt(montoCopias)} Copias</span>
+              <span>{fmt(montoCombi)} Combi + {fmt(montoComida)} Comidas</span>
             )}
           </p>
         </div>
@@ -99,12 +100,12 @@ export default function ResumenPresupuesto({
                 Recomendación Inteligente de Retiro en Cajero (Compensación de Sobrantes)
               </h3>
               <p className="text-xs text-slate-400">
-                Calculado en tiempo real según el efectivo físico que aún tienes en mano
+                Quincena actual: Base de retiro de {fmt(presupuestoEfectivoBase)} en efectivo físico
               </p>
             </div>
           </div>
-          <span className="px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px] font-bold self-start sm:self-auto">
-            💵 Efectivo Físico Optimizado
+          <span className="px-2.5 py-1 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-800 text-[11px] font-bold self-start sm:self-auto">
+            📌 Próximo Día de Pago: Nuevo retiro base a {fmt(proximoPresupuestoBase)}
           </span>
         </div>
 
@@ -115,7 +116,7 @@ export default function ResumenPresupuesto({
               Presupuesto Efectivo Base:
             </span>
             <h4 className="text-2xl font-black text-white mt-1">{fmt(presupuestoEfectivoBase)}</h4>
-            <p className="text-[10px] text-slate-400 mt-1">({fmt(montoCombi)} Pasajes + {fmt(montoComida)} Comidas + {fmt(montoCopias)} Copias)</p>
+            <p className="text-[10px] text-slate-400 mt-1">({fmt(montoCombi)} Pasajes + {fmt(montoComida)} Comidas)</p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col justify-center">
@@ -159,8 +160,7 @@ export default function ResumenPresupuesto({
             <li className="flex items-start space-x-1.5">
               <span>📄</span>
               <span>
-                <b className="text-white">Copias &amp; Papelería:</b> Retirar <b className="text-emerald-400">{fmt(sacarCopias)}</b> en cajero (en lugar de {fmt(montoCopias)}, porque ya cuentas con <b className="text-amber-300">{fmt(sobranteCopias)}</b> de remanente en mano
-                {gastoCopiasDigital > 0 ? ` • ${fmt(gastoCopiasDigital)} pagados por transferencia Nu` : ''}).
+                <b className="text-white">Copias &amp; Papelería:</b> En esta quincena cuentas con <b className="text-purple-300">{fmt(saldoCopiasNu)}</b> resguardados en Cajita Nu. A partir de tu próximo día de pago (siguiente quincena), retirarás <b className="text-emerald-400">{fmt(montoCopias)}</b> en cajero para activar tu fondo físico blindado ({fmt(proximoPresupuestoBase)} total en efectivo).
               </span>
             </li>
             <li className="flex items-start space-x-1.5">
