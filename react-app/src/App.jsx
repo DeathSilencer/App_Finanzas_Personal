@@ -333,20 +333,18 @@ export default function App() {
       />
 
       {/* Contenido Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* ================================================================= */}
         {/* VISTA 1: CONTROL DE GASTOS BÁSICOS */}
         {/* ================================================================= */}
         {activeModule === 'gastos' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Pestañas de Navegación de Gastos */}
-            <div className="flex space-x-2 border-b border-slate-800 pb-2 overflow-x-auto tab-scroll">
+            <div className="nav-tabs-ribbon">
               <button
                 onClick={() => setGastosTab('resumen')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  gastosTab === 'resumen'
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border-indigo-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  gastosTab === 'resumen' ? 'active-indigo' : ''
                 }`}
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -355,10 +353,8 @@ export default function App() {
 
               <button
                 onClick={() => setGastosTab('diario')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  gastosTab === 'diario'
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border-indigo-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  gastosTab === 'diario' ? 'active-indigo' : ''
                 }`}
               >
                 <Edit3 className="w-4 h-4" />
@@ -367,10 +363,8 @@ export default function App() {
 
               <button
                 onClick={() => setGastosTab('estado-cuenta')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  gastosTab === 'estado-cuenta'
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30 border-teal-600'
-                    : 'border-transparent text-teal-400 hover:text-teal-300'
+                className={`nav-tab-btn ${
+                  gastosTab === 'estado-cuenta' ? 'active-teal' : 'text-teal-400 hover:text-teal-300'
                 }`}
               >
                 <FileText className="w-4 h-4" />
@@ -379,10 +373,8 @@ export default function App() {
 
               <button
                 onClick={() => setGastosTab('moto')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  gastosTab === 'moto'
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border-indigo-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  gastosTab === 'moto' ? 'active-indigo' : ''
                 }`}
               >
                 <Bike className="w-4 h-4" />
@@ -391,7 +383,7 @@ export default function App() {
 
               <button
                 onClick={() => setIsConfigGastosOpen(true)}
-                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-amber-400 hover:text-amber-300 transition whitespace-nowrap ml-auto"
+                className="nav-tab-btn text-amber-400 hover:text-amber-300 ml-auto"
               >
                 <Sliders className="w-4 h-4" />
                 <span>⚙️ Configuración</span>
@@ -441,13 +433,11 @@ export default function App() {
         {activeModule === 'futuro' && (
           <div className="space-y-6">
             {/* Pestañas de Navegación de Futuro */}
-            <div className="flex space-x-2 border-b border-slate-800 pb-2 overflow-x-auto tab-scroll">
+            <div className="nav-tabs-ribbon">
               <button
                 onClick={() => setFuturoTab('general-cajita')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  futuroTab === 'general-cajita'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 border-purple-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  futuroTab === 'general-cajita' ? 'active-purple' : ''
                 }`}
               >
                 <Landmark className="w-4 h-4 text-purple-400" />
@@ -456,10 +446,8 @@ export default function App() {
 
               <button
                 onClick={() => setFuturoTab('ocio')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  futuroTab === 'ocio'
-                    ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30 border-amber-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  futuroTab === 'ocio' ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30 border-amber-600' : ''
                 }`}
               >
                 <PartyPopper className="w-4 h-4 text-amber-400" />
@@ -468,10 +456,8 @@ export default function App() {
 
               <button
                 onClick={() => setFuturoTab('historial-futuro')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  futuroTab === 'historial-futuro'
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30 border-teal-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  futuroTab === 'historial-futuro' ? 'active-teal' : ''
                 }`}
               >
                 <History className="w-4 h-4 text-teal-400" />
@@ -480,10 +466,8 @@ export default function App() {
 
               <button
                 onClick={() => setFuturoTab('dash-maestro')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  futuroTab === 'dash-maestro'
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 border-indigo-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  futuroTab === 'dash-maestro' ? 'active-indigo' : ''
                 }`}
               >
                 <LayoutDashboard className="w-4 h-4" />
@@ -492,10 +476,8 @@ export default function App() {
 
               <button
                 onClick={() => setFuturoTab('cetes')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  futuroTab === 'cetes'
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border-blue-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  futuroTab === 'cetes' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border-blue-600' : ''
                 }`}
               >
                 <Lock className="w-4 h-4" />
@@ -504,10 +486,8 @@ export default function App() {
 
               <button
                 onClick={() => setFuturoTab('tdc')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  futuroTab === 'tdc'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 border-purple-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  futuroTab === 'tdc' ? 'active-purple' : ''
                 }`}
               >
                 <CreditCard className="w-4 h-4" />
@@ -516,10 +496,8 @@ export default function App() {
 
               <button
                 onClick={() => setFuturoTab('fondo-emergencia')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  futuroTab === 'fondo-emergencia'
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 border-emerald-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  futuroTab === 'fondo-emergencia' ? 'active-emerald' : ''
                 }`}
               >
                 <ShieldCheck className="w-4 h-4" />
@@ -528,10 +506,8 @@ export default function App() {
 
               <button
                 onClick={() => setFuturoTab('retiro')}
-                className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border transition whitespace-nowrap ${
-                  futuroTab === 'retiro'
-                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 border-purple-600'
-                    : 'border-transparent text-slate-400 hover:text-white'
+                className={`nav-tab-btn ${
+                  futuroTab === 'retiro' ? 'active-purple' : ''
                 }`}
               >
                 <Award className="w-4 h-4" />
@@ -540,7 +516,7 @@ export default function App() {
 
               <button
                 onClick={() => setIsConfigFuturoOpen(true)}
-                className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold flex items-center space-x-2 border border-transparent text-amber-400 hover:text-amber-300 transition whitespace-nowrap ml-auto"
+                className="nav-tab-btn text-amber-400 hover:text-amber-300 ml-auto"
               >
                 <Sliders className="w-4 h-4" />
                 <span>⚙️ Configuración</span>

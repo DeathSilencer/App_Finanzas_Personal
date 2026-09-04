@@ -26,13 +26,13 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Hero Card: Simulador Moto */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-slate-950 border border-indigo-500/30 relative overflow-hidden shadow-2xl">
+      <div className="card-hero-purple">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div>
-            <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-black uppercase tracking-wider">
+            <span className="badge-indigo">
               Plan de Aceleración Cuatrimestral
             </span>
             <h2 className="text-2xl sm:text-4xl font-black text-white mt-2">
@@ -43,7 +43,7 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
             </p>
           </div>
           <div className="text-right shrink-0 p-4 rounded-2xl bg-slate-900/90 border border-indigo-500/30">
-            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Tiempo Estimado</p>
+            <span className="kpi-label">Tiempo Estimado</span>
             <h3 className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">{cuatrisEstimados} Cuatris</h3>
             <p className="text-xs text-slate-400 mt-1 font-semibold">(~{mesesEstimados} meses)</p>
           </div>
@@ -69,15 +69,15 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
       </div>
 
       {/* Grid: 3 Tarjetas de Resumen + Formulario de Aportación */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Card 1: Ahorro por Cuatrimestre */}
-        <div className="glass-panel p-5 rounded-2xl border-indigo-500/30 flex flex-col justify-between">
+        <div className="card-glass p-4 sm:p-5 border-indigo-500/30 flex flex-col justify-between">
           <div>
             <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-3">
               <TrendingUp className="w-5 h-5" />
             </div>
-            <h4 className="text-sm font-bold text-white">Ahorro por Cuatrimestre</h4>
-            <h3 className="text-2xl font-black text-indigo-400 mt-1">{fmt(simulador.ahorro_por_cuatrimestre || 12450)}</h3>
+            <span className="kpi-label">Ahorro por Cuatrimestre</span>
+            <h3 className="kpi-val-indigo text-indigo-400 font-black text-2xl mt-1">{fmt(simulador.ahorro_por_cuatrimestre || 12450)}</h3>
             <p className="text-xs text-slate-400 mt-2">
               8 quincenas al 80% ({fmt(excedenteQ * 8)}) + Ahorro vacaciones ({fmt(ahorroExtraVacaciones)}).
             </p>
@@ -85,13 +85,13 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
         </div>
 
         {/* Card 2: Aportaciones Directas */}
-        <div className="glass-panel p-5 rounded-2xl border-emerald-500/30 flex flex-col justify-between">
+        <div className="card-glass p-4 sm:p-5 border-emerald-500/30 flex flex-col justify-between">
           <div>
             <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
               <DollarSign className="w-5 h-5" />
             </div>
-            <h4 className="text-sm font-bold text-white">Aportaciones Directas Registradas</h4>
-            <h3 className="text-2xl font-black text-emerald-400 mt-1">{fmt(aportacionesDirectas)}</h3>
+            <span className="kpi-label">Aportaciones Directas</span>
+            <h3 className="kpi-val-emerald text-2xl mt-1">{fmt(aportacionesDirectas)}</h3>
             <p className="text-xs text-slate-400 mt-2">
               Dinero extra ingresado directamente para acelerar la compra de la moto.
             </p>
@@ -99,14 +99,14 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
         </div>
 
         {/* Formulario: Registrar Aporte Directo */}
-        <div className="glass-panel p-5 rounded-2xl border-amber-500/30">
+        <div className="card-glass p-4 sm:p-5 border-amber-500/30">
           <h4 className="text-sm font-bold text-white mb-2 flex items-center space-x-2">
             <PlusCircle className="w-4 h-4 text-amber-400" />
             <span>Registrar Aporte Voluntario a Moto</span>
           </h4>
           <form onSubmit={handleSubmit} className="space-y-3 text-xs">
             <div>
-              <label className="text-slate-400 font-medium">Monto a abonar ($ MXN)</label>
+              <label className="form-label">Monto a abonar ($ MXN)</label>
               <input
                 type="number"
                 step="50"
@@ -114,10 +114,10 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
                 placeholder="0.00"
                 value={montoAporte}
                 onChange={(e) => setMontoAporte(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold focus:border-amber-500"
+                className="form-input font-bold text-amber-400"
               />
             </div>
-            <div className="flex space-x-3 text-xs">
+            <div className="flex space-x-3 text-xs py-1">
               <label className="flex items-center space-x-1.5 cursor-pointer text-slate-300">
                 <input
                   type="radio"
@@ -143,7 +143,7 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition shadow-lg shadow-amber-600/30"
+              className="btn-amber w-full !bg-amber-600 hover:!bg-amber-500 text-white font-bold"
             >
               Guardar Aporte en SQLite
             </button>

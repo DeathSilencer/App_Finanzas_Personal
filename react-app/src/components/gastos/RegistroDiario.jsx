@@ -57,48 +57,48 @@ export default function RegistroDiario({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
       {/* Columna Izquierda: Botones Rápidos + Formulario */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Botones Rápidos */}
-        <div className="glass-panel p-5 rounded-2xl">
+        <div className="card-glass p-4 sm:p-5">
           <h3 className="text-sm font-bold text-white mb-3 flex items-center space-x-2">
             <Zap className="w-4 h-4 text-amber-400" />
             <span>Botones Rápidos (1 Clic)</span>
           </h3>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
             {quickButtons.map((btn, idx) => (
               <button
                 key={idx}
                 onClick={() => handleQuickClick(btn)}
-                className="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-left transition hover:scale-[1.02] flex flex-col justify-between"
+                className="btn-quick"
               >
-                <span className="text-xs text-slate-300 font-semibold truncate">{btn.label}</span>
-                <span className="text-base font-black text-indigo-400 mt-1">{fmt(btn.monto)}</span>
+                <span className="text-xs text-slate-300 font-semibold truncate block">{btn.label}</span>
+                <span className="text-sm sm:text-base font-black text-indigo-400 mt-1 block">{fmt(btn.monto)}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Formulario Personalizado */}
-        <div className="glass-panel p-5 rounded-2xl">
+        <div className="card-glass p-4 sm:p-5">
           <h3 className="text-sm font-bold text-white mb-3 flex items-center space-x-2">
             <PlusCircle className="w-4 h-4 text-indigo-400" />
             <span>Registrar Gasto Personalizado</span>
           </h3>
           <form onSubmit={handleSubmit} className="space-y-3 text-xs">
             <div>
-              <label className="text-slate-400 font-medium">Fecha</label>
+              <label className="form-label">Fecha</label>
               <input
                 type="date"
                 required
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-indigo-500"
+                className="form-input"
               />
             </div>
             <div>
-              <label className="text-slate-400 font-medium">Monto ($ MXN)</label>
+              <label className="form-label">Monto ($ MXN)</label>
               <input
                 type="number"
                 step="0.5"
@@ -106,15 +106,15 @@ export default function RegistroDiario({
                 placeholder="0.00"
                 value={monto}
                 onChange={(e) => setMonto(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-indigo-500 font-bold"
+                className="form-input font-bold text-emerald-400"
               />
             </div>
             <div>
-              <label className="text-slate-400 font-medium">Categoría</label>
+              <label className="form-label">Categoría</label>
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                className="form-select"
               >
                 <option value="🚌 Pasajes Combi (Efectivo)">🚌 Pasajes Combi (Efectivo)</option>
                 <option value="🥪 Comidas en Escuela (Efectivo)">🥪 Comidas en Escuela (Efectivo)</option>
@@ -125,23 +125,23 @@ export default function RegistroDiario({
               </select>
             </div>
             <div>
-              <label className="text-slate-400 font-medium">Concepto / Detalle</label>
+              <label className="form-label">Concepto / Detalle</label>
               <input
                 type="text"
                 required
                 placeholder="Ej. Combi de regreso o comida"
                 value={concepto}
                 onChange={(e) => setConcepto(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-indigo-500"
+                className="form-input"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-slate-400 font-medium">Método</label>
+                <label className="form-label">Método</label>
                 <select
                   value={metodo}
                   onChange={(e) => setMetodo(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-select"
                 >
                   <option value="Efectivo">Efectivo</option>
                   <option value="Débito Nu">Débito Nu</option>
@@ -149,11 +149,11 @@ export default function RegistroDiario({
                 </select>
               </div>
               <div>
-                <label className="text-slate-400 font-medium">Retirado</label>
+                <label className="form-label">Retirado</label>
                 <select
                   value={retirado}
                   onChange={(e) => setRetirado(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-select"
                 >
                   <option value="Sí (Efectivo)">Sí (Efectivo)</option>
                   <option value="En Cajita Nu">En Cajita Nu</option>
@@ -171,7 +171,7 @@ export default function RegistroDiario({
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition shadow-lg shadow-indigo-600/30"
+              className="btn-primary w-full mt-2"
             >
               Guardar Gasto en SQLite
             </button>
@@ -180,48 +180,48 @@ export default function RegistroDiario({
       </div>
 
       {/* Columna Derecha: Tabla Bitácora de Gastos */}
-      <div className="glass-panel p-5 rounded-2xl lg:col-span-2 flex flex-col">
+      <div className="card-glass p-4 sm:p-5 lg:col-span-2 flex flex-col">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+            <h3 className="text-sm sm:text-base font-bold text-white flex items-center space-x-2">
               <List className="w-4 h-4 text-indigo-400" />
               <span>Historial de Gastos Activos</span>
             </h3>
             <p className="text-xs text-slate-400">Persistencia instantánea sin bloqueos de Excel</p>
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="badge-slate">
               {registros?.length || 0} registros
             </span>
             <button
               onClick={onLimpiarRegistro}
-              className="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 rounded-lg text-xs font-semibold transition flex items-center space-x-1"
+              className="btn-danger !py-1 !px-2.5 !text-xs !min-h-[32px]"
             >
               <Eraser className="w-3.5 h-3.5" />
               <span>Limpiar a $0</span>
             </button>
             <button
               onClick={onOpenCerrarQuincena}
-              className="px-3 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold transition flex items-center space-x-1"
+              className="btn-success !py-1 !px-2.5 !text-xs !min-h-[32px]"
             >
-              <CheckCircle2 className="w-3 h-3" />
+              <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Cerrar Quincena</span>
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto flex-1 max-h-[500px] overflow-y-auto border border-slate-800 rounded-xl">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+        <div className="table-responsive-container flex-1 max-h-[500px] overflow-y-auto">
+          <table className="table-modern">
+            <thead className="sticky top-0 z-10">
               <tr>
-                <th className="p-3">#</th>
-                <th className="p-3">Fecha</th>
-                <th className="p-3">Día</th>
-                <th className="p-3 text-right">Monto</th>
-                <th className="p-3">Categoría</th>
-                <th className="p-3">Concepto</th>
-                <th className="p-3">Método</th>
-                <th className="p-3 text-center">Acciones</th>
+                <th className="table-modern-th">#</th>
+                <th className="table-modern-th">Fecha</th>
+                <th className="table-modern-th">Día</th>
+                <th className="table-modern-th text-right">Monto</th>
+                <th className="table-modern-th">Categoría</th>
+                <th className="table-modern-th">Concepto</th>
+                <th className="table-modern-th">Método</th>
+                <th className="table-modern-th text-center">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
@@ -233,15 +233,15 @@ export default function RegistroDiario({
                 </tr>
               ) : (
                 registros.map((r, index) => (
-                  <tr key={r.id || index} className="hover:bg-slate-800/40 transition">
-                    <td className="p-3 text-slate-500 font-medium">#{r.id || index + 1}</td>
-                    <td className="p-3 text-slate-300 whitespace-nowrap">{r.fecha}</td>
-                    <td className="p-3 text-slate-400">{r.dia}</td>
-                    <td className="p-3 text-right font-black text-rose-400">{fmt(r.monto)}</td>
-                    <td className="p-3 text-indigo-300 font-medium whitespace-nowrap">{r.categoria}</td>
-                    <td className="p-3 text-white font-medium">{r.concepto}</td>
-                    <td className="p-3 text-slate-300">{r.metodo_pago}</td>
-                    <td className="p-3 text-center">
+                  <tr key={r.id || index} className="table-modern-tr">
+                    <td className="table-modern-td text-slate-500 font-medium">#{r.id || index + 1}</td>
+                    <td className="table-modern-td text-slate-300 whitespace-nowrap">{r.fecha}</td>
+                    <td className="table-modern-td text-slate-400">{r.dia}</td>
+                    <td className="table-modern-td text-right font-black text-rose-400">{fmt(r.monto)}</td>
+                    <td className="table-modern-td text-indigo-300 font-medium whitespace-nowrap">{r.categoria}</td>
+                    <td className="table-modern-td text-white font-medium">{r.concepto}</td>
+                    <td className="table-modern-td text-slate-300">{r.metodo_pago}</td>
+                    <td className="table-modern-td text-center">
                       <button
                         onClick={() => onDeleteGasto(r.id)}
                         className="p-1.5 hover:bg-rose-500/20 text-rose-400 rounded-lg transition"

@@ -37,9 +37,9 @@ export default function CerrarQuincenaFuturoModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-panel p-6 sm:p-7 rounded-3xl max-w-md w-full border border-emerald-500/30 shadow-2xl relative space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div className="modal-overlay">
+      <div className="modal-sheet border border-emerald-500/30">
+        <div className="modal-header">
           <div className="flex items-center space-x-2.5">
             <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
               <CheckCircle2 className="w-5 h-5" />
@@ -49,14 +49,14 @@ export default function CerrarQuincenaFuturoModal({
               <p className="text-xs text-slate-400">Archivar ocio y resguardar en Cajita Nu</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg">
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
           {/* Card Resumen */}
-          <div className="p-3.5 rounded-xl bg-emerald-950/50 border border-emerald-800/60 space-y-1.5">
+          <div className="card-glass-subtle bg-emerald-950/40 border border-emerald-800/60 space-y-1.5">
             <div className="flex justify-between">
               <span className="text-slate-300">Presupuesto Ocio (30%):</span>
               <span className="font-bold text-white">{fmt(ocio.presupuesto || 1500)}</span>
@@ -76,40 +76,40 @@ export default function CerrarQuincenaFuturoModal({
           </div>
 
           <div>
-            <label className="text-slate-400 font-semibold">Nombre del Período / Quincena</label>
+            <label className="form-label">Nombre del Período / Quincena</label>
             <input
               type="text"
               required
               value={periodo}
               onChange={(e) => setPeriodo(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold focus:border-emerald-500"
+              className="form-input font-bold focus:border-emerald-500"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="text-slate-400 font-semibold">Fecha de Cierre</label>
+              <label className="form-label">Fecha de Cierre</label>
               <input
                 type="date"
                 required
                 value={fechaCierre}
                 onChange={(e) => setFechaCierre(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
             </div>
             <div>
-              <label className="text-slate-400 font-semibold">Año</label>
+              <label className="form-label">Año</label>
               <input
                 type="number"
                 required
                 value={anio}
                 onChange={(e) => setAnio(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
             </div>
           </div>
 
-          <p className="text-[11px] text-slate-400">
+          <p className="form-helper">
             💡 Al cerrar, el remanente de ocio se resguarda en tu Cajita Nu y la bitácora de ocio se reinicia en limpio para el siguiente período.
           </p>
 
@@ -117,13 +117,13 @@ export default function CerrarQuincenaFuturoModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition"
+              className="btn-ghost flex-1"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-emerald-600/30"
+              className="btn-success flex-1"
             >
               Archivar Quincena
             </button>

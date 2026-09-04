@@ -42,9 +42,9 @@ export default function ConfigGastosModal({ isOpen, onClose, config = {}, onSave
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-panel p-6 sm:p-7 rounded-3xl max-w-lg w-full border border-amber-500/30 shadow-2xl relative space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div className="modal-overlay">
+      <div className="modal-sheet max-w-lg border-amber-500/30">
+        <div className="modal-header">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
               <Sliders className="w-4 h-4" />
@@ -54,110 +54,110 @@ export default function ConfigGastosModal({ isOpen, onClose, config = {}, onSave
               <p className="text-xs text-slate-400">Gastos Básicos &amp; Simulador Moto</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg">
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-slate-400 font-semibold">Presupuesto Quincenal ($)</label>
+              <label className="form-label">Presupuesto Quincenal ($)</label>
               <input
                 type="number"
                 step="50"
                 required
                 value={presupuesto}
                 onChange={(e) => setPresupuesto(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold"
+                className="form-input font-bold"
               />
             </div>
             <div>
-              <label className="text-slate-400 font-semibold">Meta Moto ($)</label>
+              <label className="form-label">Meta Moto ($)</label>
               <input
                 type="number"
                 step="500"
                 required
                 value={metaMoto}
                 onChange={(e) => setMetaMoto(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold text-emerald-400"
+                className="form-input font-bold text-emerald-400"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-slate-400 font-semibold">Combi Quincenal ($)</label>
+              <label className="form-label">Combi Quincenal ($)</label>
               <input
                 type="number"
                 step="1"
                 required
                 value={combi}
                 onChange={(e) => setCombi(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
               <span className="text-[10px] text-slate-500">($32/día x 10 días = $320)</span>
             </div>
             <div>
-              <label className="text-slate-400 font-semibold">Comidas Escuela ($)</label>
+              <label className="form-label">Comidas Escuela ($)</label>
               <input
                 type="number"
                 step="10"
                 required
                 value={comida}
                 onChange={(e) => setComida(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-slate-400 font-semibold">Copias &amp; Material ($)</label>
+              <label className="form-label">Copias &amp; Material ($)</label>
               <input
                 type="number"
                 step="10"
                 required
                 value={copias}
                 onChange={(e) => setCopias(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
             </div>
             <div>
-              <label className="text-slate-400 font-semibold">Imprevistos ($)</label>
+              <label className="form-label">Imprevistos ($)</label>
               <input
                 type="number"
                 step="10"
                 required
                 value={imprevistos}
                 onChange={(e) => setImprevistos(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-slate-400 font-semibold">Días Libres por Cuatri</label>
+              <label className="form-label">Días Libres por Cuatri</label>
               <input
                 type="number"
                 step="1"
                 required
                 value={diasLibres}
                 onChange={(e) => setDiasLibres(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold text-amber-300"
+                className="form-input font-bold text-amber-300"
               />
               <span className="text-[10px] text-slate-500">Días sin clases para ahorro extra</span>
             </div>
             <div>
-              <label className="text-slate-400 font-semibold">Quincenas por Cuatri</label>
+              <label className="form-label">Quincenas por Cuatri</label>
               <input
                 type="number"
                 step="1"
                 required
                 value={quincenasCuatri}
                 onChange={(e) => setQuincenasCuatri(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
             </div>
           </div>
@@ -166,13 +166,13 @@ export default function ConfigGastosModal({ isOpen, onClose, config = {}, onSave
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition"
+              className="btn-ghost flex-1"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg shadow-amber-600/30"
+              className="btn-amber flex-1 !bg-amber-600 hover:!bg-amber-500 text-white font-bold"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Guardar en SQLite</span>

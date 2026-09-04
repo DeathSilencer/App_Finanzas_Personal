@@ -5,7 +5,7 @@ export default function Toast({ toasts, removeToast }) {
   if (!toasts || toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none">
+    <div className="fixed top-4 right-4 left-4 sm:left-auto sm:right-5 sm:top-5 z-50 flex flex-col space-y-2 pointer-events-none">
       {toasts.map((t) => {
         let bg = 'bg-slate-900 border-slate-700 text-white';
         let icon = <Info className="w-4 h-4 text-indigo-400" />;

@@ -43,52 +43,52 @@ export default function ControlTDCNu({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 4 KPIs de Tarjeta */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-panel p-5 rounded-2xl border-purple-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Límite de Crédito Nu</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-white mt-1">{fmt(limite)}</h3>
-          <p className="text-xs text-purple-300 mt-2 font-semibold">TDC Nu Gold / Platinum</p>
+      <div className="mobile-grid-kpi">
+        <div className="card-kpi border-purple-500/30">
+          <span className="kpi-label">Límite de Crédito Nu</span>
+          <h3 className="kpi-val-white">{fmt(limite)}</h3>
+          <p className="kpi-subtext text-purple-300 font-semibold truncate">TDC Nu Gold / Platinum</p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl border-rose-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deuda Actual / Gastado</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-rose-400 mt-1">{fmt(deuda)}</h3>
-          <p className="text-xs text-slate-400 mt-2 font-medium">{usoPct}% de uso de línea</p>
+        <div className="card-kpi border-rose-500/30">
+          <span className="kpi-label">Deuda Actual / Gastado</span>
+          <h3 className="kpi-val-rose">{fmt(deuda)}</h3>
+          <p className="kpi-subtext">{usoPct}% de uso de línea</p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl border-emerald-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo Disponible</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">{fmt(disponible)}</h3>
-          <p className="text-xs text-emerald-300 mt-2 font-semibold">Línea libre para compras</p>
+        <div className="card-kpi border-emerald-500/30">
+          <span className="kpi-label">Saldo Disponible</span>
+          <h3 className="kpi-val-emerald">{fmt(disponible)}</h3>
+          <p className="kpi-subtext text-emerald-300 font-semibold truncate">Línea libre para compras</p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl border-amber-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Próximas Fechas</p>
-          <h4 className="text-sm font-black text-white mt-1">Corte: <span className="text-amber-300">{corte}</span></h4>
-          <p className="text-xs text-amber-300 mt-2 font-semibold">Límite Pago: {pago}</p>
+        <div className="card-kpi border-amber-500/30">
+          <span className="kpi-label">Próximas Fechas</span>
+          <h4 className="text-sm sm:text-base font-black text-white mt-1">Corte: <span className="text-amber-300">{corte}</span></h4>
+          <p className="kpi-subtext text-amber-300 font-semibold">Límite Pago: {pago}</p>
         </div>
       </div>
 
       {/* Grid: Formulario + Tabla de Compras */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Formulario */}
-        <div className="glass-panel p-5 rounded-2xl space-y-4">
+        <div className="card-glass p-4 sm:p-5 space-y-4">
           <h3 className="text-sm font-bold text-white flex items-center space-x-2">
             <PlusCircle className="w-4 h-4 text-purple-400" />
             <span>Registrar Compra con TDC Nu</span>
           </h3>
           <form onSubmit={handleSubmit} className="space-y-3 text-xs">
             <div>
-              <label className="text-slate-400 font-medium">Fecha</label>
+              <label className="form-label">Fecha</label>
               <input
                 type="date"
                 required
                 value={fecha}
                 onChange={(e) => setFecha(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
             </div>
             <div>
-              <label className="text-slate-400 font-medium">Monto ($ MXN)</label>
+              <label className="form-label">Monto ($ MXN)</label>
               <input
                 type="number"
                 step="0.5"
@@ -96,26 +96,26 @@ export default function ControlTDCNu({
                 placeholder="0.00"
                 value={monto}
                 onChange={(e) => setMonto(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold focus:border-purple-500"
+                className="form-input font-bold text-rose-400"
               />
             </div>
             <div>
-              <label className="text-slate-400 font-medium">Concepto / Establecimiento</label>
+              <label className="form-label">Concepto / Establecimiento</label>
               <input
                 type="text"
                 required
                 placeholder="Ej. Oxxo / Despensa / Gasolina"
                 value={concepto}
                 onChange={(e) => setConcepto(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1"
+                className="form-input"
               />
             </div>
             <div>
-              <label className="text-slate-400 font-medium">Categoría</label>
+              <label className="form-label">Categoría</label>
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                className="form-select"
               >
                 <option value="Básicos">Básicos</option>
                 <option value="Ocio">Ocio</option>
@@ -124,11 +124,11 @@ export default function ControlTDCNu({
               </select>
             </div>
             <div>
-              <label className="text-slate-400 font-medium">¿Apartado en Cajita Básicos?</label>
+              <label className="form-label">¿Apartado en Cajita Básicos?</label>
               <select
                 value={apartado}
                 onChange={(e) => setApartado(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                className="form-select"
               >
                 <option value="Sí (En Cajita)">Sí (En Cajita al 13%)</option>
                 <option value="Pendiente">Pendiente por apartar</option>
@@ -136,7 +136,7 @@ export default function ControlTDCNu({
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/30"
+              className="btn-purple w-full mt-2"
             >
               Guardar Compra en SQLite
             </button>
@@ -145,7 +145,7 @@ export default function ControlTDCNu({
           {deuda > 0 && (
             <button
               onClick={onLiquidarDeuda}
-              className="w-full py-2 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-1.5"
+              className="btn-success w-full"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Liquidar Toda la Deuda ({fmt(deuda)})</span>
@@ -154,27 +154,27 @@ export default function ControlTDCNu({
         </div>
 
         {/* Tabla de Compras */}
-        <div className="glass-panel p-5 rounded-2xl lg:col-span-2 flex flex-col">
+        <div className="card-glass p-4 sm:p-5 lg:col-span-2 flex flex-col">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+            <h3 className="text-sm sm:text-base font-bold text-white flex items-center space-x-2">
               <CreditCard className="w-4 h-4 text-purple-400" />
               <span>Movimientos de Tarjeta Nu</span>
             </h3>
-            <span className="text-xs text-slate-400">{compras.length} compras</span>
+            <span className="badge-slate">{compras.length} compras</span>
           </div>
 
-          <div className="overflow-x-auto max-h-[480px] overflow-y-auto border border-slate-800 rounded-xl">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+          <div className="table-responsive-container flex-1 max-h-[480px] overflow-y-auto">
+            <table className="table-modern">
+              <thead className="sticky top-0 z-10">
                 <tr>
-                  <th className="p-3">#</th>
-                  <th className="p-3">Fecha</th>
-                  <th className="p-3">Concepto</th>
-                  <th className="p-3 text-right">Monto</th>
-                  <th className="p-3">Categoría</th>
-                  <th className="p-3">Apartado Cajita</th>
-                  <th className="p-3 text-center">Estado</th>
-                  <th className="p-3 text-center">Acción</th>
+                  <th className="table-modern-th">#</th>
+                  <th className="table-modern-th">Fecha</th>
+                  <th className="table-modern-th">Concepto</th>
+                  <th className="table-modern-th text-right">Monto</th>
+                  <th className="table-modern-th">Categoría</th>
+                  <th className="table-modern-th">Apartado Cajita</th>
+                  <th className="table-modern-th text-center">Estado</th>
+                  <th className="table-modern-th text-center">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -186,23 +186,19 @@ export default function ControlTDCNu({
                   </tr>
                 ) : (
                   compras.map((c, i) => (
-                    <tr key={c.id || i} className="hover:bg-slate-800/40 transition">
-                      <td className="p-3 text-slate-500">#{c.id || i + 1}</td>
-                      <td className="p-3 text-slate-300 whitespace-nowrap">{c.fecha}</td>
-                      <td className="p-3 font-medium text-white">{c.concepto}</td>
-                      <td className="p-3 text-right font-black text-rose-400">{fmt(c.monto)}</td>
-                      <td className="p-3 text-slate-400">{c.categoria}</td>
-                      <td className="p-3 text-purple-300">{c.apartado}</td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          c.estado === 'Liquidado'
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                            : 'bg-rose-950 text-rose-300 border-rose-800'
-                        }`}>
+                    <tr key={c.id || i} className="table-modern-tr">
+                      <td className="table-modern-td text-slate-500">#{c.id || i + 1}</td>
+                      <td className="table-modern-td text-slate-300 whitespace-nowrap">{c.fecha}</td>
+                      <td className="table-modern-td font-medium text-white">{c.concepto}</td>
+                      <td className="table-modern-td text-right font-black text-rose-400">{fmt(c.monto)}</td>
+                      <td className="table-modern-td text-slate-400">{c.categoria}</td>
+                      <td className="table-modern-td text-purple-300">{c.apartado}</td>
+                      <td className="table-modern-td text-center">
+                        <span className={c.estado === 'Liquidado' ? 'badge-emerald' : 'badge-rose'}>
                           {c.estado || 'Pendiente'}
                         </span>
                       </td>
-                      <td className="p-3 text-center">
+                      <td className="table-modern-td text-center">
                         <button
                           onClick={() => onDeleteCompra(c.id)}
                           className="p-1 text-rose-400 hover:bg-rose-500/20 rounded-lg transition"

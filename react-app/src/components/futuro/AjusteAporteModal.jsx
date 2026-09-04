@@ -44,40 +44,40 @@ export default function AjusteAporteModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-panel p-6 rounded-3xl max-w-sm w-full border border-purple-500/30 shadow-2xl relative space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div className="modal-overlay">
+      <div className="modal-sheet max-w-sm border border-purple-500/30">
+        <div className="modal-header">
           <h3 className="text-sm font-bold text-white">{titulo}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg">
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
           <div>
-            <label className="text-slate-400 font-semibold">Monto Aportado ($ MXN)</label>
+            <label className="form-label">Monto Aportado ($ MXN)</label>
             <input
               type="number"
               step="10"
               required
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 font-bold text-base focus:border-purple-500"
+              className="form-input font-bold text-base focus:border-purple-500"
             />
           </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">{desc}</p>
+          <p className="form-helper leading-relaxed">{desc}</p>
 
           <div className="flex space-x-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition"
+              className="btn-ghost flex-1"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5"
+              className="btn-purple flex-1"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Guardar</span>

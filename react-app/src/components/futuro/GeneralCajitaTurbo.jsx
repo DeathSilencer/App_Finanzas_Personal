@@ -135,23 +135,23 @@ export default function GeneralCajitaTurbo({
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* HERO CARD: ÚNICA CAJITA TURBO NU (13% ANUAL) - CONSOLIDADO REAL */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-purple-950/70 via-slate-900/90 to-slate-950 border border-purple-500/40 relative overflow-hidden shadow-2xl">
+      <div className="card-hero-purple">
         <div className="absolute -top-20 -right-20 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-3 max-w-2xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/40 text-xs font-black uppercase tracking-wider flex items-center space-x-1.5 shadow-sm">
+              <span className="badge-purple !py-1 !text-xs">
                 <span className="w-2 h-2 rounded-full bg-purple-400 animate-ping"></span>
                 <span>Cajita Turbo Nu • {tasaNu.toFixed(1)}% Anual Compuesto</span>
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800 text-[11px] font-bold">
+              <span className="badge-emerald">
                 🛡️ Acumulativo en Cada Cierre de Quincena
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800 text-[11px] font-bold">
+              <span className="badge-indigo">
                 ⚡ 6 Fondos en Nu (Quincena Actual)
               </span>
               {tieneRendimientos && (
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-950/90 text-amber-300 border border-amber-600/60 text-[11px] font-black flex items-center space-x-1 shadow-sm">
+                <span className="badge-amber font-black">
                   <Sparkles className="w-3 h-3 text-amber-400" />
                   <span>+{fmt(cajita.rendimientos_ganados_nu)} ganados en Nu (13%)</span>
                 </span>
@@ -171,8 +171,8 @@ export default function GeneralCajitaTurbo({
           </div>
 
           <div className="flex flex-col sm:flex-row lg:flex-col items-stretch sm:items-center lg:items-end gap-3 shrink-0">
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-purple-500/40 text-right space-y-0.5 shadow-xl">
-              <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">
+            <div className="card-glass-subtle text-right space-y-0.5 border-purple-500/40 shadow-xl w-full sm:w-auto">
+              <span className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider block">
                 Rendimiento Pasivo Mensual
               </span>
               <h4 className="text-2xl font-black text-emerald-400">+{fmt(rendMensual)} / mes</h4>
@@ -181,10 +181,10 @@ export default function GeneralCajitaTurbo({
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={() => setShowModalConciliar(true)}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-purple-300 border border-purple-500/40 text-xs font-bold transition shadow-lg flex items-center justify-center space-x-1.5"
+                className="btn-ghost !text-xs !min-h-[40px] text-purple-300 border-purple-500/40 flex-1 sm:flex-initial"
                 title="Ajustar o sincronizar saldo exacto con tu App Nu"
               >
                 <Sliders className="w-4 h-4 text-purple-400" />
@@ -192,14 +192,14 @@ export default function GeneralCajitaTurbo({
               </button>
               <button
                 onClick={onGoToOcio}
-                className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-1.5"
+                className="btn-purple !text-xs !min-h-[40px] flex-1 sm:flex-initial"
               >
                 <PartyPopper className="w-4 h-4" />
                 <span>Registrar Ocio</span>
               </button>
               <button
                 onClick={onOpenCerrarQuincena}
-                className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-1.5"
+                className="btn-success !text-xs !min-h-[40px] flex-1 sm:flex-initial"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Cerrar Quincena</span>
@@ -514,10 +514,10 @@ export default function GeneralCajitaTurbo({
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* TABLA CONSOLIDADA DE TODOS LOS FONDOS EN CAJITA NU (13%) */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <div className="glass-panel p-5 sm:p-6 rounded-2xl">
+      <div className="card-glass p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
-            <h3 className="text-base font-bold text-white flex items-center space-x-2">
+            <h3 className="text-sm sm:text-base font-bold text-white flex items-center space-x-2">
               <Coins className="w-4 h-4 text-purple-400" />
               <span>Matriz Consolidada de Fondos en Cajita Turbo Nu (13% Anual)</span>
             </h3>
@@ -525,24 +525,24 @@ export default function GeneralCajitaTurbo({
           </div>
           <button
             onClick={onGoToOcio}
-            className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition"
+            className="btn-amber !py-1.5 !px-3 !text-xs"
           >
             Registrar Gasto de Ocio
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm">
-            <thead className="bg-slate-900/90 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+        <div className="table-responsive-container">
+          <table className="table-modern">
+            <thead>
               <tr>
-                <th className="p-3.5">Fondo / Apartado</th>
-                <th className="p-3.5">Origen / Bloque</th>
-                <th className="p-3.5 text-right">Presupuesto ($)</th>
-                <th className="p-3.5 text-right">Gasto Real ($)</th>
-                <th className="p-3.5 text-right font-black text-white">Saldo en Nu ($)</th>
-                <th className="p-3.5 text-center">% en Cajita</th>
-                <th className="p-3.5 text-right">Rendimiento Mensual</th>
-                <th className="p-3.5 text-center">Estado</th>
+                <th className="table-modern-th">Fondo / Apartado</th>
+                <th className="table-modern-th">Origen / Bloque</th>
+                <th className="table-modern-th text-right">Presupuesto ($)</th>
+                <th className="table-modern-th text-right">Gasto Real ($)</th>
+                <th className="table-modern-th text-right font-black text-white">Saldo en Nu ($)</th>
+                <th className="table-modern-th text-center">% en Cajita</th>
+                <th className="table-modern-th text-right">Rendimiento Mensual</th>
+                <th className="table-modern-th text-center">Estado</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800 text-xs">
@@ -708,9 +708,9 @@ export default function GeneralCajitaTurbo({
       {/* MODAL: CONCILIAR SALDO REAL Y RENDIMIENTOS CON APP NU */}
       {/* ────────────────────────────────────────────────────────────────── */}
       {showModalConciliar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="glass-panel p-6 rounded-3xl border border-purple-500/40 shadow-2xl max-w-lg w-full bg-slate-900/95 relative overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+        <div className="modal-overlay">
+          <div className="modal-sheet border-purple-500/40">
+            <div className="modal-header">
               <div className="flex items-center space-x-2.5">
                 <div className="w-9 h-9 rounded-xl bg-purple-600/30 text-purple-300 border border-purple-500/40 flex items-center justify-center">
                   <Sliders className="w-5 h-5" />
@@ -749,7 +749,7 @@ export default function GeneralCajitaTurbo({
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">
+                <label className="form-label">
                   📱 Saldo Total Real en Cajitas Nu ($ MXN):
                 </label>
                 <input
@@ -759,15 +759,15 @@ export default function GeneralCajitaTurbo({
                   value={inputSaldoReal}
                   onChange={(e) => setInputSaldoReal(e.target.value)}
                   placeholder="Ej. 3682.95"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-bold text-base focus:border-purple-500 transition"
+                  className="form-input font-bold text-white text-base"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="form-helper">
                   Copia exactamente el número de "Total en Cajitas" de tu app Nu (ej. $3,682.95).
                 </p>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">
+                <label className="form-label">
                   📈 Rendimiento Reportado por Nu ($ MXN):
                 </label>
                 <input
@@ -776,9 +776,9 @@ export default function GeneralCajitaTurbo({
                   value={inputRendimiento}
                   onChange={(e) => setInputRendimiento(e.target.value)}
                   placeholder="Ej. 5.88"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-sm focus:border-purple-500 transition"
+                  className="form-input font-bold text-emerald-400"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="form-helper">
                   Monto verde de "Así ha crecido tu saldo en Cajitas: ↗ $5.88".
                 </p>
               </div>
@@ -787,14 +787,14 @@ export default function GeneralCajitaTurbo({
                 <button
                   type="button"
                   onClick={() => setShowModalConciliar(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition"
+                  className="btn-ghost"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={savingAjuste}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-emerald-600 hover:from-purple-500 hover:to-emerald-500 text-white font-bold transition shadow-lg shadow-purple-600/30 flex items-center space-x-2 disabled:opacity-50"
+                  className="btn-purple !bg-gradient-to-r !from-purple-600 !to-emerald-600 hover:!from-purple-500 hover:!to-emerald-500 disabled:opacity-50"
                 >
                   {savingAjuste ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   <span>Guardar y Sincronizar</span>

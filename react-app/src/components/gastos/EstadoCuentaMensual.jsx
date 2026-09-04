@@ -387,7 +387,7 @@ export default function EstadoCuentaMensual({
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* BARRA SUPERIOR DE CONTROLES (NO IMPRIMIBLE) */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <div className="glass-panel p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-teal-800/40 no-print">
+      <div className="card-glass p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-teal-800/40 no-print">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center border border-teal-500/30">
             <FileText className="w-5 h-5" />
@@ -407,7 +407,7 @@ export default function EstadoCuentaMensual({
               <select
                 value={activeMesStr}
                 onChange={(e) => setSelectedMesStr(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white font-bold focus:border-teal-500"
+                className="form-select text-xs font-bold py-1.5 px-3 w-auto focus:border-teal-500"
               >
                 {meses.map((m, idx) => (
                   <option key={idx} value={m.mes_anio}>
@@ -420,7 +420,7 @@ export default function EstadoCuentaMensual({
 
           <button
             onClick={() => window.print()}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-teal-900/40 transition flex items-center space-x-1.5 border border-teal-400/40"
+            className="btn-base bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white shadow-lg shadow-teal-900/40 border border-teal-400/40"
           >
             <Printer className="w-4 h-4" />
             <span>Imprimir / Guardar PDF</span>
@@ -428,7 +428,7 @@ export default function EstadoCuentaMensual({
 
           <button
             onClick={onOpenCerrarQuincena}
-            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-lg shadow-emerald-600/30 flex items-center space-x-1.5"
+            className="btn-success"
           >
             <PlusCircle className="w-3.5 h-3.5" />
             <span>Archivar Quincena</span>
@@ -439,34 +439,34 @@ export default function EstadoCuentaMensual({
       {/* ────────────────────────────────────────────────────────────────── */}
       {/* KPI CARDS RESUMEN RÁPIDO (SOLO PANTALLA) */}
       {/* ────────────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 no-print">
-        <div className="glass-panel p-5 rounded-2xl border-teal-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Ingreso Total Mensual</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-white mt-1">{fmt(ingresoTotal)}</h3>
-          <p className="text-xs text-teal-400 mt-2 font-semibold">
+      <div className="mobile-grid-kpi no-print">
+        <div className="card-kpi border-teal-500/30">
+          <span className="kpi-label">Ingreso Total Mensual</span>
+          <h3 className="kpi-val-white">{fmt(ingresoTotal)}</h3>
+          <p className="kpi-subtext text-teal-400 font-semibold">
             {mData ? `${mData.num_quincenas} quincena${mData.num_quincenas > 1 ? 's' : ''} consolidada${mData.num_quincenas > 1 ? 's' : ''}` : '0 quincenas'}
           </p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl border-rose-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Gastado en el Mes</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-rose-400 mt-1">{fmt(gastoRealTotal)}</h3>
-          <p className="text-xs text-slate-400 mt-2 font-medium">{pctGastadoMes}% del ingreso mensual</p>
+        <div className="card-kpi border-rose-500/30">
+          <span className="kpi-label">Total Gastado en el Mes</span>
+          <h3 className="kpi-val-rose">{fmt(gastoRealTotal)}</h3>
+          <p className="kpi-subtext">{pctGastadoMes}% del ingreso mensual</p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl border-emerald-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Ahorrado / Remanente</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">{fmt(remanenteTotal)}</h3>
-          <p className="text-xs text-emerald-400 mt-2 font-semibold">Dinero protegido en Cajita</p>
+        <div className="card-kpi border-emerald-500/30">
+          <span className="kpi-label">Total Ahorrado / Remanente</span>
+          <h3 className="kpi-val-emerald">{fmt(remanenteTotal)}</h3>
+          <p className="kpi-subtext text-emerald-400 font-semibold">Dinero protegido en Cajita</p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl border-purple-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aporte Acumulado Moto (80%)</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-purple-400 mt-1">{fmt(ahorroMotoTotal)}</h3>
-          <p className="text-xs text-purple-300 mt-2 font-semibold">Salidas (20%): {fmt(salidasTotal)}</p>
+        <div className="card-kpi border-purple-500/30">
+          <span className="kpi-label">Aporte Acumulado Moto (80%)</span>
+          <h3 className="kpi-val-purple">{fmt(ahorroMotoTotal)}</h3>
+          <p className="kpi-subtext text-purple-300 font-semibold">Salidas (20%): {fmt(salidasTotal)}</p>
         </div>
       </div>
 
       {/* GESTIÓN RÁPIDA DE QUINCENAS ARCHIVADAS (no-print) */}
       {hasData && mData.quincenas && mData.quincenas.length > 0 && (
-        <div className="glass-panel p-5 rounded-2xl border border-slate-800 no-print space-y-3">
+        <div className="card-glass p-4 sm:p-5 border-slate-800 no-print space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 rounded-full bg-teal-400"></span>
@@ -477,32 +477,32 @@ export default function EstadoCuentaMensual({
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/90 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+          <div className="table-responsive-container">
+            <table className="table-modern">
+              <thead>
                 <tr>
-                  <th className="p-2.5">Período</th>
-                  <th className="p-2.5 text-center">Fecha Cierre</th>
-                  <th className="p-2.5 text-right">Presupuesto</th>
-                  <th className="p-2.5 text-right">Gasto Real</th>
-                  <th className="p-2.5 text-right">Remanente Ahorrado</th>
-                  <th className="p-2.5 text-right">Ahorro Moto (80%)</th>
-                  <th className="p-2.5 text-center">Acción</th>
+                  <th className="table-modern-th">Período</th>
+                  <th className="table-modern-th text-center">Fecha Cierre</th>
+                  <th className="table-modern-th text-right">Presupuesto</th>
+                  <th className="table-modern-th text-right">Gasto Real</th>
+                  <th className="table-modern-th text-right">Remanente Ahorrado</th>
+                  <th className="table-modern-th text-right">Ahorro Moto (80%)</th>
+                  <th className="table-modern-th text-center">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/80">
                 {mData.quincenas.map((q, idx) => (
-                  <tr key={q.id || idx} className="hover:bg-slate-800/40 transition">
-                    <td className="p-2.5 font-bold text-white whitespace-nowrap">{q.periodo}</td>
-                    <td className="p-2.5 text-center text-slate-400 whitespace-nowrap">{q.fecha_cierre}</td>
-                    <td className="p-2.5 text-right text-slate-300 font-semibold">{fmt(q.presupuesto)}</td>
-                    <td className="p-2.5 text-right text-rose-400 font-bold">{q.gasto_real > 0 ? '-' + fmt(q.gasto_real) : '$0.00'}</td>
-                    <td className="p-2.5 text-right text-emerald-400 font-black">{fmt(q.remanente)}</td>
-                    <td className="p-2.5 text-right text-purple-300 font-bold">{fmt(q.ahorro_moto_80)}</td>
-                    <td className="p-2.5 text-center">
+                  <tr key={q.id || idx} className="table-modern-tr">
+                    <td className="table-modern-td font-bold text-white whitespace-nowrap">{q.periodo}</td>
+                    <td className="table-modern-td text-center text-slate-400 whitespace-nowrap">{q.fecha_cierre}</td>
+                    <td className="table-modern-td text-right text-slate-300 font-semibold">{fmt(q.presupuesto)}</td>
+                    <td className="table-modern-td text-right text-rose-400 font-bold">{q.gasto_real > 0 ? '-' + fmt(q.gasto_real) : '$0.00'}</td>
+                    <td className="table-modern-td text-right text-emerald-400 font-black">{fmt(q.remanente)}</td>
+                    <td className="table-modern-td text-right text-purple-300 font-bold">{fmt(q.ahorro_moto_80)}</td>
+                    <td className="table-modern-td text-center">
                       <button
                         onClick={() => onDeleteCierre(q.id)}
-                        className="px-2.5 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 text-xs font-bold transition flex items-center space-x-1 mx-auto"
+                        className="btn-danger !min-h-[32px] !py-1 !px-2.5 mx-auto"
                         title="Eliminar quincena del histórico"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

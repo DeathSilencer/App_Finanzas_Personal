@@ -64,9 +64,9 @@ export default function DashboardMaestro({ futuroData = {}, onOpenConfig }) {
   return (
     <div className="space-y-6">
       {/* Header Resumen */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="card-glass p-5 sm:p-7 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-black uppercase">
+          <span className="badge-indigo">
             Sistema 50/30/10/5/5
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-white mt-2">
@@ -78,7 +78,7 @@ export default function DashboardMaestro({ futuroData = {}, onOpenConfig }) {
         </div>
         <button
           onClick={onOpenConfig}
-          className="px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition shrink-0"
+          className="btn-amber shrink-0 w-full sm:w-auto"
         >
           Ajustar Parámetros Maestros
         </button>
@@ -87,10 +87,10 @@ export default function DashboardMaestro({ futuroData = {}, onOpenConfig }) {
       {/* Grid de 5 Reglas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((item, idx) => (
-          <div key={idx} className={`glass-panel p-5 rounded-2xl border ${item.color} flex flex-col justify-between space-y-3`}>
+          <div key={idx} className={`card-glass p-5 flex flex-col justify-between space-y-3 ${item.color}`}>
             <div>
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{item.paso}</span>
+                <span className="kpi-label">{item.paso}</span>
                 <span className="text-xs font-black px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-700">{item.pct}%</span>
               </div>
               <h4 className="text-base font-bold text-white mt-2">{item.titulo}</h4>

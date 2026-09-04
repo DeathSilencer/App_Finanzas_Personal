@@ -14,8 +14,8 @@ export default function TDCSideReminder({ isOpen, onClose, tdcData, onGoToTDC })
   const diasRestantes = tdcData?.dias_restantes_corte ?? 23;
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 transition-all duration-500 max-w-sm w-full pointer-events-auto">
-      <div className="glass-panel p-5 rounded-3xl border border-purple-500/40 shadow-2xl shadow-purple-950/80 bg-gradient-to-b from-slate-900/95 via-purple-950/50 to-slate-950/95 relative overflow-hidden backdrop-blur-xl">
+    <div className="fixed bottom-4 left-4 right-4 sm:right-auto sm:bottom-6 sm:left-6 z-50 transition-all duration-500 max-w-sm w-auto sm:w-full pointer-events-auto">
+      <div className="card-glass p-5 rounded-3xl border border-purple-500/40 shadow-2xl shadow-purple-950/80 bg-gradient-to-b from-slate-900/95 via-purple-950/50 to-slate-950/95 relative overflow-hidden backdrop-blur-xl">
         <div className="absolute -top-10 -right-10 w-28 h-28 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
         <div className="flex items-center justify-between border-b border-slate-800/80 pb-3 mb-3">
           <div className="flex items-center space-x-2.5">
@@ -25,7 +25,7 @@ export default function TDCSideReminder({ isOpen, onClose, tdcData, onGoToTDC })
             <div>
               <h4 className="text-xs font-bold text-white tracking-wide flex items-center space-x-1.5">
                 <span>Tarjeta de Crédito Nu</span>
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-800">
+                <span className="badge-emerald">
                   TOTALERO
                 </span>
               </h4>
@@ -43,12 +43,12 @@ export default function TDCSideReminder({ isOpen, onClose, tdcData, onGoToTDC })
 
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+            <div className="card-glass-subtle">
               <p className="text-[10px] text-slate-400 font-semibold">💳 Llevas Gastado / Deuda:</p>
               <p className="text-base font-black text-rose-400 mt-0.5">{fmt(deuda)}</p>
               <p className="text-[9px] text-slate-500">{usoPct}% de tu límite</p>
             </div>
-            <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-800">
+            <div className="card-glass-subtle">
               <p className="text-[10px] text-slate-400 font-semibold">🟢 Saldo Disponible:</p>
               <p className="text-base font-black text-emerald-400 mt-0.5">{fmt(disponible)}</p>
               <p className="text-[9px] text-slate-500">Límite: {fmt(limite)}</p>
@@ -82,14 +82,14 @@ export default function TDCSideReminder({ isOpen, onClose, tdcData, onGoToTDC })
               onClose();
               if (onGoToTDC) onGoToTDC();
             }}
-            className="flex-1 py-1.5 text-center bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-1.5"
+            className="btn-purple flex-1 !py-1.5 !text-xs !min-h-[36px]"
           >
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="w-3.5 h-3.5" />
             <span>Ir a Control TDC</span>
           </button>
           <button
             onClick={onClose}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition"
+            className="btn-ghost !py-1.5 !px-3 !text-xs !min-h-[36px]"
           >
             Entendido
           </button>

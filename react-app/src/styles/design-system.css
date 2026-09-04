@@ -1,215 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  margin: 0;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: #0b1120;
-  color: #f8fafc;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Glass panel */
-.glass-panel {
-  background: rgba(30, 41, 59, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(51, 65, 85, 0.6);
-}
-
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0b1120;
-}
-::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #334155;
-}
-
-/* ─────────────────────────────────────────────────────────────────────────────
-   ESTADO DE CUENTA: ESTILOS FORMALES E INSTITUCIONALES (PANTALLA & IMPRESIÓN)
-   ───────────────────────────────────────────────────────────────────────────── */
-
-.ec-doc {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #0f172a;
-}
-
-.ec-header-box {
-  border: 1.5px solid #000000;
-  background-color: #f1f5f9;
-}
-
-.ec-meta-box {
-  border: 1.5px solid #000000;
-  background-color: #ffffff;
-}
-
-.ec-section-bar {
-  background-color: #0f172a;
-  color: #ffffff;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.ec-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-}
-
-.ec-table th {
-  border-top: 1.5px solid #000000;
-  border-bottom: 1.5px solid #000000;
-  background-color: #f8fafc;
-  color: #0f172a;
-  font-weight: 800;
-  text-transform: uppercase;
-  padding: 5px 8px;
-}
-
-.ec-table td {
-  border-bottom: 1px solid #e2e8f0;
-  padding: 4.5px 8px;
-  color: #1e293b;
-}
-
-.ec-table tr:hover td {
-  background-color: #f8fafc;
-}
-
-.ec-total-bar {
-  border: 1.5px solid #000000;
-  background-color: #f8fafc;
-  font-weight: 900;
-}
-
-.ec-badge-letter {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  line-height: 18px;
-  text-align: center;
-  background-color: #000000;
-  color: #ffffff;
-  font-weight: 900;
-  font-size: 11px;
-  border-radius: 2px;
-  margin-right: 6px;
-}
-
-/* Colores institucionales de saldo */
-.ec-blue { color: #1d4ed8 !important; font-weight: 700; }
-.ec-red  { color: #dc2626 !important; font-weight: 700; }
-.ec-green{ color: #15803d !important; font-weight: 800; }
-.ec-dark { color: #000000 !important; font-weight: 800; }
-
-@page {
-  size: letter portrait;
-  margin: 8mm 10mm 8mm 10mm;
-}
-
-@media print {
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  html, body {
-    background: #ffffff !important;
-    color: #000000 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  header, nav, button, .no-print {
-    display: none !important;
-  }
-
-  #print-estado-cuenta {
-    display: block !important;
-    visibility: visible !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: #ffffff !important;
-    color: #000000 !important;
-    border-radius: 0 !important;
-  }
-
-  .ec-header-box {
-    border: 1.5px solid #000000 !important;
-    background-color: #f1f5f9 !important;
-  }
-
-  .ec-meta-box {
-    border: 1.5px solid #000000 !important;
-    background-color: #ffffff !important;
-  }
-
-  .ec-section-bar {
-    background-color: #000000 !important;
-    color: #ffffff !important;
-    border: 1px solid #000000 !important;
-    padding: 3.5px 6px !important;
-  }
-
-  .ec-table {
-    font-size: 9.5px !important;
-  }
-
-  .ec-table th {
-    border-top: 1.5px solid #000000 !important;
-    border-bottom: 1.5px solid #000000 !important;
-    background-color: #f1f5f9 !important;
-    color: #000000 !important;
-    font-weight: 800 !important;
-    padding: 3.5px 5px !important;
-  }
-
-  .ec-table td {
-    border-bottom: 1px solid #cbd5e1 !important;
-    padding: 3px 5px !important;
-    color: #000000 !important;
-  }
-
-  .ec-total-bar {
-    border: 1.5px solid #000000 !important;
-    background-color: #f1f5f9 !important;
-    padding: 4px 6px !important;
-  }
-
-  .ec-card-block {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    margin-bottom: 10px !important;
-  }
-
-  .ec-blue { color: #0044cc !important; }
-  .ec-red  { color: #cc0000 !important; }
-  .ec-green{ color: #007700 !important; }
-  .ec-dark { color: #000000 !important; }
-}
-
 /* ==========================================================================
    DESIGN SYSTEM: SISTEMA DE CLASES DE DISEÑO Y RESPONSIVIDAD MÓVIL
+   Archivo: src/styles/design-system.css
    ========================================================================== */
 
 @layer components {
@@ -345,6 +136,7 @@ body {
   }
 
   /* ── 5. Formularios y Entradas (Mobile Anti-Zoom) ───────────────────────── */
+  /* Nota: Usar text-base en móvil (16px) previene que Safari / Chrome en iOS/Android hagan zoom automático */
   .form-input {
     @apply w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 
            text-white text-base sm:text-sm font-medium
@@ -393,11 +185,11 @@ body {
   .nav-tabs-ribbon {
     @apply flex space-x-2 border-b border-slate-800 pb-2 overflow-x-auto scroll-smooth;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    scrollbar-width: none; /* Firefox */
   }
 
   .nav-tabs-ribbon::-webkit-scrollbar {
-    display: none;
+    display: none; /* Chrome, Safari, Edge */
   }
 
   .nav-tab-btn {

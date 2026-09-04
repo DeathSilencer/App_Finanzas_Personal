@@ -62,37 +62,37 @@ export default function RegistroOcio({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 4 KPIs de Ocio */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-panel p-5 rounded-2xl">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Presupuesto Quincenal Ocio</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-white mt-1">{fmt(presupuesto)}</h3>
-          <p className="text-xs text-amber-400 mt-2 font-semibold">Paso 7: Salidas, gustos &amp; diversión</p>
+      <div className="mobile-grid-kpi">
+        <div className="card-kpi">
+          <span className="kpi-label">Presupuesto Quincenal Ocio</span>
+          <h3 className="kpi-val-white">{fmt(presupuesto)}</h3>
+          <p className="kpi-subtext text-amber-400 font-semibold truncate">Paso 7: Salidas, gustos &amp; diversión</p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gasto Real Actual</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-rose-400 mt-1">{fmt(gastado)}</h3>
-          <p className="text-xs text-slate-400 mt-2 font-medium">{pctConsumido}% consumido</p>
+        <div className="card-kpi">
+          <span className="kpi-label">Gasto Real Actual</span>
+          <h3 className="kpi-val-rose">{fmt(gastado)}</h3>
+          <p className="kpi-subtext">{pctConsumido}% consumido</p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo Disponible para Gastar</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1">{fmt(disponible)}</h3>
-          <p className="text-xs text-slate-300 mt-2 font-medium">Libre para comidas o salidas</p>
+        <div className="card-kpi">
+          <span className="kpi-label">Saldo Disponible para Gastar</span>
+          <h3 className="kpi-val-emerald">{fmt(disponible)}</h3>
+          <p className="kpi-subtext truncate">Libre para comidas o salidas</p>
         </div>
-        <div className="glass-panel p-5 rounded-2xl border-purple-500/30">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Resguardo en Cajita Turbo</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-purple-400 mt-1">{fmt(totalCajita)}</h3>
-          <p className="text-xs text-purple-300 mt-2 font-semibold">Incluye Emergencia + Retiro + Ocio</p>
+        <div className="card-kpi border-purple-500/30">
+          <span className="kpi-label">Resguardo en Cajita Turbo</span>
+          <h3 className="kpi-val-purple">{fmt(totalCajita)}</h3>
+          <p className="kpi-subtext text-purple-300 font-semibold truncate">Emergencia + Retiro + Ocio</p>
         </div>
       </div>
 
       {/* Barra de Progreso de Ocio */}
-      <div className="glass-panel p-5 rounded-2xl">
+      <div className="card-glass p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-slate-300">Consumo del Presupuesto de Ocio ({fmt(presupuesto)}):</span>
-            <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40">
+            <span className="text-xs font-bold text-slate-300">Consumo de Ocio ({fmt(presupuesto)}):</span>
+            <span className="badge-rose">
               Gastado: {fmt(gastado)}
             </span>
           </div>
@@ -100,9 +100,9 @@ export default function RegistroOcio({
             <span className="text-xs font-bold text-emerald-400">Disponible: {fmt(disponible)}</span>
             <button
               onClick={onOpenCerrarQuincena}
-              className="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition flex items-center space-x-1"
+              className="btn-success !py-1 !px-2.5 !text-xs !min-h-[32px]"
             >
-              <CheckCircle2 className="w-3 h-3" />
+              <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Cerrar Quincena</span>
             </button>
           </div>
@@ -116,48 +116,48 @@ export default function RegistroOcio({
       </div>
 
       {/* Grid: Botones Rápidos + Formulario + Tabla Bitácora */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Columna Izquierda: Botones Rápidos y Formulario */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Botones Rápidos */}
-          <div className="glass-panel p-5 rounded-2xl">
+          <div className="card-glass p-4 sm:p-5">
             <h3 className="text-sm font-bold text-white mb-3 flex items-center space-x-2">
               <Zap className="w-4 h-4 text-amber-400" />
               <span>Botones Rápidos de Ocio (1 Clic)</span>
             </h3>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
               {quickItems.map((item, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleQuickClick(item)}
-                  className="p-3 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-left transition hover:scale-[1.02] flex flex-col justify-between"
+                  className="btn-quick"
                 >
-                  <span className="text-xs text-slate-300 font-semibold truncate">{item.label}</span>
-                  <span className="text-base font-black text-amber-400 mt-1">{fmt(item.monto)}</span>
+                  <span className="text-xs text-slate-300 font-semibold truncate block">{item.label}</span>
+                  <span className="text-sm sm:text-base font-black text-amber-400 mt-1 block">{fmt(item.monto)}</span>
                 </button>
               ))}
             </div>
           </div>
 
           {/* Formulario Personalizado */}
-          <div className="glass-panel p-5 rounded-2xl">
+          <div className="card-glass p-4 sm:p-5">
             <h3 className="text-sm font-bold text-white mb-3 flex items-center space-x-2">
               <PlusCircle className="w-4 h-4 text-purple-400" />
               <span>Registrar Gasto de Ocio</span>
             </h3>
             <form onSubmit={handleSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-400 font-medium">Fecha</label>
+                <label className="form-label">Fecha</label>
                 <input
                   type="date"
                   required
                   value={fecha}
                   onChange={(e) => setFecha(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-purple-500"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-medium">Monto ($ MXN)</label>
+                <label className="form-label">Monto ($ MXN)</label>
                 <input
                   type="number"
                   step="0.5"
@@ -165,15 +165,15 @@ export default function RegistroOcio({
                   placeholder="0.00"
                   value={monto}
                   onChange={(e) => setMonto(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-purple-500 font-bold"
+                  className="form-input font-bold text-amber-400"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-medium">Categoría de Ocio</label>
+                <label className="form-label">Categoría de Ocio</label>
                 <select
                   value={categoria}
                   onChange={(e) => setCategoria(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-select"
                 >
                   <option value="🍕 Salidas &amp; Gustos">🍕 Salidas &amp; Gustos</option>
                   <option value="🎬 Cine &amp; Entretenimiento">🎬 Cine &amp; Entretenimiento</option>
@@ -184,22 +184,22 @@ export default function RegistroOcio({
                 </select>
               </div>
               <div>
-                <label className="text-slate-400 font-medium">Concepto / Detalle</label>
+                <label className="form-label">Concepto / Detalle</label>
                 <input
                   type="text"
                   required
                   placeholder="Ej. Tacos con amigos o cine"
                   value={concepto}
                   onChange={(e) => setConcepto(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white mt-1 focus:border-purple-500"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-medium">Método de Pago</label>
+                <label className="form-label">Método de Pago</label>
                 <select
                   value={metodo}
                   onChange={(e) => setMetodo(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-select"
                 >
                   <option value="Débito Nu">Débito Nu (Cajita)</option>
                   <option value="Efectivo">Efectivo</option>
@@ -216,7 +216,7 @@ export default function RegistroOcio({
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg transition shadow-lg shadow-purple-600/30"
+                className="btn-purple w-full mt-2"
               >
                 Guardar Gasto de Ocio en SQLite
               </button>
@@ -225,41 +225,41 @@ export default function RegistroOcio({
         </div>
 
         {/* Columna Derecha: Tabla Bitácora de Ocio */}
-        <div className="glass-panel p-5 rounded-2xl lg:col-span-2 flex flex-col">
+        <div className="card-glass p-4 sm:p-5 lg:col-span-2 flex flex-col">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+              <h3 className="text-sm sm:text-base font-bold text-white flex items-center space-x-2">
                 <List className="w-4 h-4 text-purple-400" />
                 <span>Bitácora de Gastos de Ocio</span>
               </h3>
               <p className="text-xs text-slate-400">Actualiza automáticamente tu disponible en Cajita Turbo</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 text-xs font-semibold">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="badge-slate">
                 {registros.length} registros
               </span>
               <button
                 onClick={onOpenCerrarQuincena}
-                className="px-3 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold transition flex items-center space-x-1"
+                className="btn-success !py-1 !px-2.5 !text-xs !min-h-[32px]"
               >
-                <CheckCircle2 className="w-3 h-3" />
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Cerrar Quincena</span>
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto flex-1 max-h-[500px] overflow-y-auto border border-slate-800 rounded-xl">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/90 sticky top-0 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+          <div className="table-responsive-container flex-1 max-h-[500px] overflow-y-auto">
+            <table className="table-modern">
+              <thead className="sticky top-0 z-10">
                 <tr>
-                  <th className="p-3">#</th>
-                  <th className="p-3">Fecha</th>
-                  <th className="p-3">Día</th>
-                  <th className="p-3 text-right">Monto</th>
-                  <th className="p-3">Categoría</th>
-                  <th className="p-3">Concepto</th>
-                  <th className="p-3">Método</th>
-                  <th className="p-3 text-center">Acciones</th>
+                  <th className="table-modern-th">#</th>
+                  <th className="table-modern-th">Fecha</th>
+                  <th className="table-modern-th">Día</th>
+                  <th className="table-modern-th text-right">Monto</th>
+                  <th className="table-modern-th">Categoría</th>
+                  <th className="table-modern-th">Concepto</th>
+                  <th className="table-modern-th">Método</th>
+                  <th className="table-modern-th text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
@@ -271,15 +271,15 @@ export default function RegistroOcio({
                   </tr>
                 ) : (
                   registros.map((r, index) => (
-                    <tr key={r.id || index} className="hover:bg-slate-800/40 transition">
-                      <td className="p-3 text-slate-500 font-medium">#{r.id || index + 1}</td>
-                      <td className="p-3 text-slate-300 whitespace-nowrap">{r.fecha}</td>
-                      <td className="p-3 text-slate-400">{r.dia}</td>
-                      <td className="p-3 text-right font-black text-rose-400">{fmt(r.monto)}</td>
-                      <td className="p-3 text-amber-300 font-medium whitespace-nowrap">{r.categoria}</td>
-                      <td className="p-3 text-white font-medium">{r.concepto}</td>
-                      <td className="p-3 text-slate-300">{r.metodo_pago}</td>
-                      <td className="p-3 text-center">
+                    <tr key={r.id || index} className="table-modern-tr">
+                      <td className="table-modern-td text-slate-500 font-medium">#{r.id || index + 1}</td>
+                      <td className="table-modern-td text-slate-300 whitespace-nowrap">{r.fecha}</td>
+                      <td className="table-modern-td text-slate-400">{r.dia}</td>
+                      <td className="table-modern-td text-right font-black text-rose-400">{fmt(r.monto)}</td>
+                      <td className="table-modern-td text-amber-300 font-medium whitespace-nowrap">{r.categoria}</td>
+                      <td className="table-modern-td text-white font-medium">{r.concepto}</td>
+                      <td className="table-modern-td text-slate-300">{r.metodo_pago}</td>
+                      <td className="table-modern-td text-center">
                         <button
                           onClick={() => onDeleteGastoOcio(r.id)}
                           className="p-1.5 hover:bg-rose-500/20 text-rose-400 rounded-lg transition"

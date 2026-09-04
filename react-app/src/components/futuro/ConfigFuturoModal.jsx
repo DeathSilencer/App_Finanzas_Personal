@@ -61,11 +61,11 @@ export default function ConfigFuturoModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="glass-panel p-6 sm:p-7 rounded-3xl max-w-xl w-full border border-purple-500/30 shadow-2xl relative space-y-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div className="modal-overlay">
+      <div className="modal-sheet max-w-xl border border-purple-500/30">
+        <div className="modal-header">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/30">
               <Sliders className="w-4 h-4" />
             </div>
             <div>
@@ -73,142 +73,142 @@ export default function ConfigFuturoModal({
               <p className="text-xs text-slate-400">Plan a Futuro &amp; Regla 50/30/10/5/5</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg">
+          <button onClick={onClose} className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* Ingreso y Tasas */}
-          <div>
-            <h4 className="font-bold text-purple-300 mb-2">Ingreso y Tasas Anuales:</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="card-glass-subtle space-y-2">
+            <h4 className="font-bold text-purple-300">Ingreso y Tasas Anuales:</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               <div>
-                <label className="text-slate-400 font-semibold">Sueldo Qna ($)</label>
+                <label className="form-label">Sueldo Qna ($)</label>
                 <input
                   type="number"
                   step="100"
                   required
                   value={ingreso}
                   onChange={(e) => setIngreso(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1 font-bold text-emerald-400"
+                  className="form-input font-bold text-emerald-400"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">Tasa Nu (%)</label>
+                <label className="form-label">Tasa Nu (%)</label>
                 <input
                   type="number"
                   step="0.1"
                   required
                   value={tasaNu}
                   onChange={(e) => setTasaNu(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">Tasa Cetes (%)</label>
+                <label className="form-label">Tasa Cetes (%)</label>
                 <input
                   type="number"
                   step="0.01"
                   required
                   value={tasaCetes}
                   onChange={(e) => setTasaCetes(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">Tasa AFORE (%)</label>
+                <label className="form-label">Tasa AFORE (%)</label>
                 <input
                   type="number"
                   step="0.1"
                   required
                   value={tasaAfore}
                   onChange={(e) => setTasaAfore(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
             </div>
           </div>
 
           {/* Porcentajes Regla 50/30/10/5/5 */}
-          <div>
-            <h4 className="font-bold text-purple-300 mb-2">Distribución Porcentual (%):</h4>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <div className="card-glass-subtle space-y-2">
+            <h4 className="font-bold text-purple-300">Distribución Porcentual (%):</h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
               <div>
-                <label className="text-slate-400 font-semibold">P1 Cetes (%)</label>
+                <label className="form-label">P1 Cetes (%)</label>
                 <input
                   type="number"
                   step="1"
                   required
                   value={pctP1}
                   onChange={(e) => setPctP1(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">P2 Básicos (%)</label>
+                <label className="form-label">P2 Básicos (%)</label>
                 <input
                   type="number"
                   step="1"
                   required
                   value={pctP2}
                   onChange={(e) => setPctP2(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">P7 Ocio (%)</label>
+                <label className="form-label">P7 Ocio (%)</label>
                 <input
                   type="number"
                   step="1"
                   required
                   value={pctP7}
                   onChange={(e) => setPctP7(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">P3 Emerg. (%)</label>
+                <label className="form-label">P3 Emerg. (%)</label>
                 <input
                   type="number"
                   step="1"
                   required
                   value={pctP3}
                   onChange={(e) => setPctP3(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">P6 Retiro (%)</label>
+                <label className="form-label">P6 Retiro (%)</label>
                 <input
                   type="number"
                   step="1"
                   required
                   value={pctP6}
                   onChange={(e) => setPctP6(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
             </div>
           </div>
 
           {/* Parámetros Tarjeta de Crédito Nu */}
-          <div>
-            <h4 className="font-bold text-purple-300 mb-2">Parámetros Tarjeta Nu:</h4>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="card-glass-subtle space-y-2">
+            <h4 className="font-bold text-purple-300">Parámetros Tarjeta Nu:</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div>
-                <label className="text-slate-400 font-semibold">Límite Crédito ($)</label>
+                <label className="form-label">Límite Crédito ($)</label>
                 <input
                   type="number"
                   step="100"
                   required
                   value={tdcLimite}
                   onChange={(e) => setTdcLimite(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1 font-bold"
+                  className="form-input font-bold"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">Día de Corte</label>
+                <label className="form-label">Día de Corte</label>
                 <input
                   type="number"
                   step="1"
@@ -217,11 +217,11 @@ export default function ConfigFuturoModal({
                   required
                   value={tdcCorte}
                   onChange={(e) => setTdcCorte(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-semibold">Día Límite Pago</label>
+                <label className="form-label">Día Límite Pago</label>
                 <input
                   type="number"
                   step="1"
@@ -230,7 +230,7 @@ export default function ConfigFuturoModal({
                   required
                   value={tdcPago}
                   onChange={(e) => setTdcPago(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-white mt-1"
+                  className="form-input"
                 />
               </div>
             </div>
@@ -240,13 +240,13 @@ export default function ConfigFuturoModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-xs transition"
+              className="btn-ghost flex-1"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-1.5 shadow-lg shadow-purple-600/30"
+              className="btn-purple flex-1"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Guardar en SQLite</span>
