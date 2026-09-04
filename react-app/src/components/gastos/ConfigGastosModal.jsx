@@ -175,7 +175,7 @@ export default function ConfigGastosModal({ isOpen, onClose, config = {}, onSave
               className="btn-amber flex-1 !bg-amber-600 hover:!bg-amber-500 text-white font-bold"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Guardar en SQLite</span>
+              <span>Guardar en la Nube</span>
             </button>
           </div>
         </form>

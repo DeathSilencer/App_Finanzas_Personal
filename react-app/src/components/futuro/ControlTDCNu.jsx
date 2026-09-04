@@ -22,24 +22,29 @@ export default function ControlTDCNu({
   const [categoria, setCategoria] = useState('Básicos');
   const [tipo, setTipo] = useState('Gasto Diario');
   const [apartado, setApartado] = useState('Sí (En Cajita)');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const val = parseFloat(monto);
-    if (isNaN(val) || val <= 0) return;
+    if (isNaN(val) || val <= 0 || isSubmitting) return;
 
-    onAddCompra({
-      fecha,
-      monto: val,
-      concepto: concepto.trim() || 'Compra TDC Nu',
-      categoria,
-      tipo,
-      apartado,
-      estado: 'Pendiente'
-    });
-
-    setMonto('');
-    setConcepto('');
+    setIsSubmitting(true);
+    try {
+      await onAddCompra({
+        fecha,
+        monto: val,
+        concepto: concepto.trim() || 'Compra TDC Nu',
+        categoria,
+        tipo,
+        apartado,
+        estado: 'Pendiente'
+      });
+      setMonto('');
+      setConcepto('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -136,9 +141,10 @@ export default function ControlTDCNu({
             </div>
             <button
               type="submit"
-              className="btn-purple w-full mt-2"
+              disabled={isSubmitting}
+              className={`btn-purple w-full mt-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              Guardar Compra en SQLite
+              {isSubmitting ? 'Guardando...' : 'Guardar Compra en la Nube'}
             </button>
           </form>
 

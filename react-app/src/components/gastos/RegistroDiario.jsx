@@ -15,6 +15,7 @@ export default function RegistroDiario({
   const [concepto, setConcepto] = useState('');
   const [metodo, setMetodo] = useState('Efectivo');
   const [retirado, setRetirado] = useState('Sí (Efectivo)');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const quickButtons = [
     { label: '🚌 Combi Ida', monto: 16, cat: '🚌 Pasajes Combi (Efectivo)', con: 'Combi de ida' },
@@ -27,33 +28,43 @@ export default function RegistroDiario({
     { label: '✏️ Papelería / Útiles', monto: 35, cat: '📄 Copias, Material & Papelería', con: 'Material escolar' }
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const val = parseFloat(monto);
-    if (isNaN(val) || val <= 0) return;
+    if (isNaN(val) || val <= 0 || isSubmitting) return;
 
-    onAddGasto({
-      fecha,
-      monto: val,
-      categoria,
-      concepto: concepto.trim() || 'Gasto registrado',
-      metodo,
-      retirado
-    });
-
-    setMonto('');
-    setConcepto('');
+    setIsSubmitting(true);
+    try {
+      await onAddGasto({
+        fecha,
+        monto: val,
+        categoria,
+        concepto: concepto.trim() || 'Gasto registrado',
+        metodo,
+        retirado
+      });
+      setMonto('');
+      setConcepto('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleQuickClick = (item) => {
-    onAddGasto({
-      fecha: getTodayDate(),
-      monto: item.monto,
-      categoria: item.cat,
-      concepto: item.con,
-      metodo: 'Efectivo',
-      retirado: 'Sí (Efectivo)'
-    });
+  const handleQuickClick = async (item) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onAddGasto({
+        fecha: getTodayDate(),
+        monto: item.monto,
+        categoria: item.cat,
+        concepto: item.con,
+        metodo: 'Efectivo',
+        retirado: 'Sí (Efectivo)'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,8 +81,10 @@ export default function RegistroDiario({
             {quickButtons.map((btn, idx) => (
               <button
                 key={idx}
+                type="button"
+                disabled={isSubmitting}
                 onClick={() => handleQuickClick(btn)}
-                className="btn-quick"
+                className={`btn-quick ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <span className="text-xs text-slate-300 font-semibold truncate block">{btn.label}</span>
                 <span className="text-sm sm:text-base font-black text-indigo-400 mt-1 block">{fmt(btn.monto)}</span>
@@ -171,9 +184,10 @@ export default function RegistroDiario({
 
             <button
               type="submit"
-              className="btn-primary w-full mt-2"
+              disabled={isSubmitting}
+              className={`btn-primary w-full mt-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              Guardar Gasto en SQLite
+              {isSubmitting ? 'Guardando...' : 'Guardar Gasto en la Nube'}
             </button>
           </form>
         </div>
@@ -187,7 +201,7 @@ export default function RegistroDiario({
               <List className="w-4 h-4 text-indigo-400" />
               <span>Historial de Gastos Activos</span>
             </h3>
-            <p className="text-xs text-slate-400">Persistencia instantánea sin bloqueos de Excel</p>
+            <p className="text-xs text-slate-400">Sincronización instantánea Nube 24/7</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="badge-slate">

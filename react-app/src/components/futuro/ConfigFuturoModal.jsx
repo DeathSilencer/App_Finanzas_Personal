@@ -249,7 +249,7 @@ export default function ConfigFuturoModal({
               className="btn-purple flex-1"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Guardar en SQLite</span>
+              <span>Guardar en la Nube</span>
             </button>
           </div>
         </form>

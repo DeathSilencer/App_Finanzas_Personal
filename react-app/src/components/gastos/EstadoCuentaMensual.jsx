@@ -954,7 +954,7 @@ export default function EstadoCuentaMensual({
                 k NOTA DE AUDITORÍA Y CONTROL:
               </p>
               <p>
-                ESTE DOCUMENTO ES UN ESTADO DE CUENTA CONSOLIDADO GENERADO AUTOMÁTICAMENTE A PARTIR DE TUS REGISTROS EN BASE DE DATOS SQLITE (<b className="text-slate-800">finanzas.db</b>).
+                ESTE DOCUMENTO ES UN ESTADO DE CUENTA CONSOLIDADO GENERADO AUTOMÁTICAMENTE A PARTIR DE TUS REGISTROS EN LA NUBE 24/7 (<b className="text-slate-800">Cloud Firestore</b>).
               </p>
               <p className="text-[9px] text-slate-500">
                 Cálculos sincronizados con fórmulas exactas de rendimiento anualizado en Cajita Turbo Nu (13% anual sobre saldo digital resguardado, excluyendo efectivo retirado). Válido para control personal y administración presupuestaria.

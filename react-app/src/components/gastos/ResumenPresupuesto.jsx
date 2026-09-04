@@ -216,7 +216,7 @@ export default function ResumenPresupuesto({
               <span>Tabla de Control de Gastos por Categoría</span>
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Cálculos automáticos sincronizados con SQLite
+              Cálculos automáticos sincronizados con la Nube 24/7 (Cloud Firestore)
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

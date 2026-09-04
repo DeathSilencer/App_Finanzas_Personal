@@ -145,7 +145,7 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
               type="submit"
               className="btn-amber w-full !bg-amber-600 hover:!bg-amber-500 text-white font-bold"
             >
-              Guardar Aporte en SQLite
+              Guardar Aporte en la Nube
             </button>
           </form>
         </div>

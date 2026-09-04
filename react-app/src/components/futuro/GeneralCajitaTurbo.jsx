@@ -521,7 +521,7 @@ export default function GeneralCajitaTurbo({
               <Coins className="w-4 h-4 text-purple-400" />
               <span>Matriz Consolidada de Fondos en Cajita Turbo Nu (13% Anual)</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">Sincronizado en tiempo real con tu base de datos SQLite • Quincena Actual</p>
+            <p className="text-xs text-slate-400 mt-0.5">Sincronizado en tiempo real con la Nube 24/7 (Cloud Firestore) • Quincena Actual</p>
           </div>
           <button
             onClick={onGoToOcio}

@@ -20,7 +20,7 @@ export default function HistoricoFuturo({
           </div>
           <div>
             <h2 className="text-base sm:text-lg font-black text-white">Histórico Quincenas de Futuro</h2>
-            <p className="text-xs text-slate-400">Consolidado quincenal archivado en SQLite • Control y Eliminación</p>
+            <p className="text-xs text-slate-400">Consolidado quincenal archivado en la Nube 24/7 • Control y Eliminación</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">

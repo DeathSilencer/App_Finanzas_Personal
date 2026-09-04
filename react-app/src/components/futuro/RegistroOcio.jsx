@@ -24,6 +24,7 @@ export default function RegistroOcio({
   const [categoria, setCategoria] = useState('🍕 Salidas & Gustos');
   const [concepto, setConcepto] = useState('');
   const [metodo, setMetodo] = useState('Débito Nu');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const quickItems = [
     { monto: 45, label: '☕ Café / Snack', cat: '🍕 Salidas & Gustos', concepto: 'Café / Snack' },
@@ -34,31 +35,41 @@ export default function RegistroOcio({
     { monto: 60, label: '🛒 Antojo / Tiendita', cat: '🍕 Salidas & Gustos', concepto: 'Antojo / Oxxo' }
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const val = parseFloat(monto);
-    if (isNaN(val) || val <= 0) return;
+    if (isNaN(val) || val <= 0 || isSubmitting) return;
 
-    onAddGastoOcio({
-      fecha,
-      monto: val,
-      categoria,
-      concepto: concepto.trim() || 'Gasto de ocio',
-      metodo
-    });
-
-    setMonto('');
-    setConcepto('');
+    setIsSubmitting(true);
+    try {
+      await onAddGastoOcio({
+        fecha,
+        monto: val,
+        categoria,
+        concepto: concepto.trim() || 'Gasto de ocio',
+        metodo
+      });
+      setMonto('');
+      setConcepto('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleQuickClick = (item) => {
-    onAddGastoOcio({
-      fecha: getTodayDate(),
-      monto: item.monto,
-      categoria: item.cat,
-      concepto: item.concepto,
-      metodo: 'Débito Nu'
-    });
+  const handleQuickClick = async (item) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onAddGastoOcio({
+        fecha: getTodayDate(),
+        monto: item.monto,
+        categoria: item.cat,
+        concepto: item.concepto,
+        metodo: 'Débito Nu'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -129,8 +140,10 @@ export default function RegistroOcio({
               {quickItems.map((item, idx) => (
                 <button
                   key={idx}
+                  type="button"
+                  disabled={isSubmitting}
                   onClick={() => handleQuickClick(item)}
-                  className="btn-quick"
+                  className={`btn-quick ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <span className="text-xs text-slate-300 font-semibold truncate block">{item.label}</span>
                   <span className="text-sm sm:text-base font-black text-amber-400 mt-1 block">{fmt(item.monto)}</span>
@@ -216,9 +229,10 @@ export default function RegistroOcio({
 
               <button
                 type="submit"
-                className="btn-purple w-full mt-2"
+                disabled={isSubmitting}
+                className={`btn-purple w-full mt-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Guardar Gasto de Ocio en SQLite
+                {isSubmitting ? 'Guardando...' : 'Guardar Gasto de Ocio en la Nube'}
               </button>
             </form>
           </div>
