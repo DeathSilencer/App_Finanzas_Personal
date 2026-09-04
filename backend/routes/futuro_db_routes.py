@@ -219,15 +219,20 @@ def handle_get_futuro(handler):
         saldo_imprevistos = max(0.0, round(hist_imprevistos + m_imprevistos - gasto_real_imprevistos, 2))
         saldo_moto_80 = max(0.0, round(hist_moto + monto_moto_80 + aporte_dir_moto - gasto_real_moto_80, 2))
         saldo_salidas_20 = max(0.0, round(hist_salidas + monto_salidas_20 - gasto_real_salidas_20, 2))
-        total_digital_gastos = round(saldo_copias + saldo_imprevistos + saldo_moto_80 + saldo_salidas_20, 2)
+        # Fondos digitales que residen en Nu al 13%: Moto, Salidas e Imprevistos.
+        # (Copias $50 se retira en efectivo físico junto con Pasajes $376 y Comidas $180 = $606 base).
+        total_digital_gastos = round(saldo_imprevistos + saldo_moto_80 + saldo_salidas_20, 2)
 
         # Sub-contabilidad de la Única Cajita Turbo de Nu (13% anual)
         # DESCONTADOS CETES ($250) Y AFORE BANORTE ($250) ya que están en plataformas externas.
-        # En Cajita Turbo de Nu conviven solo los 6 fondos de Nu acumulativos:
+        # DESCONTADO EFECTIVO FÍSICO ($606: Pasajes $376 + Comidas $180 + Copias $50) en cartera.
+        # En Cajita Turbo de Nu conviven 5 fondos digitales acumulativos:
         total_futuro_cajita = round(remanente_ocio + saldo_emergencia, 2)
         gran_total_cajita = round(total_futuro_cajita + total_digital_gastos, 2)
         rendimiento_mensual_cajita = round(gran_total_cajita * (tasa_nu / 12.0), 2)
         rendimiento_anual_cajita = round(gran_total_cajita * tasa_nu, 2)
+
+        presupuesto_efectivo_total = round(m_combi + m_comida + m_copias, 2)
 
         cajita_turbo_info = {
             "gran_total": gran_total_cajita,
@@ -276,21 +281,19 @@ def handle_get_futuro(handler):
                     "pct": round((saldo_imprevistos / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
                     "etiqueta": "Colchón de Imprevistos",
                     "origen": "Gastos Básicos • Acumulativo"
-                },
-                "copias": {
-                    "presupuesto": round(hist_copias + m_copias, 2),
-                    "gasto_real": gasto_real_copias,
-                    "monto": saldo_copias,
-                    "pct": round((saldo_copias / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                    "etiqueta": "Copias & Papelería",
-                    "origen": "Gastos Básicos • Acumulativo"
                 }
             },
             "gastos_digitales_detalle": {
-                "copias": { "presupuesto": round(hist_copias + m_copias, 2), "gasto_real": gasto_real_copias, "saldo": saldo_copias },
                 "imprevistos": { "presupuesto": round(hist_imprevistos + m_imprevistos, 2), "gasto_real": gasto_real_imprevistos, "saldo": saldo_imprevistos },
                 "moto_80": { "presupuesto": round(hist_moto + monto_moto_80, 2), "gasto_real": gasto_real_moto_80, "saldo": saldo_moto_80 },
                 "salidas_20": { "presupuesto": round(hist_salidas + monto_salidas_20, 2), "gasto_real": gasto_real_salidas_20, "saldo": saldo_salidas_20 }
+            },
+            "efectivo_cartera": {
+                "presupuesto_total": presupuesto_efectivo_total,
+                "monto_combi": m_combi,
+                "monto_comida": m_comida,
+                "monto_copias": m_copias,
+                "desglose": f"${m_combi:.2f} Pasajes + ${m_comida:.2f} Comidas + ${m_copias:.2f} Copias Físicas"
             },
             "fondos_externos": {
                 "cetes": { "nombre": "Cetesdirecto (3 Meses)", "monto": cetes_aportado, "destino": "Cetesdirecto Gubernamental" },

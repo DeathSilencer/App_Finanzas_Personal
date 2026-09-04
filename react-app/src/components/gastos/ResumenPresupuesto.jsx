@@ -22,16 +22,19 @@ export default function ResumenPresupuesto({
   // Variables de Efectivo y Compensación Inteligente
   const montoCombi = resumen.monto_combi || 376;
   const montoComida = resumen.monto_comida || 180;
-  const presupuestoEfectivoBase = resumen.presupuesto_efectivo_base || (montoCombi + montoComida);
+  const montoCopias = resumen.monto_copias || 50;
+  const presupuestoEfectivoBase = resumen.presupuesto_efectivo_base || (montoCombi + montoComida + montoCopias);
   const sobranteEfectivoMano = resumen.sobrante_efectivo_mano || 0;
   const efectivoNetoRetirar = resumen.efectivo_neto_retirar ?? (presupuestoEfectivoBase - sobranteEfectivoMano);
 
   const sobranteCombi = resumen.sobrante_combi ?? 0;
   const sobranteComida = resumen.sobrante_comida ?? 0;
+  const sobranteCopias = resumen.sobrante_copias ?? 0;
   const sacarCombi = resumen.sacar_combi ?? Math.max(0, montoCombi - sobranteCombi);
   const sacarComida = resumen.sacar_comida ?? Math.max(0, montoComida - sobranteComida);
-  const saldoCopiasNu = resumen.saldo_copias_nu ?? (resumen.monto_copias || 50);
-  const fondearCopias = resumen.fondear_copias ?? Math.max(0, (resumen.monto_copias || 50) - saldoCopiasNu);
+  const sacarCopias = resumen.sacar_copias ?? Math.max(0, montoCopias - sobranteCopias);
+  const gastoCopiasDigital = resumen.gasto_copias_digital || 0;
+
   const saldoImpNu = resumen.saldo_imprevistos_nu ?? (resumen.monto_imprevistos || 200);
   const fondearImp = resumen.fondear_imprevistos ?? Math.max(0, (resumen.monto_imprevistos || 200) - saldoImpNu);
 
@@ -67,7 +70,7 @@ export default function ResumenPresupuesto({
                 Base: {fmt(presupuestoEfectivoBase)} | <b className="text-amber-300">En mano: -{fmt(sobranteEfectivoMano)}</b>
               </span>
             ) : (
-              <span>{fmt(montoCombi)} Combi + {fmt(montoComida)} Comidas</span>
+              <span>{fmt(montoCombi)} Combi + {fmt(montoComida)} Comidas + {fmt(montoCopias)} Copias</span>
             )}
           </p>
         </div>
@@ -112,7 +115,7 @@ export default function ResumenPresupuesto({
               Presupuesto Efectivo Base:
             </span>
             <h4 className="text-2xl font-black text-white mt-1">{fmt(presupuestoEfectivoBase)}</h4>
-            <p className="text-[10px] text-slate-400 mt-1">({fmt(montoCombi)} Pasajes + {fmt(montoComida)} Comidas)</p>
+            <p className="text-[10px] text-slate-400 mt-1">({fmt(montoCombi)} Pasajes + {fmt(montoComida)} Comidas + {fmt(montoCopias)} Copias)</p>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col justify-center">
@@ -156,7 +159,8 @@ export default function ResumenPresupuesto({
             <li className="flex items-start space-x-1.5">
               <span>📄</span>
               <span>
-                <b className="text-white">Copias &amp; Papelería:</b> Cuentas con <b className="text-purple-300">{fmt(saldoCopiasNu)}</b> resguardados en Cajita Nu (solo requieres asignar <b className="text-indigo-300">{fmt(fondearCopias)}</b> adicionales).
+                <b className="text-white">Copias &amp; Papelería:</b> Retirar <b className="text-emerald-400">{fmt(sacarCopias)}</b> en cajero (en lugar de {fmt(montoCopias)}, porque ya cuentas con <b className="text-amber-300">{fmt(sobranteCopias)}</b> de remanente en mano
+                {gastoCopiasDigital > 0 ? ` • ${fmt(gastoCopiasDigital)} pagados por transferencia Nu` : ''}).
               </span>
             </li>
             <li className="flex items-start space-x-1.5">
