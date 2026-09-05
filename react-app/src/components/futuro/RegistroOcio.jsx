@@ -11,7 +11,7 @@ export default function RegistroOcio({
   const of = futuroData?.otros_fondos || {};
   const ocio = of.ocio || {};
   const cajita = of.cajita_turbo || {};
-  const registros = of.registros_ocio || [];
+  const registros = of.registros_ocio || ocio.registros || [];
 
   const presupuesto = ocio.presupuesto || 1500;
   const gastado = ocio.gasto_real || 0;

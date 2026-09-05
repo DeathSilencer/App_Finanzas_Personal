@@ -8,13 +8,13 @@ export default function ControlTDCNu({
   onDeleteCompra,
   onLiquidarDeuda
 }) {
-  const compras = tdcData.compras || [];
-  const deuda = tdcData.deuda_actual || 0;
-  const limite = tdcData.limite_credito || 4000;
-  const disponible = tdcData.saldo_disponible || limite;
-  const usoPct = tdcData.pct_uso || 0;
-  const corte = tdcData.proximo_corte || "Día 23";
-  const pago = tdcData.proximo_pago || "Día 3";
+  const compras = tdcData.compras || tdcData.formatted_tdc || [];
+  const deuda = tdcData.deuda_actual ?? 0;
+  const limite = tdcData.limite_credito ?? tdcData.limite ?? 500;
+  const disponible = tdcData.saldo_disponible ?? tdcData.disponible ?? Math.max(0, limite - deuda);
+  const usoPct = tdcData.pct_uso ?? tdcData.pct_uso_credito ?? 0;
+  const corte = tdcData.proximo_corte || tdcData.fecha_corte_prox || (tdcData.dia_corte_config ? `Día ${tdcData.dia_corte_config}` : "Día 23");
+  const pago = tdcData.proximo_pago || tdcData.fecha_pago_prox || (tdcData.dia_pago_config ? `Día ${tdcData.dia_pago_config}` : "Día 3");
 
   const [fecha, setFecha] = useState(getTodayDate());
   const [monto, setMonto] = useState('');

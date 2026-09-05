@@ -428,6 +428,26 @@ export function computeFuturo(
   const rendimiento_anual_cajita = round2(gran_total_cajita * tasa_nu);
   const rendimiento_mensual_cajita = round2(rendimiento_anual_cajita / 12.0);
 
+  const tdc_payload = {
+    limite: tdc_limite,
+    limite_credito: tdc_limite,
+    deuda_actual,
+    disponible: saldo_disponible,
+    saldo_disponible,
+    pct_uso_credito,
+    pct_uso: pct_uso_credito,
+    dias_restantes_corte,
+    fecha_corte_prox: proximo_corte,
+    fecha_pago_prox: proximo_pago,
+    proximo_corte,
+    proximo_pago,
+    corte_dia: tdc_corte,
+    pago_dia: tdc_pago,
+    dia_corte_config: tdc_corte,
+    dia_pago_config: tdc_pago,
+    compras: formatted_tdc
+  };
+
   return {
     status: 'success',
     dashboard_maestro: {
@@ -441,18 +461,8 @@ export function computeFuturo(
       tasa_anual: tasa_cetes,
       tabla: cetes_tabla
     },
-    tdc_nu: {
-      limite_credito: tdc_limite,
-      deuda_actual,
-      saldo_disponible,
-      pct_uso_credito,
-      dias_restantes_corte,
-      fecha_corte_prox: proximo_corte,
-      fecha_pago_prox: proximo_pago,
-      dia_corte_config: tdc_corte,
-      dia_pago_config: tdc_pago,
-      compras: formatted_tdc
-    },
+    tdc: tdc_payload,
+    tdc_nu: tdc_payload,
     fondo_emergencia: {
       meta_total: meta_emergencia,
       aporte_mensual: aporte_emergencia_mensual,
@@ -486,6 +496,8 @@ export function computeFuturo(
         pct_consumido: pct_consumido_ocio,
         registros: formatted_ocio
       },
+      registros_ocio: formatted_ocio,
+      compras_tdc: formatted_tdc,
       cajita_turbo: {
         gran_total: gran_total_cajita,
         capital_base: capital_base_cajita,

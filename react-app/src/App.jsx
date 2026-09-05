@@ -306,7 +306,7 @@ export default function App() {
       <TDCSideReminder
         isOpen={isTDCReminderOpen}
         onClose={() => setIsTDCReminderOpen(false)}
-        tdcData={futuroData?.tdc}
+        tdcData={futuroData?.tdc || futuroData?.tdc_nu}
         onGoToTDC={() => {
           setActiveModule('futuro');
           setFuturoTab('tdc');
@@ -565,7 +565,7 @@ export default function App() {
 
             {futuroTab === 'tdc' && (
               <ControlTDCNu
-                tdcData={futuroData?.tdc}
+                tdcData={futuroData?.tdc || futuroData?.tdc_nu}
                 onAddCompra={handleAddCompraTDC}
                 onDeleteCompra={handleDeleteCompraTDC}
                 onLiquidarDeuda={handleLiquidarTDC}
