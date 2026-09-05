@@ -57,22 +57,33 @@ export default function GeneralCajitaTurbo({
     monto: cajita.rendimientos_ganados_nu || 0,
     pct: granTotal > 0 ? (((cajita.rendimientos_ganados_nu || 0) / granTotal) * 100) : 0
   };
-  const tieneRendimientos = (porcRendimientos.monto || 0) > 0;
+  const rendimientosActuales = Number(
+    cajita.rendimientos_ganados_nu ?? 
+    cajita.rendimiento_real_nu ?? 
+    cajita.rendimiento_real_ganado ?? 
+    cajita.rendimientos_ganados ?? 
+    futuroData?.config?.rendimiento_real_nu ?? 
+    0
+  );
 
   // Estado y lógica para modal de conciliación con Nu
   const [showModalConciliar, setShowModalConciliar] = useState(false);
-  const [inputSaldoReal, setInputSaldoReal] = useState(cajita.gran_total || 3682.95);
-  const [inputRendimiento, setInputRendimiento] = useState(cajita.rendimiento_real_ganado || 5.88);
+  const [inputSaldoReal, setInputSaldoReal] = useState(granTotal || 3682.95);
+  const [inputRendimiento, setInputRendimiento] = useState(rendimientosActuales || 5.88);
   const [savingAjuste, setSavingAjuste] = useState(false);
 
   useEffect(() => {
-    if (cajita.gran_total) {
-      setInputSaldoReal(cajita.gran_total);
+    if (granTotal) {
+      setInputSaldoReal(granTotal);
     }
-    if (cajita.rendimiento_real_ganado !== undefined) {
-      setInputRendimiento(cajita.rendimiento_real_ganado);
-    }
-  }, [cajita.gran_total, cajita.rendimiento_real_ganado]);
+    setInputRendimiento(rendimientosActuales);
+  }, [granTotal, rendimientosActuales]);
+
+  const handleOpenConciliar = () => {
+    if (granTotal) setInputSaldoReal(granTotal);
+    setInputRendimiento(rendimientosActuales);
+    setShowModalConciliar(true);
+  };
 
   const handleGuardarConciliacion = async (e) => {
     e.preventDefault();
@@ -81,10 +92,10 @@ export default function GeneralCajitaTurbo({
       const valSaldo = parseFloat(inputSaldoReal);
       const valRend = parseFloat(inputRendimiento);
       const res = await ajustarCajitaTurbo({
-        saldo_real: valSaldo,
-        saldo_real_ajustado: valSaldo,
-        rendimiento_real: valRend,
-        rendimiento_real_nu: valRend
+        saldo_real: isNaN(valSaldo) ? null : valSaldo,
+        saldo_real_ajustado: isNaN(valSaldo) ? null : valSaldo,
+        rendimiento_real: isNaN(valRend) ? 0 : valRend,
+        rendimiento_real_nu: isNaN(valRend) ? 0 : valRend
       });
       if (addToast) {
         addToast(res.message || 'Cajita Turbo sincronizada con Nu', 'success');
@@ -187,7 +198,7 @@ export default function GeneralCajitaTurbo({
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
-                onClick={() => setShowModalConciliar(true)}
+                onClick={handleOpenConciliar}
                 className="btn-ghost !text-xs !min-h-[40px] text-purple-300 border-purple-500/40 flex-1 sm:flex-initial"
                 title="Ajustar o sincronizar saldo exacto con tu App Nu"
               >
@@ -741,7 +752,7 @@ export default function GeneralCajitaTurbo({
                 <div className="flex items-center justify-between text-slate-300">
                   <span>Rendimientos Netos Acreditados:</span>
                   <b className="text-emerald-400 font-mono text-sm">
-                    +{fmt(Math.max(0, (parseFloat(inputSaldoReal) || 0) - (cajita.capital_base || 3678)))}
+                    +{fmt(parseFloat(inputRendimiento) || Math.max(0, (parseFloat(inputSaldoReal) || 0) - (cajita.capital_base || 3678)))}
                   </b>
                 </div>
                 <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between text-xs">

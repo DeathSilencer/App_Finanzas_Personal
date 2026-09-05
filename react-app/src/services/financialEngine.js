@@ -415,14 +415,16 @@ export function computeFuturo(
   const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia);
   const capital_base_cajita = round2(total_futuro_cajita + total_digital_gastos);
 
-  let gran_total_cajita = capital_base_cajita;
   let rendimientos_ganados_nu = 0;
+  if (rendimiento_real_nu !== undefined && rendimiento_real_nu !== null && !isNaN(Number(rendimiento_real_nu)) && Number(rendimiento_real_nu) > 0) {
+    rendimientos_ganados_nu = round2(Number(rendimiento_real_nu));
+  } else if (saldo_real_ajustado !== null && saldo_real_ajustado > capital_base_cajita) {
+    rendimientos_ganados_nu = round2(saldo_real_ajustado - capital_base_cajita);
+  }
+
+  let gran_total_cajita = round2(capital_base_cajita + rendimientos_ganados_nu);
   if (saldo_real_ajustado !== null && saldo_real_ajustado > 0) {
     gran_total_cajita = round2(saldo_real_ajustado);
-    rendimientos_ganados_nu = Math.max(0, round2(gran_total_cajita - capital_base_cajita));
-  } else {
-    rendimientos_ganados_nu = round2(rendimiento_real_nu);
-    gran_total_cajita = round2(capital_base_cajita + rendimientos_ganados_nu);
   }
 
   const rendimiento_anual_cajita = round2(gran_total_cajita * tasa_nu);
