@@ -51,12 +51,6 @@ export default function GeneralCajitaTurbo({
   const porcSalidas = porciones.salidas_20 || { presupuesto: 338.8, gasto_real: 0, monto: 338.8, pct: 9.3 };
   const porcImp = porciones.imprevistos || { presupuesto: 200, gasto_real: 0, monto: 200, pct: 5.5 };
   const porcCopias = porciones.copias || { presupuesto: 50, gasto_real: 0, monto: 50, pct: 1.4 };
-  const porcRendimientos = porciones.rendimientos || {
-    presupuesto: cajita.rendimientos_ganados_nu || 0,
-    gasto_real: 0,
-    monto: cajita.rendimientos_ganados_nu || 0,
-    pct: granTotal > 0 ? (((cajita.rendimientos_ganados_nu || 0) / granTotal) * 100) : 0
-  };
   const rendimientosActuales = Number(
     cajita.rendimientos_ganados_nu ?? 
     cajita.rendimiento_real_nu ?? 
@@ -65,6 +59,14 @@ export default function GeneralCajitaTurbo({
     futuroData?.config?.rendimiento_real_nu ?? 
     0
   );
+
+  const porcRendimientos = porciones.rendimientos || {
+    presupuesto: rendimientosActuales || 0,
+    gasto_real: 0,
+    monto: rendimientosActuales || 0,
+    pct: granTotal > 0 ? (((rendimientosActuales || 0) / granTotal) * 100) : 0
+  };
+  const tieneRendimientos = rendimientosActuales > 0 || (porcRendimientos.monto || 0) > 0;
 
   // Estado y lógica para modal de conciliación con Nu
   const [showModalConciliar, setShowModalConciliar] = useState(false);
@@ -168,7 +170,7 @@ export default function GeneralCajitaTurbo({
               {tieneRendimientos && (
                 <span className="badge-amber font-black">
                   <Sparkles className="w-3 h-3 text-amber-400" />
-                  <span>+{fmt(cajita.rendimientos_ganados_nu)} ganados en Nu (13%)</span>
+                  <span>+{fmt(rendimientosActuales)} ganados en Nu (13%)</span>
                 </span>
               )}
             </div>
