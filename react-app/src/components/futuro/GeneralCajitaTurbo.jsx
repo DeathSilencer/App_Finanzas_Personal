@@ -78,9 +78,13 @@ export default function GeneralCajitaTurbo({
     e.preventDefault();
     try {
       setSavingAjuste(true);
+      const valSaldo = parseFloat(inputSaldoReal);
+      const valRend = parseFloat(inputRendimiento);
       const res = await ajustarCajitaTurbo({
-        saldo_real: parseFloat(inputSaldoReal),
-        rendimiento_real: parseFloat(inputRendimiento)
+        saldo_real: valSaldo,
+        saldo_real_ajustado: valSaldo,
+        rendimiento_real: valRend,
+        rendimiento_real_nu: valRend
       });
       if (addToast) {
         addToast(res.message || 'Cajita Turbo sincronizada con Nu', 'success');

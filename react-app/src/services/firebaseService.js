@@ -603,11 +603,14 @@ export async function ajustarCajitaTurbo(data) {
     updated_at: new Date().toISOString()
   };
 
-  if (data.saldo_real_ajustado !== undefined) {
-    updated.saldo_real_ajustado = data.saldo_real_ajustado != null ? round2(data.saldo_real_ajustado) : null;
+  const saldoReal = data.saldo_real_ajustado !== undefined ? data.saldo_real_ajustado : (data.saldo_real !== undefined ? data.saldo_real : data.saldo);
+  if (saldoReal !== undefined) {
+    updated.saldo_real_ajustado = (saldoReal !== null && saldoReal !== '' && !isNaN(Number(saldoReal))) ? round2(Number(saldoReal)) : null;
   }
-  if (data.rendimiento_real_nu !== undefined) {
-    updated.rendimiento_real_nu = round2(data.rendimiento_real_nu);
+
+  const rendReal = data.rendimiento_real_nu !== undefined ? data.rendimiento_real_nu : (data.rendimiento_real !== undefined ? data.rendimiento_real : (data.rendimiento !== undefined ? data.rendimiento : null));
+  if (rendReal !== undefined && rendReal !== null && !isNaN(Number(rendReal))) {
+    updated.rendimiento_real_nu = round2(Number(rendReal));
   }
 
   memoryState.configFuturo = updated;
