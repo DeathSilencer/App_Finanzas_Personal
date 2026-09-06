@@ -45,12 +45,13 @@ export default function GeneralCajitaTurbo({
   const totalGastosDigital = cajita.total_gastos_digital || 1894;
 
   const porciones = cajita.porciones || {};
+  const desglose = cajita.desglose || {};
   const porcOcio = porciones.ocio || { presupuesto: 1500, gasto_real: ocio.gasto_real || 0, monto: ocio.remanente || 1500, pct: 35.0 };
   const porcEmg = porciones.emergencia || { presupuesto: 500, gasto_real: 0, monto: emg.aportado || 500, pct: 13.7 };
-  const porcMoto = porciones.moto_80 || { presupuesto: 1355.2, gasto_real: 0, monto: 1355.2, pct: 37.2 };
-  const porcSalidas = porciones.salidas_20 || { presupuesto: 338.8, gasto_real: 0, monto: 338.8, pct: 9.3 };
-  const porcImp = porciones.imprevistos || { presupuesto: 200, gasto_real: 0, monto: 200, pct: 5.5 };
-  const porcCopias = porciones.copias || { presupuesto: 50, gasto_real: 0, monto: 50, pct: 1.4 };
+  const porcMoto = porciones.moto_80 || { presupuesto: 1355.2, gasto_real: Math.max(0, (1355.2 - (desglose.moto_80 ?? 1355.2))), monto: desglose.moto_80 ?? 1355.2, pct: 37.2 };
+  const porcSalidas = porciones.salidas_20 || { presupuesto: 338.8, gasto_real: Math.max(0, (338.8 - (desglose.salidas_20 ?? 338.8))), monto: desglose.salidas_20 ?? 338.8, pct: 9.3 };
+  const porcImp = porciones.imprevistos || { presupuesto: 200, gasto_real: Math.max(0, (200 - (desglose.imprevistos ?? 200))), monto: desglose.imprevistos ?? 200, pct: 5.5 };
+  const porcCopias = porciones.copias || { presupuesto: 50, gasto_real: Math.max(0, (50 - (desglose.copias ?? 50))), monto: desglose.copias ?? 50, pct: 1.4 };
   const rendimientosActuales = Number(
     cajita.rendimientos_ganados_nu ?? 
     cajita.rendimiento_real_nu ?? 

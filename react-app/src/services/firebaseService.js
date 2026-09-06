@@ -89,7 +89,12 @@ export function buildHistorialGastos(cierres = []) {
 // Notificador a suscriptores (React components)
 const listeners = new Set();
 function notifyListeners() {
-  const gastos = computeGastos(memoryState.configGastos, memoryState.gastosDiarios, memoryState.historicoGastos);
+  const gastos = computeGastos(
+    memoryState.configGastos,
+    memoryState.gastosDiarios,
+    memoryState.historicoGastos,
+    memoryState.comprasTdc
+  );
   const futuro = computeFuturo(
     memoryState.configFuturo,
     memoryState.configGastos,
@@ -259,7 +264,12 @@ initFirestoreListeners();
 export function subscribeFinancialData(callback) {
   listeners.add(callback);
   callback({
-    gastos: computeGastos(memoryState.configGastos, memoryState.gastosDiarios, memoryState.historicoGastos),
+    gastos: computeGastos(
+      memoryState.configGastos,
+      memoryState.gastosDiarios,
+      memoryState.historicoGastos,
+      memoryState.comprasTdc
+    ),
     futuro: computeFuturo(
       memoryState.configFuturo,
       memoryState.configGastos,
@@ -280,7 +290,12 @@ export function subscribeFinancialData(callback) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function getGastos() {
-  return computeGastos(memoryState.configGastos, memoryState.gastosDiarios, memoryState.historicoGastos);
+  return computeGastos(
+    memoryState.configGastos,
+    memoryState.gastosDiarios,
+    memoryState.historicoGastos,
+    memoryState.comprasTdc
+  );
 }
 
 export async function addGasto(data) {
@@ -306,13 +321,13 @@ export async function addGasto(data) {
   // Guardar en Cloud Firestore (onSnapshot actualiza memoryState automáticamente)
   const docRef = await addDoc(collection(db, "gastos_diarios"), docData);
 
-  // Si fue con TDC Nu, registrar automáticamente en compras_tdc
+  // Si fue con TDC Nu, registrar automáticamente en compras_tdc preservando la categoría
   if (metodo_pago === 'TDC Nu') {
     await addTDC({
       fecha,
       monto,
       concepto,
-      categoria: 'Básicos',
+      categoria: categoria || 'Básicos',
       tipo: 'Gasto Diario',
       apartado: 'Sí (En Cajita)',
       estado: 'Pendiente',
@@ -392,7 +407,12 @@ export async function limpiarRegistroGastos() {
 }
 
 export async function cerrarQuincenaGastos(data) {
-  const current = computeGastos(memoryState.configGastos, memoryState.gastosDiarios, memoryState.historicoGastos);
+  const current = computeGastos(
+    memoryState.configGastos,
+    memoryState.gastosDiarios,
+    memoryState.historicoGastos,
+    memoryState.comprasTdc
+  );
   const res = current.resumen;
 
   const cierreData = {

@@ -24,7 +24,7 @@ export function getDiaSemana(fechaStr) {
 /**
  * Calcula todo el estado financiero de Gastos Básicos.
  */
-export function computeGastos(config = {}, registros = [], historico = []) {
+export function computeGastos(config = {}, registros = [], historico = [], comprasTdc = []) {
   const presupuesto_asignado = Number(config.presupuesto_asignado ?? 2500);
   const monto_combi = Number(config.monto_combi ?? 376);
   const monto_comida = Number(config.monto_comida ?? 180);
@@ -42,7 +42,39 @@ export function computeGastos(config = {}, registros = [], historico = []) {
     gastos_por_cat[cat] = (gastos_por_cat[cat] || 0) + (Number(r.monto) || 0);
   }
 
-  const gasto_total_real = round2(registros.reduce((sum, r) => sum + (Number(r.monto) || 0), 0));
+  // Filtrar compras con TDC que pertenezcan a categorías de gastos y no provengan de un gasto_diario ya registrado
+  const registrosIds = new Set(registros.map(r => String(r.id)));
+  let total_tdc_adicional = 0;
+  for (const c of comprasTdc) {
+    if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosIds.has(String(c.origen_id)))) {
+      continue;
+    }
+    const cCat = c.categoria || '';
+    const montoC = Number(c.monto) || 0;
+    if (montoC <= 0) continue;
+
+    if (cCat.includes('Excedente 20%') || cCat.includes('Salidas') || cCat.includes('Gustos / Salidas')) {
+      const catKey = "🍕 Excedente 20%: Refuerzo Gustos / Salidas";
+      gastos_por_cat[catKey] = (gastos_por_cat[catKey] || 0) + montoC;
+      total_tdc_adicional += montoC;
+    } else if (cCat.includes('Copias') || cCat.includes('Material')) {
+      const catKey = "📄 Copias, Material & Papelería";
+      gastos_por_cat[catKey] = (gastos_por_cat[catKey] || 0) + montoC;
+      total_tdc_adicional += montoC;
+    } else if (cCat.includes('Imprevistos')) {
+      const catKey = "🛡️ Imprevistos / Por si acaso";
+      gastos_por_cat[catKey] = (gastos_por_cat[catKey] || 0) + montoC;
+      total_tdc_adicional += montoC;
+    } else if (cCat.includes('Excedente 80%') || cCat.includes('Moto')) {
+      const catKey = "🛡️ Excedente 80%: Fondo Emergencia / Moto";
+      gastos_por_cat[catKey] = (gastos_por_cat[catKey] || 0) + montoC;
+      total_tdc_adicional += montoC;
+    }
+  }
+
+  const gasto_total_real = round2(
+    registros.reduce((sum, r) => sum + (Number(r.monto) || 0), 0) + total_tdc_adicional
+  );
   const remanente_total = Math.max(0, round2(presupuesto_asignado - gasto_total_real));
   const pct_consumido = presupuesto_asignado > 0 ? Math.round((gasto_total_real / presupuesto_asignado) * 1000) / 10 : 0;
 
@@ -388,23 +420,50 @@ export function computeFuturo(
     }
   }
 
-  // Filtrar gastos digitales
-  const gasto_real_copias = round2(
-    registrosGastos.filter(r => (r.categoria || '').includes("Copias") && r.metodo_pago !== "Efectivo")
-                   .reduce((sum, r) => sum + (Number(r.monto) || 0), 0)
-  );
-  const gasto_real_imprevistos = round2(
-    registrosGastos.filter(r => (r.categoria || '').includes("Imprevistos") && r.metodo_pago !== "Efectivo")
-                   .reduce((sum, r) => sum + (Number(r.monto) || 0), 0)
-  );
-  const gasto_real_salidas_20 = round2(
-    registrosGastos.filter(r => (r.categoria || '').includes("Excedente 20%") && r.metodo_pago !== "Efectivo")
-                   .reduce((sum, r) => sum + (Number(r.monto) || 0), 0)
-  );
-  const gasto_real_moto_80 = round2(
-    registrosGastos.filter(r => (r.categoria || '').includes("Excedente 80%") && r.metodo_pago !== "Efectivo")
-                   .reduce((sum, r) => sum + (Number(r.monto) || 0), 0)
-  );
+  // Filtrar gastos y compras TDC vinculadas a los fondos de la quincena activa
+  const registrosGastosIds = new Set(registrosGastos.map(r => String(r.id)));
+  const comprasTdcIndependientes = comprasTdc.filter(c => {
+    if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosGastosIds.has(String(c.origen_id)))) {
+      return false;
+    }
+    return true;
+  });
+
+  // Copias: todos los gastos registrados en copias (efectivo, débito o TDC)
+  const gasto_copias_diarios = registrosGastos
+    .filter(r => (r.categoria || '').includes("Copias") || (r.categoria || '').includes("Material"))
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+  const gasto_copias_tdc = comprasTdcIndependientes
+    .filter(c => (c.categoria || '').includes("Copias") || (c.categoria || '').includes("Material"))
+    .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+  const gasto_real_copias = round2(gasto_copias_diarios + gasto_copias_tdc);
+
+  // Imprevistos
+  const gasto_imp_diarios = registrosGastos
+    .filter(r => (r.categoria || '').includes("Imprevistos"))
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+  const gasto_imp_tdc = comprasTdcIndependientes
+    .filter(c => (c.categoria || '').includes("Imprevistos"))
+    .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+  const gasto_real_imprevistos = round2(gasto_imp_diarios + gasto_imp_tdc);
+
+  // Salidas 20% (Refuerzo Gustos / Salidas)
+  const gasto_salidas_diarios = registrosGastos
+    .filter(r => (r.categoria || '').includes("Excedente 20%") || (r.categoria || '').includes("Salidas") || (r.categoria || '').includes("Gustos / Salidas"))
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+  const gasto_salidas_tdc = comprasTdcIndependientes
+    .filter(c => (c.categoria || '').includes("Excedente 20%") || (c.categoria || '').includes("Salidas") || (c.categoria || '').includes("Gustos / Salidas"))
+    .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+  const gasto_real_salidas_20 = round2(gasto_salidas_diarios + gasto_salidas_tdc);
+
+  // Moto 80% (Excedente Moto)
+  const gasto_moto_diarios = registrosGastos
+    .filter(r => (r.categoria || '').includes("Excedente 80%") || (r.categoria || '').includes("Moto"))
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+  const gasto_moto_tdc = comprasTdcIndependientes
+    .filter(c => (c.categoria || '').includes("Excedente 80%") || (c.categoria || '').includes("Moto"))
+    .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+  const gasto_real_moto_80 = round2(gasto_moto_diarios + gasto_moto_tdc);
 
   const saldo_copias = Math.max(0, round2(hist_copias + m_copias - gasto_real_copias));
   const saldo_imprevistos = Math.max(0, round2(hist_imprevistos + m_imprevistos - gasto_real_imprevistos));
@@ -521,6 +580,50 @@ export function computeFuturo(
           moto_80: saldo_moto_80,
           salidas_20: saldo_salidas_20,
           rendimientos_ganados: rendimientos_ganados_nu
+        },
+        porciones: {
+          ocio: {
+            presupuesto: presupuesto_ocio,
+            gasto_real: gasto_real_ocio,
+            monto: remanente_ocio,
+            pct: gran_total_cajita > 0 ? Math.round((remanente_ocio / gran_total_cajita) * 1000) / 10 : 0
+          },
+          emergencia: {
+            presupuesto: aporte_emergencia_quincenal,
+            gasto_real: 0,
+            monto: saldo_emergencia,
+            pct: gran_total_cajita > 0 ? Math.round((saldo_emergencia / gran_total_cajita) * 1000) / 10 : 0
+          },
+          moto_80: {
+            presupuesto: monto_moto_80,
+            gasto_real: gasto_real_moto_80,
+            monto: saldo_moto_80,
+            pct: gran_total_cajita > 0 ? Math.round((saldo_moto_80 / gran_total_cajita) * 1000) / 10 : 0
+          },
+          salidas_20: {
+            presupuesto: monto_salidas_20,
+            gasto_real: gasto_real_salidas_20,
+            monto: saldo_salidas_20,
+            pct: gran_total_cajita > 0 ? Math.round((saldo_salidas_20 / gran_total_cajita) * 1000) / 10 : 0
+          },
+          imprevistos: {
+            presupuesto: m_imprevistos,
+            gasto_real: gasto_real_imprevistos,
+            monto: saldo_imprevistos,
+            pct: gran_total_cajita > 0 ? Math.round((saldo_imprevistos / gran_total_cajita) * 1000) / 10 : 0
+          },
+          copias: {
+            presupuesto: m_copias,
+            gasto_real: gasto_real_copias,
+            monto: saldo_copias,
+            pct: gran_total_cajita > 0 ? Math.round((saldo_copias / gran_total_cajita) * 1000) / 10 : 0
+          },
+          rendimientos: {
+            presupuesto: rendimientos_ganados_nu,
+            gasto_real: 0,
+            monto: rendimientos_ganados_nu,
+            pct: gran_total_cajita > 0 ? Math.round((rendimientos_ganados_nu / gran_total_cajita) * 1000) / 10 : 0
+          }
         }
       }
     },

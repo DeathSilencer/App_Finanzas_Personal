@@ -119,13 +119,18 @@ export default function ControlTDCNu({
               <label className="form-label">Categoría</label>
               <select
                 value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
+                onChange={(e) => {
+                  setCategoria(e.target.value);
+                  // Apartado automático en Cajita para gastos de salidas/ocio/imprevistos/copias
+                  setApartado('Sí (En Cajita)');
+                }}
                 className="form-select"
               >
+                <option value="🍕 Excedente 20%: Refuerzo Gustos / Salidas">🍕 Excedente 20%: Refuerzo Gustos / Salidas (Ocio y fin de semana)</option>
+                <option value="Ocio">🍕 Gustos / Ocio (Plan a Futuro)</option>
                 <option value="Básicos">Básicos</option>
-                <option value="Ocio">Ocio</option>
-                <option value="Imprevistos">Imprevistos</option>
-                <option value="Copias/Material">Copias/Material</option>
+                <option value="🛡️ Imprevistos / Por si acaso">🛡️ Imprevistos / Por si acaso</option>
+                <option value="📄 Copias, Material & Papelería">📄 Copias, Material & Papelería</option>
               </select>
             </div>
             <div>
