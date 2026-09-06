@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/common/Navbar';
 import Toast from './components/common/Toast';
 import TDCSideReminder from './components/common/TDCSideReminder';
+import { fmt } from './utils/formatters';
 
 // Módulos Gastos
 import ResumenPresupuesto from './components/gastos/ResumenPresupuesto';
