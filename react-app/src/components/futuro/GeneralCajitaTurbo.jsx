@@ -426,7 +426,7 @@ export default function GeneralCajitaTurbo({
                   <span>🏍️ Acelerador Moto (80% Excedente)</span>
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  Ahorro acumulado + quincena activa (Meta $35,000)
+                  Ahorro acumulado + quincena activa (Meta $42,000)
                 </p>
               </div>
               <div className="text-right">

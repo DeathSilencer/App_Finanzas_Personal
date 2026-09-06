@@ -6,7 +6,7 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
   const [montoAporte, setMontoAporte] = useState('');
   const [modo, setModo] = useState('sumar');
 
-  const meta = simulador.meta_total || 35000;
+  const meta = simulador.meta_total || 42000;
   const ahorroExtraVacaciones = simulador.ahorro_extra_vacaciones || 1250;
   const diasLibres = simulador.dias_libres_cuatri || 25;
   const excedenteQ = simulador.excedente_quincenal_80 || 1400;

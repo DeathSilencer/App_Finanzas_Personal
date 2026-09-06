@@ -377,7 +377,7 @@ export default function App() {
                 }`}
               >
                 <Bike className="w-4 h-4" />
-                <span>🏍️ Simulador Moto ($35,000)</span>
+                <span>🏍️ Simulador Moto ({fmt(gastosData?.simulador_moto?.meta_total || 42000)})</span>
               </button>
 
               <button

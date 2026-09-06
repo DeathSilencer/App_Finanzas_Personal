@@ -9,7 +9,7 @@ export default function ConfigGastosModal({ isOpen, onClose, config = {}, onSave
   const [comida, setComida] = useState(config.monto_comida || 180);
   const [copias, setCopias] = useState(config.monto_copias || 50);
   const [imprevistos, setImprevistos] = useState(config.monto_imprevistos || 200);
-  const [metaMoto, setMetaMoto] = useState(config.meta_moto || 35000);
+  const [metaMoto, setMetaMoto] = useState(config.meta_moto || 42000);
   const [diasLibres, setDiasLibres] = useState(config.dias_libres_cuatri || 25);
   const [quincenasCuatri, setQuincenasCuatri] = useState(config.quincenas_cuatri || 8);
 

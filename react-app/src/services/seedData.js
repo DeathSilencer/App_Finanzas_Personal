@@ -9,7 +9,7 @@ export const INITIAL_CONFIG_GASTOS = {
   monto_comida: 180.0,
   monto_copias: 50.0,
   monto_imprevistos: 200.0,
-  meta_moto: 35000.0,
+  meta_moto: 42000.0,
   dias_libres_cuatri: 25,
   quincenas_cuatri: 8,
   aportaciones_directas_moto: 0.0,

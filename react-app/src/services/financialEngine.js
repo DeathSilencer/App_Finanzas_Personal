@@ -30,7 +30,7 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
   const monto_comida = Number(config.monto_comida ?? 180);
   const monto_copias = Number(config.monto_copias ?? 50);
   const monto_imprevistos = Number(config.monto_imprevistos ?? 200);
-  const meta_moto = Number(config.meta_moto ?? 35000);
+  const meta_moto = Number(config.meta_moto ?? 42000);
   const dias_libres_cuatri = Number(config.dias_libres_cuatri ?? 25);
   const quincenas_cuatri = Number(config.quincenas_cuatri ?? 8);
   const aportaciones_directas = Number(config.aportaciones_directas_moto ?? 0);
