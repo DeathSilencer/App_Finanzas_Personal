@@ -46,6 +46,9 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
   const registrosIds = new Set(registros.map(r => String(r.id)));
   let total_tdc_adicional = 0;
   for (const c of comprasTdc) {
+    if (c.quincena_cerrada) {
+      continue;
+    }
     if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosIds.has(String(c.origen_id)))) {
       continue;
     }
@@ -423,6 +426,7 @@ export function computeFuturo(
   // Filtrar gastos y compras TDC vinculadas a los fondos de la quincena activa
   const registrosGastosIds = new Set(registrosGastos.map(r => String(r.id)));
   const comprasTdcIndependientes = comprasTdc.filter(c => {
+    if (c.quincena_cerrada) return false;
     if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosGastosIds.has(String(c.origen_id)))) {
       return false;
     }

@@ -16,15 +16,15 @@ import {
   query,
   writeBatch
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { computeGastos, computeFuturo, getDiaSemana, round2 } from './financialEngine';
+import { db } from '../firebase/config.js';
+import { computeGastos, computeFuturo, getDiaSemana, round2 } from './financialEngine.js';
 import {
   INITIAL_CONFIG_GASTOS,
   INITIAL_GASTOS_DIARIOS,
   INITIAL_CONFIG_FUTURO,
   INITIAL_GASTOS_OCIO,
   INITIAL_COMPRAS_TDC
-} from './seedData';
+} from './seedData.js';
 
 // Estado en memoria
 let memoryState = {
@@ -71,9 +71,23 @@ export function buildHistorialGastos(cierres = []) {
 
     try {
       const det = typeof c.detalle_json === 'string' ? JSON.parse(c.detalle_json) : (c.detalle_json || {});
+      const transIds = new Set();
       if (Array.isArray(det.registros)) {
         for (const r of det.registros) {
-          m.transacciones.push({ ...r, quincena: c.periodo });
+          const rId = String(r.id || `${r.fecha}-${r.concepto}-${r.monto}`);
+          if (!transIds.has(rId)) {
+            transIds.add(rId);
+            m.transacciones.push({ ...r, quincena: c.periodo });
+          }
+        }
+      }
+      if (Array.isArray(det.compras_tdc)) {
+        for (const cTdc of det.compras_tdc) {
+          const cId = String(cTdc.id || `${cTdc.fecha}-${cTdc.concepto}-${cTdc.monto}`);
+          if (!transIds.has(cId)) {
+            transIds.add(cId);
+            m.transacciones.push({ ...cTdc, quincena: c.periodo });
+          }
         }
       }
     } catch (e) {}
@@ -82,6 +96,66 @@ export function buildHistorialGastos(cierres = []) {
   return {
     status: "success",
     cierres,
+    meses: Object.values(mesesMap)
+  };
+}
+
+// Función para estructurar histórico de futuro consolidado por meses para el Estado de Cuenta
+export function buildHistorialFuturo(cierres = []) {
+  const mesesMap = {};
+
+  for (const c of cierres) {
+    const mesNom = c.mes || 'septiembre';
+    const key = `${mesNom} ${c.anio || 2026}`;
+    if (!mesesMap[key]) {
+      mesesMap[key] = {
+        mes_anio: key,
+        mes: mesNom,
+        anio: c.anio || 2026,
+        num_quincenas: 0,
+        presupuesto_ocio_total: 0,
+        gasto_ocio_total: 0,
+        remanente_ocio_total: 0,
+        aporte_emergencia_total: 0,
+        aporte_retiro_total: 0,
+        aporte_cetes_total: 0,
+        total_cajita_cierre: 0,
+        quincenas: [],
+        transacciones: []
+      };
+    }
+    const m = mesesMap[key];
+    m.num_quincenas += 1;
+    m.presupuesto_ocio_total = round2(m.presupuesto_ocio_total + Number(c.presupuesto_ocio || 0));
+    m.gasto_ocio_total = round2(m.gasto_ocio_total + Number(c.gasto_ocio || 0));
+    m.remanente_ocio_total = round2(m.remanente_ocio_total + Number(c.remanente_ocio || 0));
+    m.aporte_emergencia_total = round2(m.aporte_emergencia_total + Number(c.aporte_emergencia || 0));
+    m.aporte_retiro_total = round2(m.aporte_retiro_total + Number(c.aporte_retiro || 0));
+    m.aporte_cetes_total = round2(m.aporte_cetes_total + Number(c.aporte_cetes || 0));
+    if (c.total_cajita_cierre) {
+      m.total_cajita_cierre = Number(c.total_cajita_cierre);
+    }
+    m.quincenas.push(c);
+
+    try {
+      const det = typeof c.detalle_json === 'string' ? JSON.parse(c.detalle_json) : (c.detalle_json || c.detalle || {});
+      const transIds = new Set();
+      if (Array.isArray(det.registros_ocio)) {
+        for (const r of det.registros_ocio) {
+          const rId = String(r.id || `${r.fecha}-${r.concepto}-${r.monto}`);
+          if (!transIds.has(rId)) {
+            transIds.add(rId);
+            m.transacciones.push({ ...r, quincena: c.periodo });
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  return {
+    status: "success",
+    cierres,
+    historial: cierres,
     meses: Object.values(mesesMap)
   };
 }
@@ -105,13 +179,14 @@ function notifyListeners() {
     memoryState.historicoGastos
   );
   const hGastos = buildHistorialGastos(memoryState.historicoGastos);
+  const hFuturo = buildHistorialFuturo(memoryState.historicoFuturo);
   for (const cb of listeners) {
     try {
       cb({
         gastos,
         futuro,
         historialGastos: hGastos,
-        historialFuturo: memoryState.historicoFuturo
+        historialFuturo: hFuturo
       });
     } catch (e) {
       console.error("Error en listener de Firestore:", e);
@@ -280,7 +355,7 @@ export function subscribeFinancialData(callback) {
       memoryState.historicoGastos
     ),
     historialGastos: buildHistorialGastos(memoryState.historicoGastos),
-    historialFuturo: memoryState.historicoFuturo
+    historialFuturo: buildHistorialFuturo(memoryState.historicoFuturo)
   });
   return () => listeners.delete(callback);
 }
@@ -407,6 +482,7 @@ export async function limpiarRegistroGastos() {
 }
 
 export async function cerrarQuincenaGastos(data) {
+  const periodo = data.periodo || `Quincena ${new Date().toLocaleDateString()}`;
   const current = computeGastos(
     memoryState.configGastos,
     memoryState.gastosDiarios,
@@ -415,8 +491,26 @@ export async function cerrarQuincenaGastos(data) {
   );
   const res = current.resumen;
 
+  // Filtrar compras TDC de la quincena activa que no provengan de un gasto_diario duplicado
+  const regsDiariosIds = new Set(memoryState.gastosDiarios.map(r => String(r.id)));
+  const comprasTdcActivas = memoryState.comprasTdc.filter(c => !c.quincena_cerrada);
+  const tdcComoMovimientos = comprasTdcActivas
+    .filter(c => c.origen_tipo !== 'gasto_diario' && (!c.origen_id || !regsDiariosIds.has(String(c.origen_id))))
+    .map(c => ({
+      id: c.id,
+      fecha: c.fecha,
+      dia: 'TDC',
+      monto: Number(c.monto) || 0,
+      categoria: c.categoria || 'Otros',
+      concepto: c.concepto || 'Compra TDC Nu',
+      metodo_pago: 'TDC Nu',
+      retirado: c.apartado || 'Sí (En Cajita)'
+    }));
+
+  const todosMovimientos = [...memoryState.gastosDiarios, ...tdcComoMovimientos];
+
   const cierreData = {
-    periodo: data.periodo || `Quincena ${new Date().toLocaleDateString()}`,
+    periodo,
     mes: data.mes || new Date().toLocaleString('es-MX', { month: 'long' }),
     anio: data.anio || new Date().getFullYear(),
     fecha_cierre: data.fecha_cierre || new Date().toISOString().split('T')[0],
@@ -426,9 +520,10 @@ export async function cerrarQuincenaGastos(data) {
     remanente: res.remanente_total,
     ahorro_moto_80: res.excedente_80_moto,
     refuerzo_gustos_20: res.excedente_20_salidas,
-    num_movimientos: memoryState.gastosDiarios.length,
+    num_movimientos: todosMovimientos.length,
     detalle_json: JSON.stringify({
-      registros: memoryState.gastosDiarios,
+      registros: todosMovimientos,
+      compras_tdc: tdcComoMovimientos,
       desglose_categorias: res,
       monto_copias: res.monto_copias,
       monto_imprevistos: res.monto_imprevistos
@@ -439,13 +534,28 @@ export async function cerrarQuincenaGastos(data) {
   // Guardar quincena archivada
   await addDoc(collection(db, "historico_quincenas_gastos"), cierreData);
 
-  // Limpiar gastos diarios activos en Firestore
+  // Batch en Firestore: limpiar gastos diarios y marcar compras TDC como archivadas
   const snap = await getDocs(collection(db, "gastos_diarios"));
   const batch = writeBatch(db);
   snap.forEach((d) => batch.delete(d.ref));
+
+  for (const c of comprasTdcActivas) {
+    if (c.id) {
+      batch.update(doc(db, "compras_tdc", String(c.id)), {
+        quincena_cerrada: true,
+        periodo_cierre: periodo
+      });
+    }
+  }
   await batch.commit();
 
+  // Actualizar estado en memoria
   memoryState.gastosDiarios = [];
+  memoryState.comprasTdc = memoryState.comprasTdc.map(c => ({
+    ...c,
+    quincena_cerrada: true,
+    periodo_cierre: periodo
+  }));
   notifyListeners();
   return { status: "success", message: "Quincena archivada en el histórico exitosamente" };
 }
@@ -602,11 +712,7 @@ export async function cerrarQuincenaFuturo(data) {
 }
 
 export async function getHistorialFuturo() {
-  return {
-    status: "success",
-    historial: memoryState.historicoFuturo,
-    cierres: memoryState.historicoFuturo
-  };
+  return buildHistorialFuturo(memoryState.historicoFuturo);
 }
 
 export async function borrarCierreFuturo(id) {

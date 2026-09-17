@@ -45,7 +45,7 @@ export default function App() {
   const [gastosData, setGastosData] = useState(null);
   const [historialGastos, setHistorialGastos] = useState({ meses: [], cierres: [] });
   const [futuroData, setFuturoData] = useState(null);
-  const [historialFuturo, setHistorialFuturo] = useState([]);
+  const [historialFuturo, setHistorialFuturo] = useState({ meses: [], cierres: [] });
   const [loading, setLoading] = useState(true);
 
   // Toasts
@@ -110,7 +110,7 @@ export default function App() {
     try {
       const res = await api.getHistorialFuturo();
       if (res.status === 'success') {
-        setHistorialFuturo(res.cierres || []);
+        setHistorialFuturo(res);
       }
     } catch (err) {
       console.error(err);
@@ -124,7 +124,7 @@ export default function App() {
       setGastosData(gastos);
       setFuturoData(futuro);
       setHistorialGastos(hGastos || { meses: [], cierres: [] });
-      setHistorialFuturo(hFuturo || []);
+      setHistorialFuturo(hFuturo || { meses: [], cierres: [] });
       setLoading(false);
     });
     return () => {
@@ -546,7 +546,9 @@ export default function App() {
 
             {futuroTab === 'historial-futuro' && (
               <HistoricoFuturo
+                historialData={historialFuturo}
                 historial={historialFuturo}
+                futuroData={futuroData}
                 onReload={loadHistorialFuturoData}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaFuturoOpen(true)}
                 onDeleteCierre={handleDeleteCierreFuturo}
