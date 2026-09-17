@@ -8,7 +8,7 @@ export default function Navbar({
   onToggleTDC
 }) {
   return (
-    <header className="border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-xl sticky top-0 z-40">
+    <header className="border-b border-slate-800/80 bg-slate-950/95 backdrop-blur-xl sticky top-0 z-40 no-print">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-0 min-h-[56px] sm:h-16 flex items-center justify-between gap-2">
         {/* Logo e Identidad de la App */}
         <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">

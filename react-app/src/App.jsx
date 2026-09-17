@@ -299,7 +299,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col antialiased bg-[#0b1120] text-slate-100 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen flex flex-col antialiased bg-[#0b1120] text-slate-100 selection:bg-indigo-500 selection:text-white print:bg-white print:text-black print:min-h-0">
       {/* Notificaciones Flotantes */}
       <Toast toasts={toasts} removeToast={removeToast} />
 
@@ -333,14 +333,14 @@ export default function App() {
       />
 
       {/* Contenido Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 print:max-w-none print:p-0 print:m-0 print:space-y-0 print:w-full">
         {/* ================================================================= */}
         {/* VISTA 1: CONTROL DE GASTOS BÁSICOS */}
         {/* ================================================================= */}
         {activeModule === 'gastos' && (
-          <div className="space-y-4 sm:space-y-6">
+          <div className="space-y-4 sm:space-y-6 print:space-y-0 print:m-0 print:p-0">
             {/* Pestañas de Navegación de Gastos */}
-            <div className="nav-tabs-ribbon">
+            <div className="nav-tabs-ribbon no-print">
               <button
                 onClick={() => setGastosTab('resumen')}
                 className={`nav-tab-btn ${
@@ -431,9 +431,9 @@ export default function App() {
         {/* VISTA 2: PLAN FINANCIERO A FUTURO & CAJITA TURBO NU */}
         {/* ================================================================= */}
         {activeModule === 'futuro' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6 print:space-y-0 print:m-0 print:p-0">
             {/* Pestañas de Navegación de Futuro */}
-            <div className="nav-tabs-ribbon">
+            <div className="nav-tabs-ribbon no-print">
               <button
                 onClick={() => setFuturoTab('general-cajita')}
                 className={`nav-tab-btn ${

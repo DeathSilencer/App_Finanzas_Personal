@@ -153,16 +153,18 @@ export default function HistoricoFuturo({
         fondo: "3010  FONDO DE RETIRO SAT (5% Presupuesto Futuro — AFORE Banorte)",
         tipo: "Pensión & Deducible Anual SAT",
         asignado: retMes,
-        gastado: 0,
-        saldo: retMes,
+        gastado: retMes,
+        saldo: 0,
+        isExternal: true,
         rendimiento: "Interés compuesto largo plazo"
       },
       {
         fondo: "4010  FONDO CETESDIRECTO (5% Presupuesto Futuro — Bonos Gubernamentales)",
         tipo: "Cetes 28 / 91 días (Tasa Fija)",
         asignado: cetMes,
-        gastado: 0,
-        saldo: cetMes,
+        gastado: cetMes,
+        saldo: 0,
+        isExternal: true,
         rendimiento: "~11.0% Tasa Cetes Gubernamental"
       },
       {
@@ -252,9 +254,9 @@ export default function HistoricoFuturo({
         </div>
 
         <div className="card-kpi border-rose-500/30">
-          <span className="kpi-label">Total Gastado en Ocio</span>
-          <h3 className="kpi-val-rose">{fmt(gastoOcioMes)}</h3>
-          <p className="kpi-subtext">{pctOcioGastado}% del presupuesto consumido</p>
+          <span className="kpi-label">Total Egresado / Invertido</span>
+          <h3 className="kpi-val-rose">-{fmt(gastoOcioMes + retMes + cetMes)}</h3>
+          <p className="kpi-subtext">Ocio: -{fmt(gastoOcioMes)} | Retiro+Cetes: -{fmt(retMes + cetMes)}</p>
         </div>
 
         <div className="card-kpi border-emerald-500/30">
@@ -368,7 +370,7 @@ export default function HistoricoFuturo({
       {/* ────────────────────────────────────────────────────────────────── */}
       <div
         id="print-estado-cuenta"
-        className="ec-doc bg-white text-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-300 shadow-2xl space-y-6"
+        className="ec-doc bg-white text-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-300 shadow-2xl space-y-6 print:p-0 print:border-none print:shadow-none print:space-y-1"
       >
         {/* ENCABEZADO SUPERIOR FORMAL (a) */}
         <div className="ec-card-block flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-slate-900 pb-4">
@@ -399,7 +401,7 @@ export default function HistoricoFuturo({
           </div>
 
           <div className="text-right text-xs space-y-0.5 min-w-[120px]">
-            <p className="text-slate-600 font-bold">Página <b className="text-slate-900">1 / 1</b></p>
+            <p className="text-slate-600 font-bold">Estado <b className="text-slate-900">Mensual</b></p>
             <p className="text-slate-600 font-bold">Fecha: <b className="text-slate-900">{fechaEstadoCuenta}</b></p>
             <p className="text-[9px] text-emerald-800 font-black uppercase">● AUDITADO &amp; CUADRADO</p>
           </div>
@@ -485,7 +487,13 @@ export default function HistoricoFuturo({
                         <td className={`text-right ${item.gastado > 0 ? 'ec-red' : 'text-slate-400'}`}>
                           {item.gastado > 0 ? '-' + fmt(item.gastado) : '$0.00'}
                         </td>
-                        <td className="text-right ec-green">{fmt(item.saldo)}</td>
+                        <td className="text-right ec-green">
+                          {item.isExternal ? (
+                            <span>$0.00 <span className="text-[9px] text-indigo-700 block font-normal">(Aportado)</span></span>
+                          ) : (
+                            fmt(item.saldo)
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -501,7 +509,7 @@ export default function HistoricoFuturo({
               </div>
               <div className="flex flex-wrap items-center gap-4 text-xs font-black">
                 <div>Asignado a Fondos: <span className="ec-blue text-sm">{fmt(presOcioMes + emgMes + retMes + cetMes)}</span></div>
-                <div>Gasto Real Ocio: <span className="ec-red text-sm">-{fmt(gastoOcioMes)}</span></div>
+                <div>Gasto Real / Invertido: <span className="ec-red text-sm">-{fmt(gastoOcioMes + retMes + cetMes)}</span></div>
                 <div>Ahorro Ocio Resguardado: <span className="ec-green text-sm">{fmt(remOcioMes)}</span></div>
                 <div>Total en Cajita Nu: <span className="text-purple-800 text-sm">{fmt(cajitaCierre)}</span></div>
               </div>

@@ -117,29 +117,40 @@ body {
 
 @page {
   size: letter portrait;
-  margin: 8mm 10mm 8mm 10mm;
+  margin: 6mm 8mm 6mm 8mm;
 }
 
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-sizing: border-box !important;
   }
 
-  html, body {
+  /* Resetear TODO fondo oscuro de la aplicación (elimina el marco oscuro en preview/PDF) */
+  html, body, #root, #root > div, main, .tab-content, div.min-h-screen, div[class*="bg-"] {
     background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
     height: auto !important;
     overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
   }
 
-  header, nav, button, .no-print {
+  /* Ocultar elementos de UI no imprimibles */
+  header, nav, button, .nav-tabs-ribbon, .no-print, #toast-container,
+  #tdc-side-reminder, #tdc-side-pill, .modal-overlay, [role="dialog"] {
     display: none !important;
+    visibility: hidden !important;
   }
 
+  /* El contenedor de impresión debe abarcar el 100% */
   #print-estado-cuenta {
     display: block !important;
     visibility: visible !important;
@@ -154,58 +165,104 @@ body {
     border-radius: 0 !important;
   }
 
+  /* Anular espaciados verticales excesivos de Tailwind en impresión */
+  #print-estado-cuenta.space-y-6 > :not([hidden]) ~ :not([hidden]),
+  #print-estado-cuenta .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 4px !important;
+  }
+
+  #print-estado-cuenta .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 3px !important;
+  }
+
+  #print-estado-cuenta .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 2px !important;
+  }
+
+  /* Permitir ver tablas completas sin barras de scroll */
+  .overflow-x-auto, .overflow-y-auto, .table-responsive-container {
+    overflow: visible !important;
+    max-height: none !important;
+    border: none !important;
+  }
+
+  /* Evitar saltos de página partidos en tablas y tarjetas */
+  .ec-card-block {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 4px !important;
+  }
+
+  tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Clases de forzado de salto de página */
+  .ec-page-break {
+    break-before: page !important;
+    page-break-before: always !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  /* Estilos compactos institucionales */
   .ec-header-box {
-    border: 1.5px solid #000000 !important;
+    border: 1.2px solid #000000 !important;
     background-color: #f1f5f9 !important;
+    padding: 2.5px 6px !important;
   }
 
   .ec-meta-box {
-    border: 1.5px solid #000000 !important;
+    border: 1px solid #000000 !important;
     background-color: #ffffff !important;
+    padding: 2.5px 6px !important;
+    margin-bottom: 3px !important;
   }
 
   .ec-section-bar {
     background-color: #000000 !important;
     color: #ffffff !important;
     border: 1px solid #000000 !important;
-    padding: 3.5px 6px !important;
-  }
-
-  .ec-table {
+    padding: 2px 5px !important;
     font-size: 9.5px !important;
   }
 
+  .ec-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8px !important;
+    border: 1px solid #000000 !important;
+  }
+
   .ec-table th {
-    border-top: 1.5px solid #000000 !important;
-    border-bottom: 1.5px solid #000000 !important;
+    border-top: 1px solid #000000 !important;
+    border-bottom: 1px solid #000000 !important;
     background-color: #f1f5f9 !important;
     color: #000000 !important;
     font-weight: 800 !important;
-    padding: 3.5px 5px !important;
+    padding: 2px 3.5px !important;
+    font-size: 8px !important;
   }
 
   .ec-table td {
     border-bottom: 1px solid #cbd5e1 !important;
-    padding: 3px 5px !important;
+    padding: 1.8px 3.5px !important;
     color: #000000 !important;
+    font-size: 8px !important;
   }
 
   .ec-total-bar {
-    border: 1.5px solid #000000 !important;
-    background-color: #f1f5f9 !important;
-    padding: 4px 6px !important;
+    border: 1px solid #000000 !important;
+    background-color: #f8fafc !important;
+    padding: 2.5px 5px !important;
+    font-size: 9px !important;
   }
 
-  .ec-card-block {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
-    margin-bottom: 10px !important;
-  }
-
-  .ec-blue { color: #0044cc !important; }
-  .ec-red  { color: #cc0000 !important; }
-  .ec-green{ color: #007700 !important; }
-  .ec-dark { color: #000000 !important; }
+  .ec-blue { color: #0033aa !important; font-weight: 800 !important; }
+  .ec-red  { color: #bb0000 !important; font-weight: 800 !important; }
+  .ec-green{ color: #006600 !important; font-weight: 800 !important; }
+  .ec-dark { color: #000000 !important; font-weight: 800 !important; }
 }
 
 /* ==========================================================================

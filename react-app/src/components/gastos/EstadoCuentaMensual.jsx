@@ -65,18 +65,18 @@ export default function EstadoCuentaMensual({
   const salidasTotal = mData?.excedente_salidas_total || 0;
   const pctGastadoMes = ingresoTotal > 0 ? ((gastoRealTotal / ingresoTotal) * 100).toFixed(1) : '0.0';
 
-  // Efectivo consolidado (Combi + Comidas)
+  // Efectivo consolidado (Combi + Comidas + Copias)
   const transacciones = mData?.transacciones || [];
-  const efectivoRetirarTotal = (mCombi + mComida) * numQ;
+  const efectivoRetirarTotal = (mCombi + mComida + mCopias) * numQ;
   const efectivoGastoReal = transacciones
-    .filter(t => (t.categoria || '').includes("Pasajes") || (t.categoria || '').includes("Comidas"))
+    .filter(t => (t.categoria || '').includes("Pasajes") || (t.categoria || '').includes("Comidas") || (t.categoria || '').includes("Copias"))
     .reduce((sum, t) => sum + (t.monto || 0), 0);
   const efectivoRemanente = Math.max(0, efectivoRetirarTotal - efectivoGastoReal);
 
-  // Digitales en Cajita (Copias + Imprevistos)
-  const digitalesPresupuesto = (mCopias + mImprevistos) * numQ;
+  // Digitales en Cajita (Imprevistos)
+  const digitalesPresupuesto = mImprevistos * numQ;
   const digitalesGastoReal = transacciones
-    .filter(t => (t.categoria || '').includes("Copias") || (t.categoria || '').includes("Imprevistos"))
+    .filter(t => (t.categoria || '').includes("Imprevistos"))
     .reduce((sum, t) => sum + (t.monto || 0), 0);
   const digitalesRemanente = Math.max(0, digitalesPresupuesto - digitalesGastoReal);
 
@@ -98,13 +98,13 @@ export default function EstadoCuentaMensual({
         isHeader: true
       },
       {
-        concepto: "2010  EFECTIVO RETIRADO (Pasajes Combi + Comidas Escuela — No genera rend.)",
+        concepto: "2010  EFECTIVO RETIRADO (Pasajes + Comidas + Copias — En Cartera / Físico)",
         presupuesto: efectivoRetirarTotal,
         gasto: efectivoGastoReal,
         saldo: efectivoRemanente
       },
       {
-        concepto: "2020  GASTOS DIGITALES EN CAJITA (Copias & Imprevistos — Cajita Nu 13%)",
+        concepto: "2020  GASTOS DIGITALES EN CAJITA (Imprevistos — Cajita Nu 13%)",
         presupuesto: digitalesPresupuesto,
         gasto: digitalesGastoReal,
         saldo: digitalesRemanente
@@ -138,7 +138,7 @@ export default function EstadoCuentaMensual({
       const tasaPrev = prevMonth.ingreso_total > 0 ? ((prevMonth.remanente_total / prevMonth.ingreso_total) * 100).toFixed(1) : '0.0';
       const deltaTasa = (parseFloat(tasaCurr) - parseFloat(tasaPrev)).toFixed(1);
 
-      const efectivoRetirarPrev = (mCombi + mComida) * prevMonth.num_quincenas;
+      const efectivoRetirarPrev = (mCombi + mComida + mCopias) * prevMonth.num_quincenas;
       const saldoNuPrev = Math.max(0, prevMonth.remanente_total - efectivoRetirarPrev);
       const rendNuPrev = saldoNuPrev * (0.13 / 12);
 
@@ -211,7 +211,7 @@ export default function EstadoCuentaMensual({
         }
       ];
     }
-  }, [hasData, prevMonth, gastoRealTotal, remanenteTotal, ingresoTotal, pctGastadoMes, rendCajitaNuMensual, saldoEnCajitaTurboNu, mCombi, mComida]);
+  }, [hasData, prevMonth, gastoRealTotal, remanenteTotal, ingresoTotal, pctGastadoMes, rendCajitaNuMensual, saldoEnCajitaTurboNu, mCombi, mComida, mCopias]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // SECCIÓN g: Desglose Consolidado por Categoría
@@ -294,8 +294,8 @@ export default function EstadoCuentaMensual({
       },
       {
         nombre: "📄 Copias, Material & Papelería",
-        tipo: "Digital (Cajita Nu)",
-        isEfectivo: false,
+        tipo: "Efectivo Físico",
+        isEfectivo: true,
         presBaseQ: baseQCopias,
         presTotal: baseQCopias * numQ,
         gasto: transacciones.filter(t => (t.categoria || '').includes("Copias")).reduce((s, t) => s + (t.monto || 0), 0)
@@ -359,7 +359,7 @@ export default function EstadoCuentaMensual({
 
     const sacarCombi = Math.max(0, baseQCombi - sobCombi);
     const sacarComida = Math.max(0, baseQComida - sobComida);
-    const fondearCopias = Math.max(0, baseQCopias - sobCopias);
+    const sacarCopias = Math.max(0, baseQCopias - sobCopias);
     const fondearImp = Math.max(0, baseQImprevistos - sobImp);
 
     return {
@@ -370,13 +370,14 @@ export default function EstadoCuentaMensual({
         totRetiroNetoEfectivoQ,
         baseQCombi,
         baseQComida,
+        baseQCopias,
         sobCombi,
         sobComida,
         sobCopias,
         sobImp,
         sacarCombi,
         sacarComida,
-        fondearCopias,
+        sacarCopias,
         fondearImp
       }
     };
@@ -522,7 +523,7 @@ export default function EstadoCuentaMensual({
       {/* ────────────────────────────────────────────────────────────────── */}
       <div
         id="print-estado-cuenta"
-        className="ec-doc bg-white text-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-300 shadow-2xl space-y-6"
+        className="ec-doc bg-white text-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-300 shadow-2xl space-y-6 print:p-0 print:border-none print:shadow-none print:space-y-1"
       >
         {/* ENCABEZADO SUPERIOR FORMAL (a) */}
         <div className="ec-card-block flex flex-col sm:flex-row items-center justify-between gap-4 border-b-2 border-slate-900 pb-4">
@@ -553,7 +554,7 @@ export default function EstadoCuentaMensual({
           </div>
 
           <div className="text-right text-xs space-y-0.5 min-w-[120px]">
-            <p className="text-slate-600 font-bold">Página <b className="text-slate-900">1 / 1</b></p>
+            <p className="text-slate-600 font-bold">Página <b className="text-slate-900">1 / 2</b></p>
             <p className="text-slate-600 font-bold">Fecha: <b className="text-slate-900">{fechaEstadoCuenta}</b></p>
             <p className="text-[9px] text-emerald-800 font-black uppercase">● AUDITADO &amp; CUADRADO</p>
           </div>
@@ -798,7 +799,7 @@ export default function EstadoCuentaMensual({
                       <p className="text-[10px] text-slate-500 font-extrabold uppercase">Presupuesto Efectivo Base:</p>
                       <p className="text-base font-black text-slate-900 mt-0.5">{fmt(compensacionData.advice.totPresBaseEfectivoQ)}</p>
                       <p className="text-[9px] text-slate-500">
-                        ({fmt(compensacionData.advice.baseQCombi)} Pasajes + {fmt(compensacionData.advice.baseQComida)} Comidas)
+                        ({fmt(compensacionData.advice.baseQCombi)} Pasajes + {fmt(compensacionData.advice.baseQComida)} Comidas + {fmt(compensacionData.advice.baseQCopias)} Copias)
                       </p>
                     </div>
                     <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-200">
@@ -831,10 +832,10 @@ export default function EstadoCuentaMensual({
                           : `(monto base completo)`}.
                       </li>
                       <li>
-                        <b>📄 Copias &amp; Papelería:</b> Cuentas con <b>{fmt(compensacionData.advice.sobCopias)}</b> resguardados en Cajita Nu{' '}
-                        {compensacionData.advice.fondearCopias > 0
-                          ? `(solo requieres asignar ${fmt(compensacionData.advice.fondearCopias)} adicionales)`
-                          : `(saldo íntegro cubierto)`}.
+                        <b>📄 Copias &amp; Papelería:</b> Retirar <b className="text-emerald-800">{fmt(compensacionData.advice.sacarCopias)}</b> en cajero{' '}
+                        {compensacionData.advice.sobCopias > 0
+                          ? `(en lugar de ${fmt(compensacionData.advice.baseQCopias)}, porque ya cuentas con ${fmt(compensacionData.advice.sobCopias)} de remanente en mano)`
+                          : `(monto base completo en efectivo para papelería)`}.
                       </li>
                       <li>
                         <b>🛡️ Imprevistos:</b> Cuentas con <b>{fmt(compensacionData.advice.sobImp)}</b> resguardados en Cajita Nu{' '}
@@ -846,6 +847,27 @@ export default function EstadoCuentaMensual({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* MEMBRETE FORMAL DE CONTINUACIÓN PARA PÁGINA 2 (SOLO IMPRESIÓN) */}
+            <div className="hidden print:flex ec-page-break items-center justify-between border-b-2 border-slate-900 pb-2 mb-2 pt-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-black text-sm border border-slate-800">
+                  <span>PF</span>
+                </div>
+                <div>
+                  <h3 className="text-xs font-black tracking-tight text-slate-900 uppercase">
+                    CONTROL FINANCIERO PERSONAL — ESTADO DE CUENTA
+                  </h3>
+                  <p className="text-[9px] text-slate-600 font-semibold tracking-wider uppercase">
+                    DETALLE DE OPERACIONES &amp; BITÁCORA — {mData?.mes_anio?.toUpperCase() || 'GENERAL'}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right text-[10px]">
+                <p className="text-slate-600 font-bold">Página <b className="text-slate-900">2 / 2</b></p>
+                <p className="text-[8px] text-emerald-800 font-black uppercase">● AUDITADO &amp; CUADRADO</p>
+              </div>
             </div>
 
             {/* SECCIÓN i: RESUMEN DE QUINCENAS ARCHIVADAS EN EL MES */}
