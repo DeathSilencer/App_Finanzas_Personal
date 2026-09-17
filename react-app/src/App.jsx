@@ -445,6 +445,16 @@ export default function App() {
               </button>
 
               <button
+                onClick={() => setFuturoTab('tdc')}
+                className={`nav-tab-btn ${
+                  futuroTab === 'tdc' ? 'active-purple' : ''
+                }`}
+              >
+                <CreditCard className="w-4 h-4" />
+                <span>💳 Control TDC Nu</span>
+              </button>
+
+              <button
                 onClick={() => setFuturoTab('ocio')}
                 className={`nav-tab-btn ${
                   futuroTab === 'ocio' ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30 border-amber-600' : ''
@@ -475,26 +485,6 @@ export default function App() {
               </button>
 
               <button
-                onClick={() => setFuturoTab('cetes')}
-                className={`nav-tab-btn ${
-                  futuroTab === 'cetes' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border-blue-600' : ''
-                }`}
-              >
-                <Lock className="w-4 h-4" />
-                <span>🔒 Ahorro Cetes</span>
-              </button>
-
-              <button
-                onClick={() => setFuturoTab('tdc')}
-                className={`nav-tab-btn ${
-                  futuroTab === 'tdc' ? 'active-purple' : ''
-                }`}
-              >
-                <CreditCard className="w-4 h-4" />
-                <span>💳 Control TDC Nu</span>
-              </button>
-
-              <button
                 onClick={() => setFuturoTab('fondo-emergencia')}
                 className={`nav-tab-btn ${
                   futuroTab === 'fondo-emergencia' ? 'active-emerald' : ''
@@ -502,6 +492,16 @@ export default function App() {
               >
                 <ShieldCheck className="w-4 h-4" />
                 <span>🛡️ Fondo Emergencia</span>
+              </button>
+
+              <button
+                onClick={() => setFuturoTab('cetes')}
+                className={`nav-tab-btn ${
+                  futuroTab === 'cetes' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border-blue-600' : ''
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+                <span>🔒 Ahorro Cetes</span>
               </button>
 
               <button
