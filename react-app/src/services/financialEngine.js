@@ -411,13 +411,36 @@ export function computeFuturo(
   for (const h of historicoGastos) {
     try {
       const det = typeof h.detalle_json === 'string' ? JSON.parse(h.detalle_json) : (h.detalle_json || {});
-      const cat_g = det.desglose_categorias || {};
-      const g_cop = Number(cat_g["📄 Copias, Material & Papelería"] || 0);
-      const g_imp = Number(cat_g["🛡️ Imprevistos / Por si acaso"] || 0);
-      const g_sal = Number(cat_g["🍕 Excedente 20%: Refuerzo Gustos / Salidas"] || 0);
-      hist_copias += Math.max(0, Number(det.monto_copias ?? m_copias) - g_cop);
-      hist_imprevistos += Math.max(0, Number(det.monto_imprevistos ?? m_imprevistos) - g_imp);
-      hist_salidas += Math.max(0, Number(h.refuerzo_gustos_20 || 0) - g_sal);
+      const allTx = [];
+      if (Array.isArray(det.registros)) allTx.push(...det.registros);
+      if (Array.isArray(det.compras_tdc)) {
+        const existingIds = new Set(allTx.map(t => String(t.id || `${t.fecha}-${t.concepto}-${t.monto}`)));
+        for (const c of det.compras_tdc) {
+          const cId = String(c.id || `${c.fecha}-${c.concepto}-${c.monto}`);
+          if (!existingIds.has(cId)) allTx.push(c);
+        }
+      }
+
+      // 1. Copias: remanente no gastado en la quincena cerrada
+      if (det.desglose_categorias && det.desglose_categorias.saldo_copias_nu !== undefined) {
+        hist_copias += Number(det.desglose_categorias.saldo_copias_nu);
+      } else {
+        const g_cop = allTx.filter(t => (t.categoria || '').includes("Copias") || (t.categoria || '').includes("Material")).reduce((s, t) => s + (Number(t.monto) || 0), 0);
+        hist_copias += Math.max(0, Number(det.monto_copias ?? m_copias) - g_cop);
+      }
+
+      // 2. Imprevistos: remanente no gastado en la quincena cerrada
+      if (det.desglose_categorias && det.desglose_categorias.saldo_imprevistos_nu !== undefined) {
+        hist_imprevistos += Number(det.desglose_categorias.saldo_imprevistos_nu);
+      } else {
+        const g_imp = allTx.filter(t => (t.categoria || '').includes("Imprevistos")).reduce((s, t) => s + (Number(t.monto) || 0), 0);
+        hist_imprevistos += Math.max(0, Number(det.monto_imprevistos ?? m_imprevistos) - g_imp);
+      }
+
+      // 3. Salidas / Refuerzo 20%: remanente no gastado en la quincena cerrada
+      const g_sal = allTx.filter(t => (t.categoria || '').includes("Excedente 20%") || (t.categoria || '').includes("Salidas") || (t.categoria || '').includes("Refuerzo Gustos")).reduce((s, t) => s + (Number(t.monto) || 0), 0);
+      const pres_sal = Number(h.refuerzo_gustos_20 ?? monto_salidas_20);
+      hist_salidas += Math.max(0, pres_sal - g_sal);
     } catch (e) {
       hist_salidas += Number(h.refuerzo_gustos_20 || 0);
     }
