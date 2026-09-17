@@ -82,8 +82,8 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
   const pct_consumido = presupuesto_asignado > 0 ? Math.round((gasto_total_real / presupuesto_asignado) * 1000) / 10 : 0;
 
   const total_fijos = round2(monto_combi + monto_comida + monto_copias + monto_imprevistos);
-  const efectivo_a_retirar = round2(monto_combi + monto_comida);
-  const presupuesto_efectivo_base = round2(monto_combi + monto_comida);
+  const efectivo_a_retirar = round2(monto_combi + monto_comida + monto_copias);
+  const presupuesto_efectivo_base = round2(monto_combi + monto_comida + monto_copias);
 
   const gasto_combi = gastos_por_cat["🚌 Pasajes Combi (Efectivo)"] || 0;
   const gasto_comida = gastos_por_cat["🥪 Comidas en Escuela (Efectivo)"] || 0;
@@ -101,28 +101,32 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
 
   let sobrante_combi = 0;
   let sobrante_comida = 0;
+  let sobrante_copias = 0;
   let sobrante_efectivo_mano = 0;
   let efectivo_neto_retirar = presupuesto_efectivo_base;
   let sacar_combi = monto_combi;
   let sacar_comida = monto_comida;
+  let sacar_copias = monto_copias;
 
-  if (gasto_combi > 0 || gasto_comida > 0) {
+  if (gasto_combi > 0 || gasto_comida > 0 || gasto_copias > 0) {
     sobrante_combi = Math.max(0, round2(monto_combi - gasto_combi));
     sobrante_comida = Math.max(0, round2(monto_comida - gasto_comida));
-    sobrante_efectivo_mano = round2(sobrante_combi + sobrante_comida);
+    sobrante_copias = Math.max(0, round2(monto_copias - gasto_copias));
+    sobrante_efectivo_mano = round2(sobrante_combi + sobrante_comida + sobrante_copias);
     efectivo_neto_retirar = Math.max(0, round2(presupuesto_efectivo_base - sobrante_efectivo_mano));
     sacar_combi = Math.max(0, round2(monto_combi - sobrante_combi));
     sacar_comida = Math.max(0, round2(monto_comida - sobrante_comida));
+    sacar_copias = Math.max(0, round2(monto_copias - sobrante_copias));
   }
 
-  const saldo_copias_nu = Math.max(0, round2(monto_copias - gasto_copias));
-  const fondear_copias = Math.max(0, round2(monto_copias - saldo_copias_nu));
+  const saldo_copias_nu = 0;
+  const fondear_copias = 0;
   const saldo_imprevistos_nu = Math.max(0, round2(monto_imprevistos - gasto_imprevistos));
   const fondear_imprevistos = Math.max(0, round2(monto_imprevistos - saldo_imprevistos_nu));
 
   const proximo_presupuesto_efectivo_base = round2(monto_combi + monto_comida + monto_copias);
-  const proximo_sacar_copias = monto_copias;
-  const proximo_efectivo_neto_retirar = round2(sacar_combi + sacar_comida + proximo_sacar_copias);
+  const proximo_sacar_copias = sacar_copias;
+  const proximo_efectivo_neto_retirar = efectivo_neto_retirar;
 
   const excedente_fijo = Math.max(0, round2(presupuesto_asignado - total_fijos));
   const excedente_80_moto = round2(excedente_fijo * 0.80);
@@ -144,7 +148,7 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
     },
     {
       categoria: "📄 Copias, Material & Papelería",
-      mecanica: "Material escolar e impresiones",
+      mecanica: "Material escolar, copias e impresiones (Efectivo Físico en Cartera)",
       presupuesto: monto_copias,
       pct: presupuesto_asignado > 0 ? Math.round((monto_copias / presupuesto_asignado) * 1000) / 10 : 0
     },
@@ -233,8 +237,10 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
       efectivo_neto_retirar,
       sobrante_combi,
       sobrante_comida,
+      sobrante_copias,
       sacar_combi,
       sacar_comida,
+      sacar_copias,
       saldo_copias_nu,
       fondear_copias,
       saldo_imprevistos_nu,
@@ -465,6 +471,11 @@ export function computeFuturo(
     .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
   const gasto_real_copias = round2(gasto_copias_diarios + gasto_copias_tdc);
 
+  const gasto_copias_digital_diarios = registrosGastos
+    .filter(r => ((r.categoria || '').includes("Copias") || (r.categoria || '').includes("Material")) && r.metodo_pago !== "Efectivo")
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+  const gasto_copias_digital = round2(gasto_copias_digital_diarios + gasto_copias_tdc);
+
   // Imprevistos
   const gasto_imp_diarios = registrosGastos
     .filter(r => (r.categoria || '').includes("Imprevistos"))
@@ -492,7 +503,9 @@ export function computeFuturo(
     .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
   const gasto_real_moto_80 = round2(gasto_moto_diarios + gasto_moto_tdc);
 
-  const saldo_copias = Math.max(0, round2(hist_copias + m_copias - gasto_real_copias));
+  // A partir de esta quincena, Copias se retira en Efectivo Físico ($606 total en cajero).
+  // Por lo tanto, en Cajita Nu solo permanece el remanente digital previo si existe (hist_copias - gastos digitales).
+  const saldo_copias = Math.max(0, round2(hist_copias - gasto_copias_digital));
   const saldo_imprevistos = Math.max(0, round2(hist_imprevistos + m_imprevistos - gasto_real_imprevistos));
   const saldo_moto_80 = Math.max(0, round2(hist_moto + monto_moto_80 + aporte_dir_moto - gasto_real_moto_80));
   const saldo_salidas_20 = Math.max(0, round2(hist_salidas + monto_salidas_20 - gasto_real_salidas_20));
@@ -599,6 +612,15 @@ export function computeFuturo(
         total_futuro: total_futuro_cajita,
         total_gastos: total_digital_gastos,
         total_gastos_digital: total_digital_gastos,
+        efectivo_cartera: {
+          presupuesto_actual: round2(m_combi + m_comida + m_copias),
+          monto_combi: m_combi,
+          monto_comida: m_comida,
+          monto_copias: m_copias,
+          proximo_presupuesto_total: round2(m_combi + m_comida + m_copias),
+          desglose_actual: `$${m_combi.toFixed(2)} Pasajes + $${m_comida.toFixed(2)} Comidas + $${m_copias.toFixed(2)} Copias Físicas`,
+          desglose_proximo: `$${m_combi.toFixed(2)} Pasajes + $${m_comida.toFixed(2)} Comidas + $${m_copias.toFixed(2)} Copias Físicas`
+        },
         desglose: {
           fondo_emergencia: saldo_emergencia,
           ocio: remanente_ocio,
@@ -640,8 +662,8 @@ export function computeFuturo(
             pct: gran_total_cajita > 0 ? Math.round((saldo_imprevistos / gran_total_cajita) * 1000) / 10 : 0
           },
           copias: {
-            presupuesto: m_copias,
-            gasto_real: gasto_real_copias,
+            presupuesto: hist_copias,
+            gasto_real: gasto_copias_digital,
             monto: saldo_copias,
             pct: gran_total_cajita > 0 ? Math.round((saldo_copias / gran_total_cajita) * 1000) / 10 : 0
           },

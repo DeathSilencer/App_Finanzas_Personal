@@ -57,10 +57,9 @@ def handle_get_gastos(handler):
 
         # Gastos Fijos
         total_fijos = monto_combi + monto_comida + monto_copias + monto_imprevistos
-        # En la quincena actual, el retiro base ejecutado fue de $556.00 (Pasajes + Comidas)
-        # y Copias se mantuvo en Cajita Nu ($50.00).
-        efectivo_a_retirar = monto_combi + monto_comida
-        presupuesto_efectivo_base = round(monto_combi + monto_comida, 2)
+        # A partir de esta quincena, el retiro base ejecutado integra Copias ($606.00: Pasajes + Comidas + Copias)
+        efectivo_a_retirar = round(monto_combi + monto_comida + monto_copias, 2)
+        presupuesto_efectivo_base = round(monto_combi + monto_comida + monto_copias, 2)
 
         # 3.1 Cálculos Inteligentes de Retiro y Compensación de Efectivo
         gasto_combi = gastos_por_cat.get("🚌 Pasajes Combi (Efectivo)", 0.0)
@@ -78,32 +77,34 @@ def handle_get_gastos(handler):
             if "Copias" in r["categoria"] and r["metodo_pago"] != "Efectivo"
         )
 
-        if gasto_combi > 0 or gasto_comida > 0:
+        if gasto_combi > 0 or gasto_comida > 0 or gasto_copias > 0:
             sobrante_combi = max(0.0, round(monto_combi - gasto_combi, 2))
             sobrante_comida = max(0.0, round(monto_comida - gasto_comida, 2))
-            sobrante_efectivo_mano = round(sobrante_combi + sobrante_comida, 2)
+            sobrante_copias = max(0.0, round(monto_copias - gasto_copias, 2))
+            sobrante_efectivo_mano = round(sobrante_combi + sobrante_comida + sobrante_copias, 2)
             efectivo_neto_retirar = max(0.0, round(presupuesto_efectivo_base - sobrante_efectivo_mano, 2))
             sacar_combi = max(0.0, round(monto_combi - sobrante_combi, 2))
             sacar_comida = max(0.0, round(monto_comida - sobrante_comida, 2))
+            sacar_copias = max(0.0, round(monto_copias - sobrante_copias, 2))
         else:
             sobrante_combi = 0.0
             sobrante_comida = 0.0
+            sobrante_copias = 0.0
             sobrante_efectivo_mano = 0.0
             efectivo_neto_retirar = presupuesto_efectivo_base
             sacar_combi = monto_combi
             sacar_comida = monto_comida
+            sacar_copias = monto_copias
 
-        # En la quincena actual, Copias e Imprevistos siguen en Cajita Nu:
-        saldo_copias_nu = max(0.0, round(monto_copias - gasto_copias, 2))
-        fondear_copias = max(0.0, round(monto_copias - saldo_copias_nu, 2))
+        # Copias ya es efectivo en mano; Imprevistos sigue en Cajita Nu:
+        saldo_copias_nu = 0.0
+        fondear_copias = 0.0
         saldo_imprevistos_nu = max(0.0, round(monto_imprevistos - gasto_imprevistos, 2))
         fondear_imprevistos = max(0.0, round(monto_imprevistos - saldo_imprevistos_nu, 2))
 
-        # PLANIFICACIÓN PARA LA SIGUIENTE QUINCENA (Próximo Día de Pago):
-        # A partir del próximo día de pago, se integran los $50 de copias al retiro físico ($606 base).
         proximo_presupuesto_efectivo_base = round(monto_combi + monto_comida + monto_copias, 2)
-        proximo_sacar_copias = monto_copias  # $50.00 para fondear el efectivo físico en la siguiente quincena
-        proximo_efectivo_neto_retirar = round(sacar_combi + sacar_comida + proximo_sacar_copias, 2)
+        proximo_sacar_copias = sacar_copias
+        proximo_efectivo_neto_retirar = efectivo_neto_retirar
 
         # Excedente Base Fijo
         excedente_fijo = max(0.0, round(presupuesto_asignado - total_fijos, 2))

@@ -218,12 +218,12 @@ def handle_get_futuro(handler):
         gasto_real_imprevistos = sum(float(r["monto"]) for r in reg_gastos if "Imprevistos" in r["categoria"] and r["metodo_pago"] != "Efectivo")
         gasto_real_salidas_20 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 20%" in r["categoria"] and r["metodo_pago"] != "Efectivo")
         gasto_real_moto_80 = sum(float(r["monto"]) for r in reg_gastos if "Excedente 80%" in r["categoria"] and r["metodo_pago"] != "Efectivo")
-
-        saldo_copias = max(0.0, round(hist_copias + m_copias - gasto_real_copias, 2))
+        # A partir de esta quincena, Copias se retira en efectivo físico en cajero.
+        # En Cajita Nu solo queda el remanente digital previo si existe (hist_copias - gastos digitales).
+        saldo_copias = max(0.0, round(hist_copias - gasto_real_copias, 2))
         saldo_imprevistos = max(0.0, round(hist_imprevistos + m_imprevistos - gasto_real_imprevistos, 2))
         saldo_moto_80 = max(0.0, round(hist_moto + monto_moto_80 + aporte_dir_moto - gasto_real_moto_80, 2))
         saldo_salidas_20 = max(0.0, round(hist_salidas + monto_salidas_20 - gasto_real_salidas_20, 2))
-        # En la quincena actual, Copias sigue en Cajita Nu (6 fondos activos).
         total_digital_gastos = round(saldo_copias + saldo_imprevistos + saldo_moto_80 + saldo_salidas_20, 2)
 
         # Sub-contabilidad de la Única Cajita Turbo de Nu (13% anual)
@@ -242,7 +242,7 @@ def handle_get_futuro(handler):
         rendimiento_mensual_cajita = round(gran_total_cajita * (tasa_nu / 12.0), 2)
         rendimiento_anual_cajita = round(gran_total_cajita * tasa_nu, 2)
 
-        presupuesto_efectivo_actual = round(m_combi + m_comida, 2)
+        presupuesto_efectivo_actual = round(m_combi + m_comida + m_copias, 2)
         proximo_presupuesto_efectivo = round(m_combi + m_comida + m_copias, 2)
 
         porciones_cajita = {
@@ -287,12 +287,12 @@ def handle_get_futuro(handler):
                 "origen": "Gastos Básicos • Acumulativo"
             },
             "copias": {
-                "presupuesto": round(hist_copias + m_copias, 2),
+                "presupuesto": round(hist_copias, 2),
                 "gasto_real": gasto_real_copias,
                 "monto": saldo_copias,
                 "pct": round((saldo_copias / gran_total_cajita) * 100, 1) if gran_total_cajita > 0 else 0.0,
-                "etiqueta": "Copias & Papelería (En Cajita)",
-                "origen": "Gastos Básicos • Quincena Actual"
+                "etiqueta": "Copias & Papelería (Remanente Nu)",
+                "origen": "Gastos Básicos • Acumulativo"
             }
         }
 
@@ -320,7 +320,7 @@ def handle_get_futuro(handler):
             "total_gastos_digital": total_digital_gastos,
             "porciones": porciones_cajita,
             "gastos_digitales_detalle": {
-                "copias": { "presupuesto": round(hist_copias + m_copias, 2), "gasto_real": gasto_real_copias, "saldo": saldo_copias },
+                "copias": { "presupuesto": round(hist_copias, 2), "gasto_real": gasto_real_copias, "saldo": saldo_copias },
                 "imprevistos": { "presupuesto": round(hist_imprevistos + m_imprevistos, 2), "gasto_real": gasto_real_imprevistos, "saldo": saldo_imprevistos },
                 "moto_80": { "presupuesto": round(hist_moto + monto_moto_80, 2), "gasto_real": gasto_real_moto_80, "saldo": saldo_moto_80 },
                 "salidas_20": { "presupuesto": round(hist_salidas + monto_salidas_20, 2), "gasto_real": gasto_real_salidas_20, "saldo": saldo_salidas_20 }
@@ -331,7 +331,7 @@ def handle_get_futuro(handler):
                 "monto_comida": m_comida,
                 "proximo_presupuesto_total": proximo_presupuesto_efectivo,
                 "monto_copias": m_copias,
-                "desglose_actual": f"${m_combi:.2f} Pasajes + ${m_comida:.2f} Comidas",
+                "desglose_actual": f"${m_combi:.2f} Pasajes + ${m_comida:.2f} Comidas + ${m_copias:.2f} Copias Físicas",
                 "desglose_proximo": f"${m_combi:.2f} Pasajes + ${m_comida:.2f} Comidas + ${m_copias:.2f} Copias Físicas"
             },
             "fondos_externos": {

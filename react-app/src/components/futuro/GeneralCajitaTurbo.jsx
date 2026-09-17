@@ -137,12 +137,12 @@ export default function GeneralCajitaTurbo({
   );
 
   const efectivoCartera = cajita.efectivo_cartera || {
-    presupuesto_actual: 556,
+    presupuesto_actual: 606,
     monto_combi: 376,
     monto_comida: 180,
-    proximo_presupuesto_total: 606,
     monto_copias: 50,
-    desglose_actual: "$376.00 Pasajes + $180.00 Comidas",
+    proximo_presupuesto_total: 606,
+    desglose_actual: "$376.00 Pasajes + $180.00 Comidas + $50.00 Copias Físicas",
     desglose_proximo: "$376.00 Pasajes + $180.00 Comidas + $50.00 Copias Físicas"
   };
 
@@ -494,22 +494,22 @@ export default function GeneralCajitaTurbo({
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-black text-sky-400">{fmt(porcCopias.monto)}</p>
-                  <span className="text-[8px] text-emerald-400 font-semibold">En Cajita</span>
+                  <span className="text-[8px] text-emerald-400 font-semibold">{porcCopias.monto > 0 ? 'Remanente Nu' : 'En Cartera'}</span>
                 </div>
               </div>
             </div>
 
-            {/* Banner Informativo de Transición al Siguiente Día de Pago */}
+            {/* Banner Informativo de Retiro en Efectivo Físico */}
             <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5 text-xs">
               <div className="flex items-center justify-between text-slate-400">
                 <span className="font-semibold flex items-center space-x-1 text-emerald-400">
                   <Banknote className="w-3.5 h-3.5" />
-                  <span>Efectivo Físico en Cartera:</span>
+                  <span>Efectivo Físico en Cartera (Retirado en Cajero):</span>
                 </span>
-                <span className="font-bold text-emerald-300">{fmt(efectivoCartera.presupuesto_actual)} actual</span>
+                <span className="font-bold text-emerald-300">{fmt(efectivoCartera.presupuesto_actual)} base</span>
               </div>
               <p className="text-[10px] text-slate-300">
-                *En esta quincena activa tu retiro base fue de <b className="text-white">{efectivoCartera.desglose_actual}</b> ({fmt(efectivoCartera.presupuesto_actual)}). A partir de tu próximo día de pago (siguiente quincena), pasará a <b className="text-emerald-400">{fmt(efectivoCartera.proximo_presupuesto_total)}</b> para incluir Copias en efectivo y blindar tu transporte.
+                *A partir de esta quincena, tu retiro en efectivo incluye <b className="text-white">{efectivoCartera.desglose_actual}</b> ({fmt(efectivoCartera.presupuesto_actual)} total), manteniendo tus pasajes, comidas y copias escolares 100% cubiertos en mano.
               </p>
             </div>
           </div>

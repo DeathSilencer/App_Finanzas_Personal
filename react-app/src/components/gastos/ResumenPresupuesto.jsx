@@ -23,18 +23,20 @@ export default function ResumenPresupuesto({
   const montoCombi = resumen.monto_combi || 376;
   const montoComida = resumen.monto_comida || 180;
   const montoCopias = resumen.monto_copias || 50;
-  const presupuestoEfectivoBase = resumen.presupuesto_efectivo_base || (montoCombi + montoComida);
+  const presupuestoEfectivoBase = resumen.presupuesto_efectivo_base || (montoCombi + montoComida + montoCopias);
   const sobranteEfectivoMano = resumen.sobrante_efectivo_mano || 0;
   const efectivoNetoRetirar = resumen.efectivo_neto_retirar ?? (presupuestoEfectivoBase - sobranteEfectivoMano);
 
   const sobranteCombi = resumen.sobrante_combi ?? 0;
   const sobranteComida = resumen.sobrante_comida ?? 0;
+  const sobranteCopias = resumen.sobrante_copias ?? 0;
   const sacarCombi = resumen.sacar_combi ?? Math.max(0, montoCombi - sobranteCombi);
   const sacarComida = resumen.sacar_comida ?? Math.max(0, montoComida - sobranteComida);
-  const saldoCopiasNu = resumen.saldo_copias_nu ?? (resumen.monto_copias || 50);
-  const fondearCopias = resumen.fondear_copias ?? Math.max(0, (resumen.monto_copias || 50) - saldoCopiasNu);
+  const sacarCopias = resumen.sacar_copias ?? Math.max(0, montoCopias - sobranteCopias);
+  const saldoCopiasNu = resumen.saldo_copias_nu ?? 0;
+  const fondearCopias = resumen.fondear_copias ?? 0;
   const proximoPresupuestoBase = resumen.proximo_presupuesto_efectivo_base || (montoCombi + montoComida + montoCopias);
-  const proximoEfectivoNeto = resumen.proximo_efectivo_neto_retirar ?? (sacarCombi + sacarComida + montoCopias);
+  const proximoEfectivoNeto = resumen.proximo_efectivo_neto_retirar ?? efectivoNetoRetirar;
 
   const saldoImpNu = resumen.saldo_imprevistos_nu ?? (resumen.monto_imprevistos || 200);
   const fondearImp = resumen.fondear_imprevistos ?? Math.max(0, (resumen.monto_imprevistos || 200) - saldoImpNu);
@@ -73,7 +75,7 @@ export default function ResumenPresupuesto({
                 Base: {fmt(presupuestoEfectivoBase)} | <b className="text-amber-300">En mano: -{fmt(sobranteEfectivoMano)}</b>
               </span>
             ) : (
-              <span className="truncate">{fmt(montoCombi)} Combi + {fmt(montoComida)} Comidas</span>
+              <span className="truncate">{fmt(montoCombi)} Combi + {fmt(montoComida)} Comidas + {fmt(montoCopias)} Copias</span>
             )}
           </p>
         </div>
@@ -107,7 +109,7 @@ export default function ResumenPresupuesto({
             </div>
           </div>
           <span className="badge-indigo self-start sm:self-auto">
-            📌 Próximo Día de Pago: Retiro base {fmt(proximoPresupuestoBase)}
+            📌 Efectivo Físico en Cartera: Base {fmt(presupuestoEfectivoBase)}
           </span>
         </div>
 
@@ -118,7 +120,7 @@ export default function ResumenPresupuesto({
               Presupuesto Efectivo Base:
             </span>
             <h4 className="text-xl sm:text-2xl font-black text-white mt-1">{fmt(presupuestoEfectivoBase)}</h4>
-            <p className="text-[10px] text-slate-400 mt-1">({fmt(montoCombi)} Pasajes + {fmt(montoComida)} Comidas)</p>
+            <p className="text-[10px] text-slate-400 mt-1">({fmt(montoCombi)} Pasajes + {fmt(montoComida)} Comidas + {fmt(montoCopias)} Copias)</p>
           </div>
 
           <div className="card-glass-subtle flex flex-col justify-center">
@@ -144,31 +146,31 @@ export default function ResumenPresupuesto({
         <div className="card-glass-subtle border border-indigo-500/30 text-xs text-slate-300 space-y-2">
           <p className="font-bold text-white flex items-center space-x-1.5">
             <span className="text-amber-400">💡</span>
-            <span>Instrucción Exacta de Retiro y Fondeo para el Próximo Día de Pago:</span>
+            <span>Instrucción Exacta de Retiro y Fondeo para la Quincena:</span>
           </p>
           <ul className="space-y-1.5 pl-1 sm:pl-2 text-xs">
             <li className="flex items-start space-x-1.5">
               <span>🚌</span>
               <span>
-                <b className="text-white">Pasajes Combi:</b> Retirar <b className="text-emerald-400">{fmt(sacarCombi)}</b> en cajero (en lugar de {fmt(montoCombi)}, porque ya cuentas con <b className="text-amber-300">{fmt(sobranteCombi)}</b> de remanente en mano).
+                <b className="text-white">Pasajes Combi:</b> Retirar <b className="text-emerald-400">{fmt(sacarCombi)}</b> en cajero{sobranteCombi > 0 ? ` (en lugar de ${fmt(montoCombi)}, porque ya cuentas con ${fmt(sobranteCombi)} de remanente en mano)` : ` (${fmt(montoCombi)} base)`}.
               </span>
             </li>
             <li className="flex items-start space-x-1.5">
               <span>🥪</span>
               <span>
-                <b className="text-white">Comidas Escuela:</b> Retirar <b className="text-emerald-400">{fmt(sacarComida)}</b> en cajero (en lugar de {fmt(montoComida)}, porque ya cuentas con <b className="text-amber-300">{fmt(sobranteComida)}</b> de remanente en mano).
+                <b className="text-white">Comidas Escuela:</b> Retirar <b className="text-emerald-400">{fmt(sacarComida)}</b> en cajero{sobranteComida > 0 ? ` (en lugar de ${fmt(montoComida)}, porque ya cuentas con ${fmt(sobranteComida)} de remanente en mano)` : ` (${fmt(montoComida)} base)`}.
               </span>
             </li>
             <li className="flex items-start space-x-1.5">
               <span>📄</span>
               <span>
-                <b className="text-white">Copias &amp; Papelería:</b> En esta quincena cuentas con <b className="text-purple-300">{fmt(saldoCopiasNu)}</b> resguardados en Cajita Nu. A partir de tu próximo día de pago (siguiente quincena), retirarás <b className="text-emerald-400">{fmt(montoCopias)}</b> en cajero para activar tu fondo físico blindado ({fmt(proximoPresupuestoBase)} total en efectivo).
+                <b className="text-white">Copias &amp; Papelería:</b> Retirar <b className="text-emerald-400">{fmt(sacarCopias)}</b> en cajero{sobranteCopias > 0 ? ` (en lugar de ${fmt(montoCopias)}, porque cuentas con ${fmt(sobranteCopias)} de remanente en mano)` : ` para tu fondo físico en cartera`} ({fmt(montoCopias)} base asignados).
               </span>
             </li>
             <li className="flex items-start space-x-1.5">
               <span>🛡️</span>
               <span>
-                <b className="text-white">Imprevistos:</b> Cuentas con <b className="text-purple-300">{fmt(saldoImpNu)}</b> resguardados en Cajita Nu (solo requieres asignar <b className="text-indigo-300">{fmt(fondearImp)}</b> adicionales).
+                <b className="text-white">Imprevistos:</b> Cuentas con <b className="text-purple-300">{fmt(saldoImpNu)}</b> resguardados en Cajita Nu (requieres fondear <b className="text-indigo-300">{fmt(fondearImp)}</b> adicionales).
               </span>
             </li>
           </ul>
