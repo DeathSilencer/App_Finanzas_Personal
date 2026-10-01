@@ -37,17 +37,56 @@ let memoryState = {
   historicoFuturo: []
 };
 
+// Función inteligente para inferir el mes exacto del período o fecha de cierre
+export function inferMes(data = {}) {
+  const mesesList = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+  // 1. Si data.mes viene explícito
+  if (data.mes && typeof data.mes === 'string' && data.mes.trim()) {
+    const cleanMes = data.mes.trim().toLowerCase();
+    for (const m of mesesList) {
+      if (cleanMes.includes(m)) return m;
+    }
+    return cleanMes;
+  }
+
+  // 2. Extraer del texto del periodo si contiene algún nombre de mes (ej. "2da Quincena Septiembre 2026")
+  if (data.periodo && typeof data.periodo === 'string') {
+    const pLower = data.periodo.toLowerCase();
+    for (const m of mesesList) {
+      if (pLower.includes(m)) return m;
+    }
+  }
+
+  // 3. Extraer de fecha_cierre (ej. "2026-09-30")
+  if (data.fecha_cierre && typeof data.fecha_cierre === 'string') {
+    const parts = data.fecha_cierre.split('-');
+    if (parts.length >= 2) {
+      const monthNum = parseInt(parts[1], 10);
+      if (monthNum >= 1 && monthNum <= 12) {
+        return mesesList[monthNum - 1];
+      }
+    }
+  }
+
+  // 4. Fallback al mes actual
+  return new Date().toLocaleString('es-MX', { month: 'long' }).toLowerCase();
+}
+
 // Función para estructurar histórico consolidado por meses para el Estado de Cuenta
 export function buildHistorialGastos(cierres = []) {
   const mesesMap = {};
 
   for (const c of cierres) {
-    const key = `${c.mes} ${c.anio}`;
+    const mesNom = inferMes(c);
+    const anioVal = c.anio || (c.fecha_cierre ? parseInt(c.fecha_cierre.split('-')[0], 10) : 2026);
+    const mesDisplay = mesNom.charAt(0).toUpperCase() + mesNom.slice(1);
+    const key = `${mesNom} ${anioVal}`;
     if (!mesesMap[key]) {
       mesesMap[key] = {
-        mes_anio: key,
-        mes: c.mes,
-        anio: c.anio,
+        mes_anio: `${mesDisplay} ${anioVal}`,
+        mes: mesDisplay,
+        anio: anioVal,
         num_quincenas: 0,
         ingreso_total: 0,
         gastos_fijos_total: 0,
@@ -105,13 +144,15 @@ export function buildHistorialFuturo(cierres = []) {
   const mesesMap = {};
 
   for (const c of cierres) {
-    const mesNom = c.mes || 'septiembre';
-    const key = `${mesNom} ${c.anio || 2026}`;
+    const mesNom = inferMes(c);
+    const anioVal = c.anio || (c.fecha_cierre ? parseInt(c.fecha_cierre.split('-')[0], 10) : 2026);
+    const mesDisplay = mesNom.charAt(0).toUpperCase() + mesNom.slice(1);
+    const key = `${mesNom} ${anioVal}`;
     if (!mesesMap[key]) {
       mesesMap[key] = {
-        mes_anio: key,
-        mes: mesNom,
-        anio: c.anio || 2026,
+        mes_anio: `${mesDisplay} ${anioVal}`,
+        mes: mesDisplay,
+        anio: anioVal,
         num_quincenas: 0,
         presupuesto_ocio_total: 0,
         gasto_ocio_total: 0,
@@ -511,7 +552,7 @@ export async function cerrarQuincenaGastos(data) {
 
   const cierreData = {
     periodo,
-    mes: data.mes || new Date().toLocaleString('es-MX', { month: 'long' }),
+    mes: inferMes(data),
     anio: data.anio || new Date().getFullYear(),
     fecha_cierre: data.fecha_cierre || new Date().toISOString().split('T')[0],
     presupuesto: res.presupuesto_total,
@@ -681,7 +722,7 @@ export async function cerrarQuincenaFuturo(data) {
 
   const cierreData = {
     periodo: data.periodo || `Quincena ${new Date().toLocaleDateString()}`,
-    mes: data.mes || new Date().toLocaleString('es-MX', { month: 'long' }),
+    mes: inferMes(data),
     anio: data.anio || new Date().getFullYear(),
     fecha_cierre: data.fecha_cierre || new Date().toISOString().split('T')[0],
     presupuesto_ocio: ocio.presupuesto,

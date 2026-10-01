@@ -12,11 +12,27 @@ export default function CerrarQuincenaModal({
 
   const now = new Date();
   const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-  const defaultPeriodo = `${now.getDate() <= 15 ? '1ra' : '2da'} Quincena ${meses[now.getMonth()]} ${now.getFullYear()}`;
+  
+  let defaultQNum = '1ra';
+  let defaultMonthIdx = now.getMonth();
+  let defaultYear = now.getFullYear();
+
+  if (now.getDate() <= 3) {
+    defaultQNum = '2da';
+    defaultMonthIdx = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+    if (now.getMonth() === 0) defaultYear -= 1;
+  } else if (now.getDate() <= 18) {
+    defaultQNum = '1ra';
+  } else {
+    defaultQNum = '2da';
+  }
+
+  const defaultPeriodo = `${defaultQNum} Quincena ${meses[defaultMonthIdx]} ${defaultYear}`;
 
   const [periodo, setPeriodo] = useState(defaultPeriodo);
+  const [mes, setMes] = useState(meses[defaultMonthIdx]);
   const [fechaCierre, setFechaCierre] = useState(getTodayDate());
-  const [anio, setAnio] = useState(now.getFullYear());
+  const [anio, setAnio] = useState(defaultYear);
 
   const presupuesto = resumen.presupuesto_total || 2500;
   const gastoReal = resumen.gasto_total_real || 0;
@@ -24,10 +40,23 @@ export default function CerrarQuincenaModal({
   const ahorroMoto = resumen.excedente_80_moto || 1400;
   const refuerzoOcio = resumen.excedente_20_salidas || 350;
 
+  const handleMesChange = (newMes) => {
+    setMes(newMes);
+    setPeriodo(prev => {
+      for (const m of meses) {
+        if (prev.includes(m)) {
+          return prev.replace(m, newMes);
+        }
+      }
+      return prev;
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onConfirm({
       periodo: periodo.trim() || defaultPeriodo,
+      mes: mes.toLowerCase(),
       fecha_cierre: fechaCierre,
       anio: parseInt(anio)
     });
@@ -77,15 +106,29 @@ export default function CerrarQuincenaModal({
             </div>
           </div>
 
-          <div>
-            <label className="form-label">Nombre del Período / Quincena</label>
-            <input
-              type="text"
-              required
-              value={periodo}
-              onChange={(e) => setPeriodo(e.target.value)}
-              className="form-input font-bold"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="sm:col-span-2">
+              <label className="form-label">Nombre del Período / Quincena</label>
+              <input
+                type="text"
+                required
+                value={periodo}
+                onChange={(e) => setPeriodo(e.target.value)}
+                className="form-input font-bold"
+              />
+            </div>
+            <div>
+              <label className="form-label">Mes</label>
+              <select
+                value={mes}
+                onChange={(e) => handleMesChange(e.target.value)}
+                className="form-select font-bold"
+              >
+                {meses.map((m, idx) => (
+                  <option key={idx} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
