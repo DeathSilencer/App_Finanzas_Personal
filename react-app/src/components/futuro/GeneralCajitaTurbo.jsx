@@ -51,7 +51,7 @@ export default function GeneralCajitaTurbo({
   const porcMoto = porciones.moto_80 || { presupuesto: 1355.2, gasto_real: Math.max(0, (1355.2 - (desglose.moto_80 ?? 1355.2))), monto: desglose.moto_80 ?? 1355.2, pct: 37.2 };
   const porcSalidas = porciones.salidas_20 || { presupuesto: 338.8, gasto_real: Math.max(0, (338.8 - (desglose.salidas_20 ?? 338.8))), monto: desglose.salidas_20 ?? 338.8, pct: 9.3 };
   const porcImp = porciones.imprevistos || { presupuesto: 200, gasto_real: Math.max(0, (200 - (desglose.imprevistos ?? 200))), monto: desglose.imprevistos ?? 200, pct: 5.5 };
-  const porcCopias = porciones.copias || { presupuesto: 50, gasto_real: Math.max(0, (50 - (desglose.copias ?? 50))), monto: desglose.copias ?? 50, pct: 1.4 };
+  const porcCopias = porciones.copias || { presupuesto: 0, gasto_real: 0, monto: desglose.copias ?? 0, pct: 0 };
   const rendimientosActuales = Number(
     cajita.rendimientos_ganados_nu ?? 
     cajita.rendimiento_real_nu ?? 
@@ -166,7 +166,7 @@ export default function GeneralCajitaTurbo({
                 🛡️ Acumulativo en Cada Cierre de Quincena
               </span>
               <span className="badge-indigo">
-                ⚡ 6 Fondos en Nu (Quincena Actual)
+                ⚡ 5 Fondos en Nu (Quincena Actual)
               </span>
               {tieneRendimientos && (
                 <span className="badge-amber font-black">
@@ -266,12 +266,14 @@ export default function GeneralCajitaTurbo({
               style={{ width: `${porcImp.pct}%` }}
               title={`Imprevistos: ${fmt(porcImp.monto)} (${porcImp.pct}%)`}
             ></div>
-            {/* Copias */}
-            <div
-              className="bg-sky-400 transition-all duration-500 hover:opacity-80"
-              style={{ width: `${porcCopias.pct}%` }}
-              title={`Copias: ${fmt(porcCopias.monto)} (${porcCopias.pct}%)`}
-            ></div>
+            {/* Copias (Solo si tuviera remanente en Nu) */}
+            {porcCopias.monto > 0 && (
+              <div
+                className="bg-sky-400 transition-all duration-500 hover:opacity-80"
+                style={{ width: `${porcCopias.pct}%` }}
+                title={`Copias: ${fmt(porcCopias.monto)} (${porcCopias.pct}%)`}
+              ></div>
+            )}
             {/* Rendimientos Ganados */}
             {tieneRendimientos && (
               <div
@@ -282,8 +284,8 @@ export default function GeneralCajitaTurbo({
             )}
           </div>
 
-          {/* Leyenda de los 6 o 7 colores */}
-          <div className={`grid grid-cols-2 sm:grid-cols-3 ${tieneRendimientos ? 'lg:grid-cols-7' : 'lg:grid-cols-6'} gap-2 pt-2 text-[11px] text-slate-300`}>
+          {/* Leyenda de los 5 fondos en Nu (+ rendimientos) */}
+          <div className={`grid grid-cols-2 sm:grid-cols-3 ${tieneRendimientos ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-2 pt-2 text-[11px] text-slate-300`}>
             <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
               <span className="truncate">🍕 Ocio: <b>{fmt(porcOcio.monto)}</b></span>
@@ -304,14 +306,16 @@ export default function GeneralCajitaTurbo({
               <span className="w-2.5 h-2.5 rounded-full bg-teal-400 shrink-0"></span>
               <span className="truncate">🛡️ Imprev.: <b>{fmt(porcImp.monto)}</b></span>
             </div>
-            <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0"></span>
-              <span className="truncate">📄 Copias: <b>{fmt(porcCopias.monto)}</b></span>
-            </div>
             {tieneRendimientos && (
               <div className="flex items-center space-x-1.5 bg-yellow-950/60 p-1.5 rounded-lg border border-yellow-600/50 text-yellow-300">
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 shrink-0 animate-pulse"></span>
                 <span className="truncate">✨ Rendim.: <b>+{fmt(porcRendimientos.monto)}</b></span>
+              </div>
+            )}
+            {porcCopias.monto > 0 && (
+              <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-400 shrink-0"></span>
+                <span className="truncate">📄 Copias: <b>{fmt(porcCopias.monto)}</b></span>
               </div>
             )}
           </div>
@@ -456,61 +460,71 @@ export default function GeneralCajitaTurbo({
               </div>
             </div>
 
-            {/* Imprevistos y Copias */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-bold text-white flex items-center space-x-1">
-                    <span className="w-2 h-2 rounded-full bg-teal-400"></span>
-                    <span>🛡️ Imprevistos</span>
-                  </p>
-                  <p className="text-[9px] text-slate-400">
-                    {porcImp.gasto_real > 0 ? (
-                      <span className="text-rose-400 font-bold">Gastado: -{fmt(porcImp.gasto_real)}</span>
-                    ) : (
-                      `Saldo: ${fmt(porcImp.presupuesto)}`
-                    )}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-black text-teal-400">{fmt(porcImp.monto)}</p>
-                  <span className="text-[8px] text-slate-400 font-semibold">En Cajita</span>
-                </div>
+            {/* Colchón de Imprevistos */}
+            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-white flex items-center space-x-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-400"></span>
+                  <span>🛡️ Colchón de Imprevistos (En Cajita Nu)</span>
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {porcImp.gasto_real > 0 ? (
+                    <span className="text-rose-400 font-bold">Gastado: -{fmt(porcImp.gasto_real)}</span>
+                  ) : (
+                    `Presupuesto: ${fmt(porcImp.presupuesto)}`
+                  )}
+                </p>
               </div>
-
-              <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] font-bold text-white flex items-center space-x-1">
-                    <span className="w-2 h-2 rounded-full bg-sky-400"></span>
-                    <span>📄 Copias</span>
-                  </p>
-                  <p className="text-[9px] text-slate-400">
-                    {porcCopias.gasto_real > 0 ? (
-                      <span className="text-rose-400 font-bold">Gastado: -{fmt(porcCopias.gasto_real)}</span>
-                    ) : (
-                      `Saldo: ${fmt(porcCopias.presupuesto)}`
-                    )}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-black text-sky-400">{fmt(porcCopias.monto)}</p>
-                  <span className="text-[8px] text-emerald-400 font-semibold">{porcCopias.monto > 0 ? 'Remanente Nu' : 'En Cartera'}</span>
-                </div>
+              <div className="text-right">
+                <p className="text-sm font-black text-teal-400">{fmt(porcImp.monto)}</p>
+                <span className="text-[9px] text-slate-400 font-bold">Reserva en Nu</span>
               </div>
             </div>
 
             {/* Banner Informativo de Retiro en Efectivo Físico */}
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5 text-xs">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="font-semibold flex items-center space-x-1 text-emerald-400">
-                  <Banknote className="w-3.5 h-3.5" />
+            <div className="p-3.5 rounded-xl bg-slate-950/80 border border-emerald-500/30 space-y-2 text-xs shadow-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-bold flex items-center space-x-1.5 text-emerald-400">
+                  <Banknote className="w-4 h-4" />
                   <span>Efectivo Físico en Cartera (Retirado en Cajero):</span>
                 </span>
-                <span className="font-bold text-emerald-300">{fmt(efectivoCartera.presupuesto_actual)} base</span>
+                <span className="font-black text-emerald-300 text-sm">
+                  {fmt(efectivoCartera.presupuesto_actual || 606)} base
+                </span>
               </div>
-              <p className="text-[10px] text-slate-300">
-                *A partir de esta quincena, tu retiro en efectivo incluye <b className="text-white">{efectivoCartera.desglose_actual}</b> ({fmt(efectivoCartera.presupuesto_actual)} total), manteniendo tus pasajes, comidas y copias escolares 100% cubiertos en mano.
-              </p>
+              
+              <div className="grid grid-cols-3 gap-2 pt-1 text-[11px]">
+                <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-semibold">🚌 Pasajes</p>
+                  <p className="font-bold text-white">{fmt(efectivoCartera.monto_combi || 376)}</p>
+                  <p className="text-[9px] text-emerald-400 font-medium">
+                    {efectivoCartera.remanente_combi !== undefined ? `Restan: ${fmt(efectivoCartera.remanente_combi)}` : 'En mano'}
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800">
+                  <p className="text-[10px] text-slate-400 font-semibold">🥪 Comidas</p>
+                  <p className="font-bold text-white">{fmt(efectivoCartera.monto_comida || 180)}</p>
+                  <p className="text-[9px] text-emerald-400 font-medium">
+                    {efectivoCartera.remanente_comida !== undefined ? `Restan: ${fmt(efectivoCartera.remanente_comida)}` : 'En mano'}
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-slate-900/90 border border-sky-500/30 bg-sky-950/20">
+                  <p className="text-[10px] text-sky-300 font-semibold">📄 Copias</p>
+                  <p className="font-bold text-white">{fmt(efectivoCartera.monto_copias || 50)}</p>
+                  <p className="text-[9px] text-sky-400 font-medium">
+                    {efectivoCartera.remanente_copias !== undefined ? `Restan: ${fmt(efectivoCartera.remanente_copias)}` : 'En mano'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[10px] text-slate-400">
+                <span>
+                  Total gastado en efectivo: <b className="text-rose-400">-{fmt(efectivoCartera.gasto_total || 0)}</b>
+                </span>
+                <span>
+                  Efectivo restante en mano: <b className="text-emerald-300 font-bold">{fmt(efectivoCartera.remanente_total ?? (efectivoCartera.presupuesto_actual || 606))}</b>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -652,23 +666,25 @@ export default function GeneralCajitaTurbo({
                 </td>
               </tr>
 
-              {/* Copias */}
-              <tr className="hover:bg-slate-800/40 transition">
-                <td className="p-3.5 font-bold text-white">📄 Copias, Material &amp; Papelería</td>
-                <td className="p-3.5 text-slate-300">Gastos Básicos (En Cajita Nu)</td>
-                <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcCopias.presupuesto)}</td>
-                <td className={`p-3.5 text-right font-bold ${porcCopias.gasto_real > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
-                  {porcCopias.gasto_real > 0 ? '-' + fmt(porcCopias.gasto_real) : '$0.00'}
-                </td>
-                <td className="p-3.5 text-right font-black text-sky-300 text-sm">{fmt(porcCopias.monto)}</td>
-                <td className="p-3.5 text-center font-bold text-sky-400">{porcCopias.pct}%</td>
-                <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcCopias.monto * (0.13 / 12))}</td>
-                <td className="p-3.5 text-center">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-950 text-sky-300 border border-sky-800">
-                    En Cajita Nu
-                  </span>
-                </td>
-              </tr>
+              {/* Copias - Solo si tuviera remanente en Nu */}
+              {porcCopias.monto > 0 && (
+                <tr className="hover:bg-slate-800/40 transition">
+                  <td className="p-3.5 font-bold text-white">📄 Copias, Material &amp; Papelería</td>
+                  <td className="p-3.5 text-slate-300">Gastos Básicos (Remanente en Nu)</td>
+                  <td className="p-3.5 text-right text-slate-300 font-semibold">{fmt(porcCopias.presupuesto)}</td>
+                  <td className={`p-3.5 text-right font-bold ${porcCopias.gasto_real > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
+                    {porcCopias.gasto_real > 0 ? '-' + fmt(porcCopias.gasto_real) : '$0.00'}
+                  </td>
+                  <td className="p-3.5 text-right font-black text-sky-300 text-sm">{fmt(porcCopias.monto)}</td>
+                  <td className="p-3.5 text-center font-bold text-sky-400">{porcCopias.pct}%</td>
+                  <td className="p-3.5 text-right text-emerald-400 font-bold">+{fmt(porcCopias.monto * (0.13 / 12))}</td>
+                  <td className="p-3.5 text-center">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-950 text-sky-300 border border-sky-800">
+                      En Cajita Nu
+                    </span>
+                  </td>
+                </tr>
+              )}
 
               {/* Rendimientos Ganados Nu (13%) */}
               {tieneRendimientos && (

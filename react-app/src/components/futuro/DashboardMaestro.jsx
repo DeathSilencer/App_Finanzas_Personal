@@ -44,8 +44,8 @@ export default function DashboardMaestro({
   const saldoMotoVivo = desglose.moto_80 ?? 4065.6;
   const saldoSalidasVivo = desglose.salidas_20 ?? 854.9;
   const saldoImprevistosVivo = desglose.imprevistos ?? 430;
-  const saldoCopiasVivo = desglose.copias ?? 26;
-  const totalGastosDigitalVivo = cajita.total_gastos_digital ?? (saldoMotoVivo + saldoSalidasVivo + saldoImprevistosVivo + saldoCopiasVivo);
+  const saldoCopiasVivo = desglose.copias ?? 0;
+  const totalGastosDigitalVivo = cajita.total_gastos_digital ?? (saldoMotoVivo + saldoSalidasVivo + saldoImprevistosVivo);
 
   // Datos de Gastos Básicos
   const resumenGastos = gastosData?.resumen || {};

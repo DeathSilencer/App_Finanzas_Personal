@@ -512,13 +512,21 @@ export function computeFuturo(
     .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
   const gasto_real_moto_80 = round2(gasto_moto_diarios + gasto_moto_tdc);
 
-  // A partir de esta quincena, Copias se retira en Efectivo Físico ($606 total en cajero).
-  // Por lo tanto, en Cajita Nu solo permanece el remanente digital previo si existe (hist_copias - gastos digitales).
-  const saldo_copias = Math.max(0, round2(hist_copias - gasto_copias_digital));
+  // Gastos diarios en efectivo para cartera (Pasajes, Comidas y Copias)
+  const gasto_combi_diarios = registrosGastos
+    .filter(r => (r.categoria || '').includes("Pasajes") || (r.categoria || '').includes("Combi"))
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+  const gasto_comida_diarios = registrosGastos
+    .filter(r => (r.categoria || '').includes("Comida"))
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+
+  // Copias se retira 100% en Efectivo Físico de cajero ($606 total junto con combi y comida).
+  // Por lo tanto, Copias NO está en Cajita Nu (saldo_copias = 0). Pertenece a la cartera física.
+  const saldo_copias = 0.0;
   const saldo_imprevistos = Math.max(0, round2(hist_imprevistos + m_imprevistos - gasto_real_imprevistos));
   const saldo_moto_80 = Math.max(0, round2(hist_moto + monto_moto_80 + aporte_dir_moto - gasto_real_moto_80));
   const saldo_salidas_20 = Math.max(0, round2(hist_salidas + monto_salidas_20 - gasto_real_salidas_20));
-  const total_digital_gastos = round2(saldo_copias + saldo_imprevistos + saldo_moto_80 + saldo_salidas_20);
+  const total_digital_gastos = round2(saldo_imprevistos + saldo_moto_80 + saldo_salidas_20);
 
   const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia);
   const capital_base_cajita = round2(total_futuro_cajita + total_digital_gastos);
@@ -626,6 +634,14 @@ export function computeFuturo(
           monto_combi: m_combi,
           monto_comida: m_comida,
           monto_copias: m_copias,
+          gasto_combi: gasto_combi_diarios,
+          gasto_comida: gasto_comida_diarios,
+          gasto_copias: gasto_copias_diarios,
+          gasto_total: round2(gasto_combi_diarios + gasto_comida_diarios + gasto_copias_diarios),
+          remanente_combi: Math.max(0, round2(m_combi - gasto_combi_diarios)),
+          remanente_comida: Math.max(0, round2(m_comida - gasto_comida_diarios)),
+          remanente_copias: Math.max(0, round2(m_copias - gasto_copias_diarios)),
+          remanente_total: Math.max(0, round2(round2(m_combi + m_comida + m_copias) - round2(gasto_combi_diarios + gasto_comida_diarios + gasto_copias_diarios))),
           proximo_presupuesto_total: round2(m_combi + m_comida + m_copias),
           desglose_actual: `$${m_combi.toFixed(2)} Pasajes + $${m_comida.toFixed(2)} Comidas + $${m_copias.toFixed(2)} Copias Físicas`,
           desglose_proximo: `$${m_combi.toFixed(2)} Pasajes + $${m_comida.toFixed(2)} Comidas + $${m_copias.toFixed(2)} Copias Físicas`
@@ -634,7 +650,7 @@ export function computeFuturo(
           fondo_emergencia: saldo_emergencia,
           emergencia: saldo_emergencia,
           ocio: remanente_ocio,
-          copias: saldo_copias,
+          copias: 0,
           imprevistos: saldo_imprevistos,
           moto_80: saldo_moto_80,
           salidas_20: saldo_salidas_20,
@@ -672,10 +688,10 @@ export function computeFuturo(
             pct: gran_total_cajita > 0 ? Math.round((saldo_imprevistos / gran_total_cajita) * 1000) / 10 : 0
           },
           copias: {
-            presupuesto: hist_copias,
-            gasto_real: gasto_copias_digital,
-            monto: saldo_copias,
-            pct: gran_total_cajita > 0 ? Math.round((saldo_copias / gran_total_cajita) * 1000) / 10 : 0
+            presupuesto: 0,
+            gasto_real: 0,
+            monto: 0,
+            pct: 0
           },
           rendimientos: {
             presupuesto: rendimientos_ganados_nu,
