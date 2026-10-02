@@ -1,222 +1,294 @@
-# 💰 App Finanzas Personal — Documentación Técnica Integral
+# 💎 App Finanzas Personal — Especificación Maestra y Arquitectura Oficial
 
-> **Sistema Integral de Gestión Patrimonial, Control de Gastos Básicos y Planificación Financiera a Futuro.**
-> Conectado en tiempo real con Microsoft Excel (`Control_Gastos_Basicos.xlsx` y `Plan_Financiero_Futuro.xlsx`), con arquitectura desacoplada, diseño responsivo, automatizaciones inteligentes y generación de Estados de Cuenta Institucionales.
+> **Única Fuente de Verdad Técnica y Financiera para Humanos y Modelos de Inteligencia Artificial.**  
+> Este documento define la visión, reglas de negocio, modelos matemáticos, esquema de datos y arquitectura de software del sistema. **Cualquier IA o desarrollador que trabaje en este proyecto DEBE basarse estrictamente en este archivo.**
 
 ---
 
-## 🏛️ 1. Arquitectura General del Sistema
+## 🧭 1. Resumen Ejecutivo y Visión del Sistema
 
-El sistema está construido siguiendo una arquitectura limpia y desacoplada de dos capas:
+### ¿Qué es este sistema?
+Es un **Sistema Operativo Financiero Personal** diseñado a la medida para gestionar con precisión de centavo el flujo de efectivo, ahorros, inversiones y deudas de una persona universitaria y trabajadora en México.
 
+El sistema administra un presupuesto quincenal fijo (base: **\$5,000.00 MXN**, equivalente a **\$10,000.00 MXN mensuales**), automatizando:
+1. **Retiro de Efectivo en Cajero (\$606.00/Q):** Cobertura diaria para pasajes de combi, comidas escolares y copias/papelería.
+2. **Cajita Turbo Nu (Tasa Anual del 13% Compuesto):** Cuenta digital única donde conviven **5 fondos acumulativos** generando rendimientos pasivos 24/7.
+3. **Tarjeta de Crédito Nu (TDC Nu):** Disciplina financiera 100% **totalera** (corte día 23, fecha límite de pago día 3, \$0.00 en intereses).
+4. **Inversiones y Retiro Externos:** Inversión involuntaria quincenal a **CETES Directo** (\$250/Q) y **Afore / Retiro** (\$250/Q).
+5. **Simulador Acelerador de Moto:** Plan cuatrimestral para comprar una motocicleta de contado (meta: **\$42,000.00 MXN**), impulsado por el excedente quincenal del 80% y los ahorros extra en días hábiles de vacaciones.
+
+---
+
+## 🏛️ 2. Arquitectura de Software Oficial (Stack Activo)
+
+### ⚠️ AVISO DE OBSOLESCENCIA Y LIMPIEZA
+Históricamente, el proyecto nació vinculado a hojas de cálculo en Excel (`.xlsx`) y scripts locales de Python (`backend/server.py`).  
+**EL ENTORNO ACTUAL ES 100% SERVERLESS EN LA NUBE.**
+* **Stack Oficial:** **React 18 + Vite + Tailwind CSS + Cloud Firestore (Firebase)**.
+* **Hosting Oficial:** **Firebase Hosting** (`https://controlfinancierosites.web.app`).
+* **Archivos Legados / Inactivos:** Las carpetas `backend/`, `frontend/` (versión HTML estática) y archivos `.xlsx` son históricos. Ninguna IA debe modificar ni reintroducir dependencias a esas carpetas. Todo el desarrollo se realiza en `react-app/`.
+
+### Estructura de Capas
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                          FRONTEND (SPA Modular)                        │
-│   • HTML5 Semántico + Tailwind CSS CDN + Lucide Icons                  │
-│   • Vanilla JavaScript ES6+ Modular (Sin dependencias pesadas ni node) │
-│   • Estilos de Impresión Formal Institucional (@media print)           │
+│                        INTERFAZ DE USUARIO (SPA)                       │
+│   • React 18 + Vite + Tailwind CSS + Lucide Icons                      │
+│   • Ubicación: /react-app/src                                         │
+│   • Componentes desacoplados (Gastos Básicos, Plan Futuro, Dashboards) │
 ├────────────────────────────────────────────────────────────────────────┤
-│                           HTTP / REST API                              │
-│   • Endpoints GET / POST en JSON UTF-8 (Puerto 8085)                   │
+│                       MOTOR FINANCIERO CENTRAL                         │
+│   • Archivo: /react-app/src/services/financialEngine.js                │
+│   • Funciones puras, deterministas y sin efectos secundarios          │
+│   • ÚNICA FUENTE DE VERDAD MATEMÁTICA PARA TODA LA APLICACIÓN          │
 ├────────────────────────────────────────────────────────────────────────┤
-│                       BACKEND (Python Standalone)                      │
-│   • http.server nativo multiruta (Sin dependencias de Flask/Django)    │
-│   • openpyxl para lectura y escritura atómica en libros de Excel       │
-├────────────────────────────────────────────────────────────────────────┤
-│                         PERSISTENCIA (Excel)                           │
-│   • Control_Gastos_Basicos.xlsx (Gastos, Quincenas, Simulador Moto)    │
-│   • Plan_Financiero_Futuro.xlsx (TDC Nu 100 filas, Fondos, Retiro)     │
+│                     PERSISTENCIA Y NUBE (24/7)                         │
+│   • Google Cloud Firestore (Base de datos NoSQL reactiva en tiempo real)│
+│   • Firebase Hosting (Despliegue estático optimizado en /frontend_dist)│
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📁 2. Estructura Completa de Archivos y Carpetas
+## 📐 3. Reglas de Negocio y Modelos Matemáticos Exactos
+
+El motor financiero (`financialEngine.js`) ejecuta el cálculo integral basándose en las siguientes 5 reglas patrimoniales:
+
+### Regla 1: Distribución Quincenal del Ingreso Base (\$5,000.00 MXN)
+| Concepto | Porcentaje | Presupuesto Quincenal | Destino / Modalidad |
+| :--- | :---: | :---: | :--- |
+| **Gastos Básicos** | 50.0% | **\$2,500.00** | Operación diaria, efectivo y ahorro acelerado moto |
+| **Gustos & Ocio (Estilo de Vida)** | 30.0% | **\$1,500.00** | Acumulativo en Cajita Nu (salidas, gustos personales) |
+| **Fondo de Emergencia** | 10.0% | **\$500.00** | Acumulativo en Cajita Nu (blindaje 3 meses: \$7,500) |
+| **Inversión Involuntaria CETES** | 5.0% | **\$250.00** | Fuera de Nu (CETES Directo gubernamental) |
+| **Afore / Retiro SAT** | 5.0% | **\$250.00** | Fuera de Nu (Cuenta de retiro individual) |
+| **TOTAL QUINCENAL** | **100.0%** | **\$5,000.00** | **Cuadrado al centavo** |
+
+---
+
+### Regla 2: Desglose de Gastos Básicos (\$2,500.00 Quincenales)
+
+Los \$2,500.00 se dividen de manera estricta entre **Efectivo Físico**, **Reserva Digital** y **Excedentes Automáticos**:
 
 ```
-App_Finanzas_Personal/
+Presupuesto Gastos Básicos: $2,500.00
 │
-├── backend/
-│   ├── config.py                      # Configuración central (puerto 8085, rutas a archivos Excel)
-│   ├── server.py                      # Servidor HTTP multiruta y despachador de endpoints
-│   ├── helpers/
-│   │   ├── __init__.py
-│   │   └── excel_helpers.py           # Utilidades openpyxl (lectura readonly, escritura segura, casteo de tipos)
-│   └── routes/
-│       ├── __init__.py
-│       ├── gastos_routes.py           # Lógica y endpoints de Control de Gastos Básicos e Histórico
-│       └── futuro_routes.py           # Lógica y endpoints de Plan a Futuro y Control TDC Nu (100 filas)
+├── 1. EFECTIVO FÍSICO EN CARTERA (Retiro en Cajero Automático: $606.00)
+│   ├── 🚌 Pasajes Combi:               $376.00 (10 días x $37.60 prom.)
+│   ├── 🥪 Comidas Escuela:              $180.00 ($18 diarios)
+│   └── 📄 Copias & Papelería:           $50.00 (Material escolar y copias)
+│   * Nota: Este dinero NO está en Nu. Se retira físicamente el día de pago.
 │
-├── data/                              # Copias de seguridad y plantillas de libros de Excel
-│   ├── Control_Gastos_Basicos.xlsx
-│   └── Plan_Financiero_Futuro.xlsx
+├── 2. RESERVA DE CONTINGENCIA EN CAJITA NU
+│   └── 🛡️ Imprevistos Escolares:       $200.00 (Permanece en Cajita Nu al 13%)
 │
-├── frontend/
-│   ├── index.html                     # Portal de bienvenida (Hub de navegación entre módulos)
-│   ├── shared/
-│   │   ├── css/
-│   │   │   └── base.css               # Estilos globales, glassmorphism, temas oscuros y scrollbars
-│   │   └── js/
-│   │       ├── toast.js               # Sistema centralizado de notificaciones toast flotantes
-│   │       └── tdc-reminder.js        # Widget inteligente lateral con alertas de corte y pago TDC Nu
-│   ├── gastos/
-│   │   ├── index.html                 # Dashboard modular de Gastos Básicos y Estado de Cuenta Formal
-│   │   ├── css/
-│   │   │   └── gastos.css             # Estilos específicos de gastos y reglas @media print institucionales
-│   │   └── js/
-│   │       ├── api.js                 # Cliente HTTP fetch para todos los endpoints de gastos
-│   │       ├── modals.js              # Gestión de modales (Cerrar Quincena, Editar, Eliminar)
-│   │       ├── navigation.js          # Control de pestañas y sincronización
-│   │       └── render.js              # Renderizado dinámico del DOM, tablas, KPIs y Estado de Cuenta
-│   └── futuro/
-│       ├── index.html                 # Dashboard modular de Plan a Futuro y TDC Nu
-│       ├── css/
-│       │   └── futuro.css             # Estilos específicos de futuro y tablas de inversión
-│       └── js/
-│           ├── api.js                 # Cliente HTTP fetch para endpoints de futuro
-│           ├── modals.js              # Modales de agregar/editar compra TDC y abonos
-│           ├── render.js              # Renderizado de CETES, Fondos de Ahorro y Retiro
-│           └── tdc.js                 # Gestión de bitácora TDC Nu, liquidación y Spotify
-│
-├── iniciar_app.bat                    # Lanzador rápido en Windows (doble clic)
-├── .gitignore                         # Exclusiones de Git
-└── README.md                          # Esta documentación técnica
+└── 3. EXCEDENTE BASE CALCULADO ($2,500 - $606 - $200 = $1,694.00)
+    ├── 🏍️ Acelerador Moto (80%):        $1,355.20 (Se resguarda en Cajita Nu)
+    └── 🍦 Refuerzo Salidas (20%):       $338.80 (Se resguarda en Cuenta/Cajita Nu)
 ```
 
 ---
 
-## ⚙️ 3. Reglas de Negocio y Lógica Financiera
+### Regla 3: Cajita Turbo Nu (Tasa Anual del 13.0%)
 
-### 💸 A. Control de Gastos Básicos y Cajita Turbo Nu (13% Anual)
-* **Presupuesto Quincenal Base:** Celda `B4` (ej. `$2,500.00 MXN`).
-* **Efectivo Físico Retirado:** 
-  - Pasajes Combi (`C8`, ej. `$320.00`) + Comidas Escuela (`C9`, ej. `$180.00`) = `$500.00 MXN` por quincena (`B10`).
-  - **Regla del Efectivo:** Este dinero se retira en efectivo en el cajero para el uso diario de lunes a viernes, por lo que **NUNCA genera rendimiento bancario**.
-* **Gastos Digitales Resguardados en Cajita Nu:**
-  - Copias & Papelería (`C10`, ej. `$100.00`) e Imprevistos (`C11`, ej. `$150.00`). Permanecen en la cuenta digital Nu.
-* **Excedente Base & Distribución Automática:**
-  - Excedente Total (`B14`) = Presupuesto Asignado (`B4`) - Gastos Operativos Fijos (`B8`).
-  - **Fondo Acelerador Moto (80%):** Celda `B15` (`Excedente * 0.80`).
-  - **Fondo Salidas y Gustos (20%):** Celda `B16` (`Excedente * 0.20`).
-* **Ahorro Extra por No Gastar el 100%:**
-  - Todo remanente no consumido en pasajes, comidas, copias o imprevistos se suma automáticamente al remanente real y se distribuye 80% a la Moto y 20% a Salidas.
-* **Cálculo de Rendimiento Real en Cajita Turbo Nu (13% Anual):**
-  $$\text{Capital Digital en Nu} = \max(0, \text{Saldo Remanente Total} - \text{Efectivo Retirado})$$
-  $$\text{Rendimiento Mensual Estimado} = \text{Capital Digital en Nu} \times \left(\frac{0.13}{12}\right)$$
-  *(Se excluye el efectivo retirado físicamente y se calcula con exactitud matemática).*
+Nu únicamente permite tener **1 sola Cajita de ahorro**. Dentro de ella conviven de forma virtual y segregada exactamente **5 fondos legítimos**, más los rendimientos pasivos generados:
 
----
+1. 🍕 **Fondo de Ocio / Estilo de Vida:** Aporte de \$1,500.00/Q + remanente no gastado de quincenas anteriores.
+2. 🏍️ **Fondo Acelerador Moto (80%):** Aporte de \$1,355.20/Q + sobrantes acumulados de quincenas cerradas.
+3. 🛡️ **Fondo de Emergencia:** Aporte de \$500.00/Q acumulativo hasta alcanzar la meta de \$7,500.00.
+4. 🍦 **Refuerzo Salidas (20%):** Aporte de \$338.80/Q + remanentes de salidas no gastados.
+5. 🛡️ **Colchón de Imprevistos:** Aporte de \$200.00/Q + remanente acumulado.
 
-### 📅 B. Automatización y Restricciones de Quincenas
-* **Nombres Automáticos de Período:**
-  - Si el día actual es del **1 al 15**: se asigna `1ra Quincena (1-15 [Mes] [Año])` (ej. `1ra Quincena (1-15 Agosto 2026)`).
-  - Si el día actual es del **16 al 31**: se asigna `2da Quincena (16-[ÚltimoDía] [Mes] [Año])` (ej. `2da Quincena (16-31 Agosto 2026)`).
-* **Restricción de Meses:**
-  - El modal de cierre está restringido a solo 2 opciones:
-    1. **Mes Actual** (seleccionado por defecto).
-    2. **Mes Anterior** (habilitado únicamente para cierres extemporáneos por olvido).
-* **Cierre Atómico y Reinicio a $0.00:**
-  - Al cerrar la quincena, se genera un registro consolidado en la hoja `Histórico de Quincenas` (con metadatos y payload JSON en columna 15) y se limpian las filas 11 a 110 de la hoja `Registro Diario` para arrancar la nueva quincena limpia en `$0.00`.
+#### ⚠️ REGLA CRÍTICA DE COPIAS Y PAPELERÍA
+* **Copias (\$50.00 quincenal) NO vive en Cajita Nu.** Se retira en efectivo junto con combi y comida (\$606 total).
+* En el motor y en la base de datos, `saldo_copias_nu = $0.00`. Nunca debe mostrarse con saldo dentro de Nu a menos que exista un remanente atípico explícito.
+
+#### Cálculo del Capital Base y Rendimientos Pasivos
+$$\text{Capital Base Nu} = \text{Ocio} + \text{Moto (80\%)} + \text{Emergencia} + \text{Salidas (20\%)} + \text{Imprevistos}$$
+$$\text{Rendimientos Ganados Nu} = \text{Saldo Real App Nu} - \text{Capital Base Nu}$$
+$$\text{Gran Total Cajita Nu} = \text{Capital Base Nu} + \text{Rendimientos Ganados Nu}$$
+$$\text{Rendimiento Mensual Estimado} = \text{Gran Total} \times \frac{0.13}{12}$$
 
 ---
 
-### 💳 C. Control TDC Nu & Suscripción Spotify
-* **Capacidad Ampliada a 100 Compras:**
-  - Rango de filas en Excel: **Filas 13 a 112** (Hoja `Control TDC Nu` de `Plan_Financiero_Futuro.xlsx`).
-  - Fila 113: Celda de **TOTAL** con fórmula `=SUM(C13:C112)`.
-* **Liquidación Total ("Pagar Tarjeta"):**
-  - Al presionar *Pagar Tarjeta*, se vacían completamente todas las compras pasadas (filas 13 a 112), reseteando la bitácora a `$0.00` de deuda y 0 compras para el nuevo ciclo de facturación.
-* **Cargo Programado de Spotify ($70.00 MXN):**
-  - La suscripción a Spotify ($70) **solo se añade como cargo/deuda en la bitácora a partir del día 12 del mes**.
-  - Si la fecha actual es anterior al día 12 y la tarjeta fue liquidada, la deuda arranca en `$0.00` y se muestra la fecha del próximo cargo programado (`12/[Mes]/[Año]`).
-* **Widget Flotante Lateral Inteligente:**
-  - Informa en tiempo real: Deuda Actual, Saldo Disponible, Fecha de Corte (Día 23), Fecha Límite de Pago (Día 3 del siguiente mes) y alerta de Totalero.
+### Regla 4: Tarjeta de Crédito Nu (Totalero al 100%)
+* **Límite de Crédito:** Configurable (base: \$2,000.00 MXN).
+* **Día de Corte:** Día **23** de cada mes.
+* **Día Límite de Pago:** Día **3** del mes siguiente.
+* **Principio Totalero:** Todo gasto realizado con TDC Nu debe pagarse en su totalidad antes del día 3.  
+* **Asignación de Compras TDC:** Si una compra con TDC se categoriza (ej. en *Refuerzo Salidas* o *Imprevistos*), el motor resta automáticamente el saldo disponible de dicha categoría para que el usuario no gaste de más y tenga el dinero reservado para liquidar la tarjeta.
 
 ---
 
-### 🖨️ D. Estado de Cuenta Institucional y Formato Impreso
-* **Diseño Formal Estructurado:**
-  - **`a` Encabezado:** Marco formal con título `ESTADO DE CUENTA`, período en mayúsculas, fecha de emisión y número de página.
-  - **`b` y `c` Metadatos:** Titular (*David*), Plan Financiero (*Plan Maestro 50/30/10/5/5 • Cajita Turbo Nu 13%*), divisa y estado auditado.
-  - **`d` Resumen de Movimientos:** Balance en 4 columnas (*Concepto*, *Presupuesto Asignado*, *Gasto Real*, *Remanente / Saldo*).
-  - **`e` Barra Enmarcada de Totales:** Resumen destacado con borde sólido.
-  - **`f` Comparativa vs Mes Anterior & Rendimientos:**
-    - Variación en `$`, `%` y diagnóstico de gasto vs mes previo.
-    - Crecimiento de remanente y Tasa de Eficiencia de Ahorro.
-    - **Rendimiento Mensual Estimado en Cajita Turbo Nu (13% anual)** sobre capital digital resguardado.
-  - **`g` Desglose por Categoría:** Presupuesto, real, saldo y semáforos de control.
-  - **`h` Quincenas Consolidadas:** Detalle quincena por quincena.
-  - **`i` Bitácora Exhaustiva:** Folio por folio de cada movimiento individual.
-  - **`j` Nota de Auditoría:** Pie de página legal y de sincronización.
-* **Aislamiento Hermético en `@media print`:**
-  - Utiliza reglas CSS estrictas (`body > *:not(main)`, `#tab-estado-cuenta > *:not(#print-estado-cuenta)`) para que al presionar **"Imprimir / Guardar PDF"** (`Ctrl + P`) **única y exclusivamente** se imprima el Estado de Cuenta formal, con márgenes exactos y sin ningún elemento web o botones.
+### Regla 5: Ciclo de Cierre de Quincena (Workflow de Transición)
+
+El cierre de quincena es la operación que garantiza la acumulación patrimonial. Cuando el usuario hace clic en **"Cerrar Quincena Actual"**:
+1. **Auditoría de Gastos:** Se totaliza lo gastado en la quincena activa (`gastos_diarios`).
+2. **Repartición de Sobrantes:**
+   * Si en Gastos Básicos no se gastó todo el presupuesto, el remanente real se destina automáticamente: **80% a Moto** y **20% a Salidas**.
+   * En Ocio, todo lo que no se gastó pasa íntegro como ahorro acumulado a la siguiente quincena.
+   * El Fondo de Emergencia suma sus **+\$500.00** blindados.
+3. **Archivado Histórico:** Se crea un registro inmutable en la colección `historico_gastos` con el desglose exacto en JSON de todos los movimientos y saldos.
+4. **Reseteo del Ciclo:** Se limpia la bitácora de `gastos_diarios` activa. La nueva quincena inicia en **\$0.00 gastados**, pero con todos los saldos de ahorro vivos en Cajita Nu incrementados.
 
 ---
 
-## 📡 4. Catálogo Completo de Endpoints API
-
-### 📊 Endpoints de Gastos (`/api/gastos`)
-
-| Método | Ruta | Descripción | Payload / Parámetros |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/gastos` | Obtiene el resumen actual, categorías, registros activos y simulador moto. | Ninguno |
-| `GET` | `/api/gastos/historial` | Obtiene el historial de quincenas archivadas y meses consolidados. | Ninguno |
-| `POST` | `/api/gastos/add` | Agrega un nuevo gasto a la hoja `Registro Diario`. | `{"fecha": "YYYY-MM-DD", "monto": 50, "categoria": "...", "concepto": "...", "metodo": "Efectivo", "retirado": "Sí"}` |
-| `POST` | `/api/gastos/edit` | Edita un gasto existente por número de fila. | `{"fila": 11, "fecha": "...", "monto": 50, ...}` |
-| `POST` | `/api/gastos/delete` | Elimina un gasto y compacta las filas en Excel. | `{"fila": 11}` |
-| `POST` | `/api/gastos/config` | Actualiza presupuesto, gastos fijos y parámetros de la moto. | `{"presupuesto": 2500, "combi": 320, "comida": 180, ...}` |
-| `POST` | `/api/gastos/cerrar_quincena` | Archiva la quincena actual en el histórico y limpia el registro. | `{"periodo": "1ra Quincena...", "mes": "Agosto"}` |
-| `POST` | `/api/gastos/limpiar_registro` | Vacía la hoja `Registro Diario` sin archivar. | `{}` |
-| `POST` | `/api/gastos/borrar_cierre` | Elimina un cierre del histórico por su ID. | `{"id": 1}` |
+### Regla 6: Simulador Acelerador de Moto (\$42,000.00 MXN)
+* **Meta de Compra de Contado:** **\$42,000.00 MXN**.
+* **Fuentes de Ahorro:**
+  1. Excedente quincenal base del 80%: **\$1,355.20/Q** (\$2,710.40/mes).
+  2. Aportaciones directas opcionales.
+  3. **Ahorro Extra por Vacaciones Escolares:**
+     * En cuatrimestres escolares, hay aproximadamente **25 días hábiles (Lunes a Viernes) sin clases**.
+     * En cada día sin clases, el usuario no gasta sus pasajes (\$37.60) ni comida escolar (\$18.00), generando un ahorro extra de **+\$1,250.00** a **+\$1,390.00** por periodo vacacional, acelerando la compra de la motocicleta a menos de 3 cuatrimestres (~10 a 11 meses).
 
 ---
 
-### 📈 Endpoints de Plan a Futuro y TDC Nu (`/api/futuro`)
+## 🗄️ 4. Esquema de Base de Datos (Cloud Firestore)
 
-| Método | Ruta | Descripción | Payload / Parámetros |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/futuro` | Obtiene CETES, Fondos, Retiro, Dashboard y bitácora TDC Nu (100 filas). | Ninguno |
-| `POST` | `/api/futuro/tdc_add` | Registra una compra en la bitácora de TDC Nu (filas 13-112). | `{"fecha": "YYYY-MM-DD", "concepto": "...", "monto": 150, "msi": "No", "quincenas": 1}` |
-| `POST` | `/api/futuro/tdc_edit` | Modifica una compra existente en TDC Nu. | `{"fila": 13, "fecha": "...", "concepto": "...", "monto": 150, ...}` |
-| `POST` | `/api/futuro/tdc_delete` | Elimina una compra de TDC Nu y compacta la lista. | `{"fila": 13}` |
-| `POST` | `/api/futuro/tdc_pay` | Liquida la tarjeta: limpia filas 13 a 112 y resetea a `$0.00`. | `{}` |
-| `POST` | `/api/futuro/config` | Actualiza límites de crédito, aportes de CETES y fondos de retiro. | `{"limite_credito": 2000, ...}` |
+La base de datos utiliza 6 colecciones principales en Firestore:
+
+```
+cloud_firestore/
+├── config_gastos/
+│   └── main                # Configuración global de montos, límites y fechas
+│       ├── presupuesto_asignado: number (2500)
+│       ├── monto_combi: number (376)
+│       ├── monto_comida: number (180)
+│       ├── monto_copias: number (50)
+│       ├── monto_imprevistos: number (200)
+│       ├── meta_moto: number (42000)
+│       ├── dias_libres_vacaciones: number (25)
+│       ├── tdc_limite: number (2000)
+│       ├── tdc_dia_corte: number (23)
+│       ├── tdc_dia_pago: number (3)
+│       └── aportaciones_directas_moto: number (0)
+│
+├── gastos_diarios/
+│   └── {docId}             # Registros de gastos de la quincena activa
+│       ├── fecha: string ("YYYY-MM-DD")
+│       ├── monto: number
+│       ├── categoria: string ("🚌 Pasajes Combi (Efectivo)", etc.)
+│       ├── concepto: string
+│       ├── metodo_pago: string ("Efectivo" | "Débito Nu" | "TDC Nu")
+│       └── retirado_efectivo: string ("Sí (Efectivo)" | "En Cajita Nu")
+│
+├── historico_gastos/
+│   └── {docId}             # Quincenas archivadas históricamente
+│       ├── periodo: string ("Septiembre 2026 - 2da Quincena")
+│       ├── mes: string ("Septiembre")
+│       ├── fecha_cierre: string
+│       ├── presupuesto: number
+│       ├── gasto_real: number
+│       ├── remanente: number
+│       ├── ahorro_moto_80: number
+│       ├── refuerzo_gustos_20: number
+│       └── detalle_json: string (Snapshot completo de compras y desglose)
+│
+├── compras_tdc/
+│   └── {docId}             # Bitácora de compras con Tarjeta de Crédito Nu
+│       ├── fecha: string
+│       ├── concepto: string
+│       ├── monto: number
+│       ├── categoria: string
+│       ├── pagado: boolean
+│       └── fecha_pago: string | null
+│
+├── gastos_futuro/
+│   └── {docId}             # Registros específicos de Gastos de Ocio
+│       ├── fecha: string
+│       ├── concepto: string
+│       ├── monto: number
+│       └── metodo_pago: string
+│
+└── ajustes_cajita/
+    └── current             # Conciliación de saldo real con la App Nu
+        ├── saldo_real_ajustado: number (ej. 10322.26)
+        ├── rendimientos_ganados_nu: number (ej. 110.76)
+        └── updated_at: timestamp
+```
 
 ---
 
-## 🚀 5. Puesta en Marcha y Ejecución
+## 💻 5. Estructura del Código Fuente (`/react-app`)
 
-### Requisitos Previos:
-- Python 3.10 o superior.
-- Librería `openpyxl`:
-  ```bash
-  pip install openpyxl
-  ```
-
-### Iniciar en Local:
-1. **Opción Rápida:** Doble clic sobre [`iniciar_app.bat`](file:///d:/Armando/$1%20Corel/DOCUMENTOS/Planes%20financieros%20a%20futuro%20y%20diario/App_Finanzas_Personal/iniciar_app.bat).
-2. **Opción por Terminal:**
-   ```bash
-   cd "d:\Armando\$1 Corel\DOCUMENTOS\Planes financieros a futuro y diario\App_Finanzas_Personal\backend"
-   python server.py
-   ```
-3. Acceder en el navegador a:
-   - **Hub Principal:** `http://localhost:8085/`
-   - **Control de Gastos Básicos:** `http://localhost:8085/gastos/`
-   - **Plan Financiero al Futuro:** `http://localhost:8085/futuro/`
+```
+react-app/
+├── src/
+│   ├── components/
+│   │   ├── basico/                  # Componentes de Gastos Básicos
+│   │   │   ├── ResumenGastos.jsx    # KPIs, barra quincenal y tabla por categorías
+│   │   │   ├── RegistroDiario.jsx   # Formulario y tabla de gastos de quincena activa
+│   │   │   ├── EstadoCuenta.jsx     # Estado de cuenta mensual formal para imprimir
+│   │   │   ├── SimuladorMoto.jsx    # Radar y avance de meta de moto de $42,000
+│   │   │   └── ModalCerrarQuincena.jsx # Modal para archivar quincena y transferir
+│   │   │
+│   │   ├── futuro/                  # Componentes de Plan a Futuro y Nu
+│   │   │   ├── GeneralCajitaTurbo.jsx # Consolidador de los 5 fondos en Nu y efectivo
+│   │   │   ├── DashboardMaestro.jsx # Visión ejecutiva de las 5 reglas patrimoniales
+│   │   │   ├── ControlTdc.jsx       # Bitácora y semáforo de corte/pago TDC Nu
+│   │   │   ├── RegistroOcio.jsx     # Bitácora exclusiva de estilo de vida
+│   │   │   ├── FondosRetiroCetes.jsx# Proyecciones CETES y Afore
+│   │   │   └── HistoricoFuturo.jsx  # Historial y bitácora de quincenas cerradas
+│   │   │
+│   │   └── shared/                  # Componentes compartidos
+│   │       ├── Navbar.jsx           # Navegación y selector de módulos
+│   │       ├── Toast.jsx            # Notificaciones flotantes
+│   │       └── TdcSideReminder.jsx  # Widget lateral flotante de TDC Nu
+│   │
+│   ├── services/
+│   │   ├── firebase.js              # Inicialización del SDK Firebase v12
+│   │   ├── firestoreService.js      # Operaciones CRUD en Cloud Firestore
+│   │   └── financialEngine.js       # ⭐ MOTOR MATEMÁTICO ÚNICO Y CENTRAL
+│   │
+│   ├── utils/
+│   │   └── formatters.js            # Formato de moneda ($X,XXX.XX) y fechas
+│   │
+│   ├── App.jsx                      # Orquestador principal de estado y vistas
+│   ├── main.jsx                     # Punto de entrada Vite React
+│   └── index.css                    # Clases globales Tailwind y temas dark glass
+│
+├── package.json                     # Dependencias (React, Vite, Lucide, Tailwind)
+├── tailwind.config.js               # Configuración de diseño y paletas
+└── vite.config.js                   # Configuración de compilación hacia ../frontend_dist
+```
 
 ---
 
-## 🔒 6. Reglas Críticas para Ingenieros / Mantenimiento
+## ⚙️ 6. Guía de Ejecución y Comandos
 
-1. **Limpieza de Celdas en openpyxl:**
-   - ❌ NUNCA usar `ws.cell(r, c, value=None)`.
-   - ✅ SIEMPRE usar `ws.cell(row=r, column=c).value = None`.
-2. **Capacidad de Filas en Excel:**
-   - `Control TDC Nu`: Filas **13 a 112** (Capacidad: 100 compras). Fila 113 es TOTAL `=SUM(C13:C112)`.
-   - `Registro Diario`: Filas **11 a 110** (Capacidad: 100 gastos diarios).
-3. **Manejo de Bloqueos de Archivo (Error 423):**
-   - Si el usuario tiene abierto el archivo `.xlsx` en Microsoft Excel de escritorio, el backend captura `PermissionError` y retorna código HTTP 423 con un mensaje amigable solicitando cerrar el archivo para permitir la escritura atómica.
-4. **Despliegue en la Nube:**
-   - La carpeta `frontend/` es 100% estática (HTML/CSS/JS nativo) y puede alojarse directamente en **Firebase Hosting**, **Netlify** o **Vercel**.
-   - La carpeta `backend/` puede ejecutarse como un microservicio en **Google Cloud Run**, **Render** o convertirse en **Cloud Functions**.
+Todos los comandos de terminal se ejecutan dentro de la carpeta `react-app/`:
+
+```powershell
+# 1. Instalar dependencias
+cd react-app
+npm install
+
+# 2. Iniciar servidor de desarrollo local (Puerto 3000)
+npm run dev
+
+# 3. Compilar para producción (Genera archivos optimizados en /frontend_dist)
+npm run build
+
+# 4. Desplegar a Firebase Hosting en producción
+npx firebase deploy --only hosting --project controlfinancierosites
+```
+
+---
+
+## 🤖 7. Reglas Obligatorias para Agentes de Inteligencia Artificial
+
+Cualquier IA que intervenga en este repositorio debe respetar estrictamente estos 5 principios:
+
+1. **PROHIBIDO HARDCODEAR VALORES O FALLBACKS EN LA UI:**  
+   Nunca coloques números fijos con `?? 26`, `?? 3361`, etc., en los componentes `.jsx`. Todo número debe provenir de `financialEngine.js` o de los datos de Firestore.
+2. **ÚNICA FUENTE MATEMÁTICA:**  
+   Cualquier cálculo de saldos, porcentajes, excedentes, amortizaciones o rendimientos debe programarse dentro de `react-app/src/services/financialEngine.js`. La interfaz de usuario es puramente presentacional.
+3. **PRESERVACIÓN DEL EFECTIVO (\$606):**  
+   Pasajes (\$376), Comida (\$180) y Copias (\$50) son **efectivo retirado en cajero**. NO forman parte del capital en Cajita Nu.
+4. **INTEGRIDAD DE CAJITA NU (\$10,322.26 / 5 FONDOS):**  
+   Cajita Nu contiene exclusivamente: Ocio, Acelerador Moto (80%), Emergencia, Salidas (20%) e Imprevistos, más sus rendimientos. Copias no debe añadirse a Cajita Nu.
+5. **VERIFICACIÓN TRAS CAMBIOS:**  
+   Tras modificar código en `react-app/`, siempre compila con `npm run build` para asegurar que no existan errores de sintaxis o imports rotos antes de entregar el resultado al usuario.
+
+---
+*Documento actualizado y certificado al 100% para la versión 2.0 Serverless de App Finanzas Personal.*
