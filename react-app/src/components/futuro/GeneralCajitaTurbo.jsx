@@ -229,9 +229,9 @@ export default function GeneralCajitaTurbo({
         {/* BARRA DE DISTRIBUCIÓN MULTICOLOR DE LOS 6 FONDOS EN CAJITA NU */}
         <div className="mt-6 pt-6 border-t border-purple-500/20 space-y-2.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs font-semibold text-slate-300 gap-1">
-            <span>Distribución de los 6 Fondos en tu Cajita Turbo (Quincena Actual):</span>
+            <span>Distribución de los Fondos en tu Cajita Turbo (Quincena Actual):</span>
             <span className="text-purple-300 font-mono text-[11px]">
-              Futuro ({fmt(totalFuturo)}) + Gastos Digitales ({fmt(totalGastosDigital)}) = {fmt(granTotal)}
+              Futuro ({fmt(totalFuturo)}) + Gastos Digitales ({fmt(totalGastosDigital)}){tieneRendimientos ? ` + Rendim. (+${fmt(rendimientosActuales)})` : ''} = {fmt(granTotal)}
             </span>
           </div>
 
