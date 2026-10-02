@@ -558,6 +558,7 @@ export default function App() {
             {futuroTab === 'dash-maestro' && (
               <DashboardMaestro
                 futuroData={futuroData}
+                gastosData={gastosData}
                 onOpenConfig={() => setIsConfigFuturoOpen(true)}
               />
             )}

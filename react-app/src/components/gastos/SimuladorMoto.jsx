@@ -50,9 +50,9 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
         </div>
 
         {/* Barra de progreso de la meta */}
-        <div className="mt-6 pt-6 border-t border-indigo-500/20 space-y-2">
+        <div className="mt-6 pt-6 border-t border-indigo-500/20 space-y-3">
           <div className="flex justify-between text-xs font-semibold">
-            <span className="text-slate-300">Progreso hacia los {fmt(meta)}:</span>
+            <span className="text-slate-300">Progreso hacia los {fmt(meta)} (Quincenas Cerradas):</span>
             <span className="text-emerald-400 font-bold">{pctCumplido}% completado</span>
           </div>
           <div className="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden shadow-inner">
@@ -62,8 +62,17 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
             ></div>
           </div>
           <div className="flex justify-between text-[11px] text-slate-400">
-            <span>Ahorrado: <b className="text-white">{fmt(totalAhorrado)}</b></span>
+            <span>Ahorrado Cerrado (Histórico): <b className="text-white">{fmt(totalAhorrado)}</b></span>
             <span>Resta: <b className="text-rose-400">{fmt(Math.max(0, meta - totalAhorrado))}</b></span>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-400 bg-slate-900/70 p-2.5 rounded-xl border border-indigo-500/20">
+            <div className="flex items-center space-x-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>Quincenas cerradas resguardadas: <b className="text-white">{fmt(ahorroHistorico)}</b></span>
+            </div>
+            <div className="text-purple-300 font-medium">
+              💡 Quincena activa (+{fmt(excedenteQ)} en Cajita Nu) se sumará al histórico al <b>Cerrar Quincena</b>.
+            </div>
           </div>
         </div>
       </div>

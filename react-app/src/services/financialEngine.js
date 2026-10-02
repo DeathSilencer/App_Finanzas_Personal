@@ -632,6 +632,7 @@ export function computeFuturo(
         },
         desglose: {
           fondo_emergencia: saldo_emergencia,
+          emergencia: saldo_emergencia,
           ocio: remanente_ocio,
           copias: saldo_copias,
           imprevistos: saldo_imprevistos,
