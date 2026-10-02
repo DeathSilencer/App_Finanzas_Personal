@@ -383,8 +383,17 @@ export function computeFuturo(
   }
 
   // 6. Fondos de Ocio y Cajita Turbo Nu
-  const hist_rem_ocio = round2(historicoFuturo.reduce((sum, h) => sum + (Number(h.remanente_ocio) || 0), 0));
-  const hist_emg = round2(historicoFuturo.reduce((sum, h) => sum + (Number(h.aporte_emergencia) || 0), 0));
+  // Ordenar histórico de futuro del más reciente al más antiguo para tomar el saldo remanente vivo
+  const sortedFuturo = [...historicoFuturo].sort((a, b) => {
+    const dDiff = (b.fecha_cierre || '').localeCompare(a.fecha_cierre || '');
+    if (dDiff !== 0) return dDiff;
+    return (b.created_at || '').localeCompare(a.created_at || '');
+  });
+
+  const ultimoCierreFuturo = sortedFuturo.length > 0 ? sortedFuturo[0] : null;
+  // El último cierre ya contiene el saldo acumulado real resguardado al momento de su cierre
+  const hist_rem_ocio = ultimoCierreFuturo ? round2(Number(ultimoCierreFuturo.remanente_ocio) || 0) : 0.0;
+  const hist_emg = ultimoCierreFuturo ? round2(Number(ultimoCierreFuturo.aporte_emergencia) || 0) : 0.0;
 
   const aporte_emergencia_quincenal = round2(ingreso_base * pct_p3);
   const saldo_emergencia = Math.max(emergencia_aportado, round2(hist_emg + aporte_emergencia_quincenal));

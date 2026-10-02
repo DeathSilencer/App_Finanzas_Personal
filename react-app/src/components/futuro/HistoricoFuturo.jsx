@@ -58,16 +58,6 @@ export default function HistoricoFuturo({
         };
       }
       const m = mesesMap[key];
-      m.num_quincenas += 1;
-      m.presupuesto_ocio_total = round2(m.presupuesto_ocio_total + Number(c.presupuesto_ocio || 0));
-      m.gasto_ocio_total = round2(m.gasto_ocio_total + Number(c.gasto_ocio || 0));
-      m.remanente_ocio_total = round2(m.remanente_ocio_total + Number(c.remanente_ocio || 0));
-      m.aporte_emergencia_total = round2(m.aporte_emergencia_total + Number(c.aporte_emergencia || 0));
-      m.aporte_retiro_total = round2(m.aporte_retiro_total + Number(c.aporte_retiro || 0));
-      m.aporte_cetes_total = round2(m.aporte_cetes_total + Number(c.aporte_cetes || 0));
-      if (c.total_cajita_cierre) {
-        m.total_cajita_cierre = Number(c.total_cajita_cierre);
-      }
       m.quincenas.push(c);
 
       try {
@@ -83,6 +73,21 @@ export default function HistoricoFuturo({
           }
         }
       } catch (e) {}
+    }
+
+    for (const key of Object.keys(mesesMap)) {
+      const m = mesesMap[key];
+      m.quincenas.sort((a, b) => (b.fecha_cierre || '').localeCompare(a.fecha_cierre || ''));
+      m.num_quincenas = m.quincenas.length;
+
+      const qReciente = m.quincenas[0];
+      m.gasto_ocio_total = round2(m.quincenas.reduce((sum, c) => sum + Number(c.gasto_ocio || 0), 0));
+      m.remanente_ocio_total = qReciente ? Number(qReciente.remanente_ocio || 0) : 0;
+      m.total_cajita_cierre = qReciente ? Number(qReciente.total_cajita_cierre || 0) : 0;
+      m.presupuesto_ocio_total = round2(m.gasto_ocio_total + m.remanente_ocio_total);
+      m.aporte_emergencia_total = qReciente ? Number(qReciente.aporte_emergencia || 0) : 0;
+      m.aporte_retiro_total = round2(m.quincenas.reduce((sum, c) => sum + Number(c.aporte_retiro || 0), 0));
+      m.aporte_cetes_total = round2(m.quincenas.reduce((sum, c) => sum + Number(c.aporte_cetes || 0), 0));
     }
 
     return Object.values(mesesMap);
