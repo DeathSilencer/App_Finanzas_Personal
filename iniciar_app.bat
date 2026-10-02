@@ -1,10 +1,9 @@
 @echo off
-title Suite Financiera Personal - Dashboard Local
-cd /d "%~dp0"
+title Suite Financiera Personal - Dashboard Vite
+cd /d "%~dp0react-app"
 echo ======================================================
-echo    SUITE FINANCIERA PERSONAL • REACT ^& SQLITE
+echo    SUITE FINANCIERA PERSONAL • REACT 18 & FIRESTORE
 echo ======================================================
-echo Iniciando servidor local en http://localhost:8085 ...
-start "" http://localhost:8085/
-python backend\server.py
-pause
+echo Iniciando servidor de desarrollo en http://localhost:3000 ...
+start "" http://localhost:3000/
+npm run dev

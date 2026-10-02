@@ -35,15 +35,15 @@ export default function DashboardMaestro({
   const retiro = of.retiro || {};
   const desglose = cajita.desglose || {};
 
-  const granTotalNu = cajita.gran_total || 10322.26;
-  const rendMensualEstimado = cajita.rendimiento_mensual || (granTotalNu * (0.13 / 12));
+  const granTotalNu = cajita.gran_total ?? 0;
+  const rendMensualEstimado = cajita.rendimiento_mensual ?? (granTotalNu * (0.13 / 12));
 
   // Saldos vivos reales en Nu
-  const saldoOcioVivo = desglose.ocio ?? ocio.remanente ?? 3361;
-  const saldoEmergenciaVivo = desglose.emergencia ?? desglose.fondo_emergencia ?? emg.aportado ?? 1500;
-  const saldoMotoVivo = desglose.moto_80 ?? 4065.6;
-  const saldoSalidasVivo = desglose.salidas_20 ?? 854.9;
-  const saldoImprevistosVivo = desglose.imprevistos ?? 430;
+  const saldoOcioVivo = desglose.ocio ?? ocio.remanente ?? 0;
+  const saldoEmergenciaVivo = desglose.emergencia ?? desglose.fondo_emergencia ?? emg.aportado ?? 0;
+  const saldoMotoVivo = desglose.moto_80 ?? 0;
+  const saldoSalidasVivo = desglose.salidas_20 ?? 0;
+  const saldoImprevistosVivo = desglose.imprevistos ?? 0;
   const saldoCopiasVivo = desglose.copias ?? 0;
   const totalGastosDigitalVivo = cajita.total_gastos_digital ?? (saldoMotoVivo + saldoSalidasVivo + saldoImprevistosVivo);
 
@@ -56,11 +56,11 @@ export default function DashboardMaestro({
 
   // Datos de Moto
   const simMoto = gastosData?.simulador_moto || {};
-  const metaMoto = simMoto.meta_total || 42000;
-  const ahorradoHistoricoMoto = simMoto.total_ahorrado_acumulado ?? 2710.4;
-  const pctCumplidoHistorico = simMoto.pct_meta_cumplido ?? 6.5;
-  const pctCumplidoVivo = metaMoto > 0 ? Math.round((saldoMotoVivo / metaMoto) * 1000) / 10 : 9.7;
-  const mesesMoto = simMoto.meses_estimados || 11.2;
+  const metaMoto = simMoto.meta_total ?? 42000;
+  const ahorradoHistoricoMoto = simMoto.total_ahorrado_acumulado ?? 0;
+  const pctCumplidoHistorico = simMoto.pct_meta_cumplido ?? (metaMoto > 0 ? Math.round((ahorradoHistoricoMoto / metaMoto) * 1000) / 10 : 0);
+  const pctCumplidoVivo = metaMoto > 0 ? Math.round((saldoMotoVivo / metaMoto) * 1000) / 10 : 0;
+  const mesesMoto = simMoto.meses_estimados ?? 0;
 
   // Las 5 Reglas Maestras con asignación teórica y saldo vivo sincronizado
   const reglas = [

@@ -36,22 +36,22 @@ export default function GeneralCajitaTurbo({
   const ret = of.retiro || {};
   const cetes = of.cetes || {};
 
-  const granTotal = cajita.gran_total || 3644;
-  const rendMensual = cajita.rendimiento_mensual || 39.48;
-  const rendAnual = cajita.rendimiento_anual || (granTotal * 0.13);
-  const tasaNu = (cajita.tasa_anual || 0.13) * 100;
+  const granTotal = cajita.gran_total ?? 0;
+  const rendMensual = cajita.rendimiento_mensual ?? 0;
+  const rendAnual = cajita.rendimiento_anual ?? (granTotal * 0.13);
+  const tasaNu = (cajita.tasa_anual ?? 0.13) * 100;
 
-  const totalFuturo = cajita.total_futuro || 1750;
-  const totalGastosDigital = cajita.total_gastos_digital || 1894;
+  const totalFuturo = cajita.total_futuro ?? 0;
+  const totalGastosDigital = cajita.total_gastos_digital ?? 0;
 
   const porciones = cajita.porciones || {};
   const desglose = cajita.desglose || {};
-  const porcOcio = porciones.ocio || { presupuesto: 1500, gasto_real: ocio.gasto_real || 0, monto: ocio.remanente || 1500, pct: 35.0 };
-  const porcEmg = porciones.emergencia || { presupuesto: 500, gasto_real: 0, monto: emg.aportado || 500, pct: 13.7 };
-  const porcMoto = porciones.moto_80 || { presupuesto: 1355.2, gasto_real: Math.max(0, (1355.2 - (desglose.moto_80 ?? 1355.2))), monto: desglose.moto_80 ?? 1355.2, pct: 37.2 };
-  const porcSalidas = porciones.salidas_20 || { presupuesto: 338.8, gasto_real: Math.max(0, (338.8 - (desglose.salidas_20 ?? 338.8))), monto: desglose.salidas_20 ?? 338.8, pct: 9.3 };
-  const porcImp = porciones.imprevistos || { presupuesto: 200, gasto_real: Math.max(0, (200 - (desglose.imprevistos ?? 200))), monto: desglose.imprevistos ?? 200, pct: 5.5 };
-  const porcCopias = porciones.copias || { presupuesto: 0, gasto_real: 0, monto: desglose.copias ?? 0, pct: 0 };
+  const porcOcio = porciones.ocio || { presupuesto: 0, gasto_real: ocio.gasto_real || 0, monto: ocio.remanente || 0, pct: 0 };
+  const porcEmg = porciones.emergencia || { presupuesto: 0, gasto_real: 0, monto: emg.aportado || 0, pct: 0 };
+  const porcMoto = porciones.moto_80 || { presupuesto: 0, gasto_real: 0, monto: desglose.moto_80 ?? 0, pct: 0 };
+  const porcSalidas = porciones.salidas_20 || { presupuesto: 0, gasto_real: 0, monto: desglose.salidas_20 ?? 0, pct: 0 };
+  const porcImp = porciones.imprevistos || { presupuesto: 0, gasto_real: 0, monto: desglose.imprevistos ?? 0, pct: 0 };
+  const porcCopias = porciones.copias || { presupuesto: 0, gasto_real: 0, monto: 0, pct: 0 };
   const rendimientosActuales = Number(
     cajita.rendimientos_ganados_nu ?? 
     cajita.rendimiento_real_nu ?? 
@@ -71,8 +71,8 @@ export default function GeneralCajitaTurbo({
 
   // Estado y lógica para modal de conciliación con Nu
   const [showModalConciliar, setShowModalConciliar] = useState(false);
-  const [inputSaldoReal, setInputSaldoReal] = useState(granTotal || 3682.95);
-  const [inputRendimiento, setInputRendimiento] = useState(rendimientosActuales || 5.88);
+  const [inputSaldoReal, setInputSaldoReal] = useState(granTotal || 0);
+  const [inputRendimiento, setInputRendimiento] = useState(rendimientosActuales || 0);
   const [savingAjuste, setSavingAjuste] = useState(false);
 
   useEffect(() => {
