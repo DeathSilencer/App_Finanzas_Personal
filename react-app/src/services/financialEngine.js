@@ -99,25 +99,17 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
              .reduce((sum, r) => sum + (Number(r.monto) || 0), 0)
   );
 
-  let sobrante_combi = 0;
-  let sobrante_comida = 0;
-  let sobrante_copias = 0;
-  let sobrante_efectivo_mano = 0;
-  let efectivo_neto_retirar = presupuesto_efectivo_base;
-  let sacar_combi = monto_combi;
-  let sacar_comida = monto_comida;
-  let sacar_copias = monto_copias;
+  const gasto_efectivo_total = round2(gasto_combi + gasto_comida + gasto_copias);
+  const gasto_tdc_total = round2(total_tdc_adicional);
 
-  if (gasto_combi > 0 || gasto_comida > 0 || gasto_copias > 0) {
-    sobrante_combi = Math.max(0, round2(monto_combi - gasto_combi));
-    sobrante_comida = Math.max(0, round2(monto_comida - gasto_comida));
-    sobrante_copias = Math.max(0, round2(monto_copias - gasto_copias));
-    sobrante_efectivo_mano = round2(sobrante_combi + sobrante_comida + sobrante_copias);
-    efectivo_neto_retirar = Math.max(0, round2(presupuesto_efectivo_base - sobrante_efectivo_mano));
-    sacar_combi = Math.max(0, round2(monto_combi - sobrante_combi));
-    sacar_comida = Math.max(0, round2(monto_comida - sobrante_comida));
-    sacar_copias = Math.max(0, round2(monto_copias - sobrante_copias));
-  }
+  const sobrante_combi = Math.max(0, round2(monto_combi - gasto_combi));
+  const sobrante_comida = Math.max(0, round2(monto_comida - gasto_comida));
+  const sobrante_copias = Math.max(0, round2(monto_copias - gasto_copias));
+  const sobrante_efectivo_mano = round2(sobrante_combi + sobrante_comida + sobrante_copias);
+  const efectivo_neto_retirar = Math.max(0, round2(presupuesto_efectivo_base - sobrante_efectivo_mano));
+  const sacar_combi = Math.max(0, round2(monto_combi - sobrante_combi));
+  const sacar_comida = Math.max(0, round2(monto_comida - sobrante_comida));
+  const sacar_copias = Math.max(0, round2(monto_copias - sobrante_copias));
 
   const saldo_copias_nu = 0;
   const fondear_copias = 0;
@@ -228,6 +220,8 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
     resumen: {
       presupuesto_total: presupuesto_asignado,
       gasto_total_real,
+      gasto_efectivo_total,
+      gasto_tdc_total,
       remanente_total,
       pct_consumido,
       total_gastos_fijos: total_fijos,

@@ -24,8 +24,10 @@ export default function ResumenPresupuesto({
   const montoComida = resumen.monto_comida || 180;
   const montoCopias = resumen.monto_copias || 50;
   const presupuestoEfectivoBase = resumen.presupuesto_efectivo_base || (montoCombi + montoComida + montoCopias);
-  const sobranteEfectivoMano = resumen.sobrante_efectivo_mano || 0;
-  const efectivoNetoRetirar = resumen.efectivo_neto_retirar ?? (presupuestoEfectivoBase - sobranteEfectivoMano);
+  const sobranteEfectivoMano = resumen.sobrante_efectivo_mano ?? 0;
+  const gastoEfectivoTotal = resumen.gasto_efectivo_total ?? (presupuestoEfectivoBase - sobranteEfectivoMano);
+  const gastoTdcTotal = resumen.gasto_tdc_total ?? 0;
+  const efectivoNetoRetirar = resumen.efectivo_neto_retirar ?? gastoEfectivoTotal;
 
   const sobranteCombi = resumen.sobrante_combi ?? 0;
   const sobranteComida = resumen.sobrante_comida ?? 0;
@@ -62,21 +64,22 @@ export default function ResumenPresupuesto({
           <h3 className="kpi-val-rose">{fmt(gastoReal)}</h3>
           <p className="kpi-subtext">
             <span>{pctConsumido}% consumido</span>
+            {gastoTdcTotal > 0 ? (
+              <span className="text-amber-300 font-semibold block text-[10px] mt-0.5">
+                ({fmt(gastoEfectivoTotal)} efectivo + {fmt(gastoTdcTotal)} TDC Nu)
+              </span>
+            ) : null}
           </p>
         </div>
 
-        {/* KPI 3: Efectivo Neto Real a Retirar */}
+        {/* KPI 3: Efectivo Restante en Mano */}
         <div className="card-kpi border-emerald-500/40">
-          <span className="kpi-label">Efectivo Neto a Retirar (Cajero)</span>
-          <h3 className="kpi-val-emerald">{fmt(efectivoNetoRetirar)}</h3>
+          <span className="kpi-label">Efectivo Restante en Mano</span>
+          <h3 className="kpi-val-emerald">{fmt(sobranteEfectivoMano)}</h3>
           <p className="kpi-subtext">
-            {sobranteEfectivoMano > 0 ? (
-              <span className="truncate">
-                Base: {fmt(presupuestoEfectivoBase)} | <b className="text-amber-300">En mano: -{fmt(sobranteEfectivoMano)}</b>
-              </span>
-            ) : (
-              <span className="truncate">{fmt(montoCombi)} Combi + {fmt(montoComida)} Comidas + {fmt(montoCopias)} Copias</span>
-            )}
+            <span className="truncate">
+              Base: {fmt(presupuestoEfectivoBase)} | <b className="text-rose-400">Gastado: -{fmt(gastoEfectivoTotal)}</b>
+            </span>
           </p>
         </div>
 
@@ -101,7 +104,7 @@ export default function ResumenPresupuesto({
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-black text-white">
-                Recomendación Inteligente de Retiro en Cajero
+                Control y Recomendación de Efectivo en Cartera
               </h3>
               <p className="text-[11px] sm:text-xs text-slate-400">
                 Quincena actual: Base de retiro de {fmt(presupuestoEfectivoBase)} en efectivo físico
@@ -117,7 +120,7 @@ export default function ResumenPresupuesto({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-center">
           <div className="card-glass-subtle flex flex-col justify-center">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Presupuesto Efectivo Base:
+              Presupuesto Inicial en Cajero:
             </span>
             <h4 className="text-xl sm:text-2xl font-black text-white mt-1">{fmt(presupuestoEfectivoBase)}</h4>
             <p className="text-[10px] text-slate-400 mt-1">({fmt(montoCombi)} Pasajes + {fmt(montoComida)} Comidas + {fmt(montoCopias)} Copias)</p>
@@ -125,20 +128,20 @@ export default function ResumenPresupuesto({
 
           <div className="card-glass-subtle flex flex-col justify-center">
             <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Sobrante que Tienes en Mano:
+              Total Gastado en Efectivo:
             </span>
-            <h4 className={`text-xl sm:text-2xl font-black mt-1 ${sobranteEfectivoMano > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
-              -{fmt(sobranteEfectivoMano)}
+            <h4 className="text-xl sm:text-2xl font-black mt-1 text-rose-400">
+              -{fmt(gastoEfectivoTotal)}
             </h4>
-            <p className="text-[10px] text-emerald-400 font-semibold mt-1">Ahorro de retiro físico</p>
+            <p className="text-[10px] text-slate-400 font-medium mt-1">Registrado en gastos diarios</p>
           </div>
 
           <div className="p-4 rounded-xl bg-emerald-950/70 border border-emerald-500/50 shadow-lg shadow-emerald-950/60 flex flex-col justify-center">
             <span className="text-[10px] sm:text-[11px] font-black text-emerald-300 uppercase tracking-wider">
-              🏦 EFECTIVO NETO A RETIRAR:
+              💵 EFECTIVO DISPONIBLE EN MANO:
             </span>
-            <h4 className="text-2xl sm:text-3xl font-black text-emerald-300 mt-1">{fmt(efectivoNetoRetirar)}</h4>
-            <p className="text-[10px] text-emerald-200 font-semibold mt-1">Monto exacto para el cajero</p>
+            <h4 className="text-2xl sm:text-3xl font-black text-emerald-300 mt-1">{fmt(sobranteEfectivoMano)}</h4>
+            <p className="text-[10px] text-emerald-200 font-semibold mt-1">Lo que traes físicamente en cartera</p>
           </div>
         </div>
 
@@ -146,31 +149,37 @@ export default function ResumenPresupuesto({
         <div className="card-glass-subtle border border-indigo-500/30 text-xs text-slate-300 space-y-2">
           <p className="font-bold text-white flex items-center space-x-1.5">
             <span className="text-amber-400">💡</span>
-            <span>Instrucción Exacta de Retiro y Fondeo para la Quincena:</span>
+            <span>Desglose Actual de tu Efectivo y Reposición al Cierre:</span>
           </p>
           <ul className="space-y-1.5 pl-1 sm:pl-2 text-xs">
             <li className="flex items-start space-x-1.5">
               <span>🚌</span>
               <span>
-                <b className="text-white">Pasajes Combi:</b> Retirar <b className="text-emerald-400">{fmt(sacarCombi)}</b> en cajero{sobranteCombi > 0 ? ` (en lugar de ${fmt(montoCombi)}, porque ya cuentas con ${fmt(sobranteCombi)} de remanente en mano)` : ` (${fmt(montoCombi)} base)`}.
+                <b className="text-white">Pasajes Combi:</b> Has gastado <b className="text-rose-400">-{fmt(montoCombi - sobranteCombi)}</b> (te quedan <b className="text-emerald-400">{fmt(sobranteCombi)}</b> en mano de tus {fmt(montoCombi)} asignados).
               </span>
             </li>
             <li className="flex items-start space-x-1.5">
               <span>🥪</span>
               <span>
-                <b className="text-white">Comidas Escuela:</b> Retirar <b className="text-emerald-400">{fmt(sacarComida)}</b> en cajero{sobranteComida > 0 ? ` (en lugar de ${fmt(montoComida)}, porque ya cuentas con ${fmt(sobranteComida)} de remanente en mano)` : ` (${fmt(montoComida)} base)`}.
+                <b className="text-white">Comidas Escuela:</b> Has gastado <b className="text-rose-400">-{fmt(montoComida - sobranteComida)}</b> (te quedan <b className="text-emerald-400">{fmt(sobranteComida)}</b> en mano de tus {fmt(montoComida)} asignados).
               </span>
             </li>
             <li className="flex items-start space-x-1.5">
               <span>📄</span>
               <span>
-                <b className="text-white">Copias &amp; Papelería:</b> Retirar <b className="text-emerald-400">{fmt(sacarCopias)}</b> en cajero{sobranteCopias > 0 ? ` (en lugar de ${fmt(montoCopias)}, porque cuentas con ${fmt(sobranteCopias)} de remanente en mano)` : ` para tu fondo físico en cartera`} ({fmt(montoCopias)} base asignados).
+                <b className="text-white">Copias &amp; Papelería:</b> Has gastado <b className="text-rose-400">-{fmt(montoCopias - sobranteCopias)}</b> (te quedan <b className="text-emerald-400">{fmt(sobranteCopias)}</b> en mano de tus {fmt(montoCopias)} asignados).
               </span>
             </li>
             <li className="flex items-start space-x-1.5">
               <span>🛡️</span>
               <span>
                 <b className="text-white">Imprevistos:</b> Cuentas con <b className="text-purple-300">{fmt(saldoImpNu)}</b> resguardados en Cajita Nu (requieres fondear <b className="text-indigo-300">{fmt(fondearImp)}</b> adicionales).
+              </span>
+            </li>
+            <li className="flex items-start space-x-1.5 pt-1 border-t border-slate-800/80 text-[11px] text-slate-400">
+              <span>🏦</span>
+              <span>
+                <b className="text-indigo-300">Próximo día de pago:</b> Si terminas la quincena con esos <b className="text-white">{fmt(sobranteEfectivoMano)}</b> en mano, para tu siguiente quincena solo requerirás retirar <b className="text-emerald-300 font-bold">{fmt(efectivoNetoRetirar)}</b> en el cajero para rellenar a tus {fmt(presupuestoEfectivoBase)} completos.
               </span>
             </li>
           </ul>
