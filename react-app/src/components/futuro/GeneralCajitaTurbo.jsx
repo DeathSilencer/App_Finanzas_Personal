@@ -52,6 +52,9 @@ export default function GeneralCajitaTurbo({
   const porcSalidas = porciones.salidas_20 || { presupuesto: 0, gasto_real: 0, monto: desglose.salidas_20 ?? 0, pct: 0 };
   const porcImp = porciones.imprevistos || { presupuesto: 0, gasto_real: 0, monto: desglose.imprevistos ?? 0, pct: 0 };
   const porcCopias = porciones.copias || { presupuesto: 0, gasto_real: 0, monto: 0, pct: 0 };
+  const porcDisp = porciones.disponible || { presupuesto: 0, gasto_real: 0, monto: cajita.saldo_base_disponible || 0, pct: 0 };
+  const tieneDisp = (porcDisp.monto || 0) > 0;
+
   const rendimientosActuales = Number(
     cajita.rendimientos_ganados_nu ?? 
     cajita.rendimiento_real_nu ?? 
@@ -70,6 +73,7 @@ export default function GeneralCajitaTurbo({
   const tieneRendimientos = rendimientosActuales > 0 || (porcRendimientos.monto || 0) > 0;
 
   const capitalBaseNu = Number(cajita.capital_base) || (Number(totalFuturo) + Number(totalGastosDigital)) || 0;
+  const totalAsignadoNu = Number(cajita.total_asignado) || (Number(totalFuturo) + Number(totalGastosDigital)) || 0;
 
   // Estado y lógica para modal de conciliación con Nu
   const [showModalConciliar, setShowModalConciliar] = useState(false);
@@ -95,23 +99,11 @@ export default function GeneralCajitaTurbo({
   };
 
   const handleRendimientoChange = (e) => {
-    const val = e.target.value;
-    setInputRendimiento(val);
-    const num = parseFloat(val);
-    if (!isNaN(num)) {
-      const nuevoSaldo = Math.round((capitalBaseNu + Math.max(0, num)) * 100) / 100;
-      setInputSaldoReal(nuevoSaldo.toFixed(2));
-    }
+    setInputRendimiento(e.target.value);
   };
 
   const handleSaldoChange = (e) => {
-    const val = e.target.value;
-    setInputSaldoReal(val);
-    const num = parseFloat(val);
-    if (!isNaN(num)) {
-      const nuevoRend = Math.round(Math.max(0, num - capitalBaseNu) * 100) / 100;
-      setInputRendimiento(nuevoRend.toFixed(2));
-    }
+    setInputSaldoReal(e.target.value);
   };
 
   const handleGuardarConciliacion = async (e) => {
@@ -300,6 +292,14 @@ export default function GeneralCajitaTurbo({
                 title={`Copias: ${fmt(porcCopias.monto)} (${porcCopias.pct}%)`}
               ></div>
             )}
+            {/* Saldo Libre / Disponible en Nu */}
+            {tieneDisp && (
+              <div
+                className="bg-cyan-400 transition-all duration-500 hover:opacity-80"
+                style={{ width: `${porcDisp.pct}%` }}
+                title={`Saldo Base Libre Nu: ${fmt(porcDisp.monto)} (${porcDisp.pct}%)`}
+              ></div>
+            )}
             {/* Rendimientos Ganados */}
             {tieneRendimientos && (
               <div
@@ -310,8 +310,8 @@ export default function GeneralCajitaTurbo({
             )}
           </div>
 
-          {/* Leyenda de los 5 fondos en Nu (+ rendimientos) */}
-          <div className={`grid grid-cols-2 sm:grid-cols-3 ${tieneRendimientos ? 'lg:grid-cols-6' : 'lg:grid-cols-5'} gap-2 pt-2 text-[11px] text-slate-300`}>
+          {/* Leyenda de los fondos en Nu (+ rendimientos) */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 text-[11px] text-slate-300">
             <div className="flex items-center space-x-1.5 bg-slate-900/60 p-1.5 rounded-lg border border-slate-800">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
               <span className="truncate">🍕 Ocio: <b>{fmt(porcOcio.monto)}</b></span>
@@ -332,6 +332,12 @@ export default function GeneralCajitaTurbo({
               <span className="w-2.5 h-2.5 rounded-full bg-teal-400 shrink-0"></span>
               <span className="truncate">🛡️ Imprev.: <b>{fmt(porcImp.monto)}</b></span>
             </div>
+            {tieneDisp && (
+              <div className="flex items-center space-x-1.5 bg-cyan-950/60 p-1.5 rounded-lg border border-cyan-800/60 text-cyan-300">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 shrink-0"></span>
+                <span className="truncate">💵 Saldo Libre Nu: <b>{fmt(porcDisp.monto)}</b></span>
+              </div>
+            )}
             {tieneRendimientos && (
               <div className="flex items-center space-x-1.5 bg-yellow-950/60 p-1.5 rounded-lg border border-yellow-600/50 text-yellow-300">
                 <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 shrink-0 animate-pulse"></span>
@@ -791,20 +797,26 @@ export default function GeneralCajitaTurbo({
             <form onSubmit={handleGuardarConciliacion} className="space-y-4 text-xs">
               <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 space-y-2">
                 <div className="flex items-center justify-between text-slate-300">
-                  <span>Capital Base Presupuestado:</span>
-                  <b className="text-white font-mono text-sm">{fmt(capitalBaseNu)}</b>
+                  <span>📱 Saldo Total en Cajita Nu:</span>
+                  <b className="text-white font-mono text-sm">{fmt(parseFloat(inputSaldoReal) || 0)}</b>
                 </div>
                 <div className="flex items-center justify-between text-slate-300">
-                  <span>Rendimientos Netos Acreditados:</span>
+                  <span>📈 Rendimientos Netos Reportados:</span>
                   <b className="text-emerald-400 font-mono text-sm">
                     +{fmt(parseFloat(inputRendimiento) || 0)}
                   </b>
                 </div>
-                <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between text-xs">
-                  <span className="font-bold text-purple-200">Total Sincronizado en App:</span>
-                  <b className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-emerald-300">
-                    {fmt(parseFloat(inputSaldoReal) || (capitalBaseNu + (parseFloat(inputRendimiento) || 0)))}
+                <div className="flex items-center justify-between text-slate-300">
+                  <span>💼 Capital Base Real en Nu:</span>
+                  <b className="text-purple-300 font-mono text-sm">
+                    {fmt(Math.max(0, (parseFloat(inputSaldoReal) || 0) - (parseFloat(inputRendimiento) || 0)))}
                   </b>
+                </div>
+                <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Fondos Presupuestados en App:</span>
+                  <span className="font-semibold text-slate-300">
+                    {fmt(totalAsignadoNu)}
+                  </span>
                 </div>
               </div>
 
@@ -818,11 +830,11 @@ export default function GeneralCajitaTurbo({
                   required
                   value={inputSaldoReal}
                   onChange={handleSaldoChange}
-                  placeholder="Ej. 9776.61"
+                  placeholder="Ej. 10231.88"
                   className="form-input font-bold text-white text-base"
                 />
                 <p className="form-helper">
-                  Copia exactamente el número de "Total en Cajitas" de tu app Nu. Al cambiarlo, el rendimiento se actualiza automáticamente.
+                  El monto total que aparece en tu pantalla de Cajitas Nu (ej. $10,231.88).
                 </p>
               </div>
 
@@ -835,11 +847,11 @@ export default function GeneralCajitaTurbo({
                   step="0.01"
                   value={inputRendimiento}
                   onChange={handleRendimientoChange}
-                  placeholder="Ej. 97.71"
+                  placeholder="Ej. 91.71"
                   className="form-input font-bold text-emerald-400"
                 />
                 <p className="form-helper">
-                  Monto verde de "Así ha crecido tu saldo en Cajitas: ↗ $97.71". Al escribirlo, el saldo total se calcula al centavo.
+                  El monto verde de "Así ha crecido tu saldo en Cajitas: ↗ $91.71".
                 </p>
               </div>
 

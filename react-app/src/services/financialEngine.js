@@ -523,20 +523,29 @@ export function computeFuturo(
   const total_digital_gastos = round2(saldo_imprevistos + saldo_moto_80 + saldo_salidas_20);
 
   const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia);
-  const capital_base_cajita = round2(total_futuro_cajita + total_digital_gastos);
+  const total_asignado_cajita = round2(total_futuro_cajita + total_digital_gastos);
 
   // Rendimientos ganados en Nu (13% anual):
-  // Si se ingresó un rendimiento real explícito (de la app Nu), se respeta prioritariamente.
-  // De lo contrario, si hay un saldo real ajustado que excede el capital base, la diferencia son los rendimientos ganados.
+  // 1. Si el usuario ingresó su rendimiento real de Nu (monto verde), se respeta con máxima prioridad.
+  // 2. Si no hay rendimiento explícito pero hay un saldo real que excede los fondos asignados, la diferencia son los rendimientos.
   let rendimientos_ganados_nu = 0;
   if (rendimiento_real_nu !== undefined && rendimiento_real_nu !== null && !isNaN(Number(rendimiento_real_nu)) && Number(rendimiento_real_nu) > 0) {
     rendimientos_ganados_nu = round2(Number(rendimiento_real_nu));
-  } else if (saldo_real_ajustado !== null && saldo_real_ajustado !== undefined && !isNaN(Number(saldo_real_ajustado)) && Number(saldo_real_ajustado) > capital_base_cajita) {
-    rendimientos_ganados_nu = round2(Number(saldo_real_ajustado) - capital_base_cajita);
+  } else if (saldo_real_ajustado !== null && saldo_real_ajustado !== undefined && !isNaN(Number(saldo_real_ajustado)) && Number(saldo_real_ajustado) > total_asignado_cajita) {
+    rendimientos_ganados_nu = round2(Number(saldo_real_ajustado) - total_asignado_cajita);
   }
 
-  // El Gran Total es SIEMPRE la suma exacta matemática del capital base + rendimientos (100% dinámico y automático)
-  const gran_total_cajita = round2(capital_base_cajita + rendimientos_ganados_nu);
+  // Gran Total en Cajita Nu:
+  // Si el usuario ingresó su saldo total real de Nu (ej. $10,231.88), ese es exactamente el Gran Total en Nu.
+  // De lo contrario, es la suma de los fondos asignados + los rendimientos ganados.
+  let gran_total_cajita = round2(total_asignado_cajita + rendimientos_ganados_nu);
+  if (saldo_real_ajustado !== null && saldo_real_ajustado !== undefined && !isNaN(Number(saldo_real_ajustado)) && Number(saldo_real_ajustado) > 0) {
+    gran_total_cajita = round2(Number(saldo_real_ajustado));
+  }
+
+  // Capital base en Nu (Saldo Total menos Rendimientos Netos):
+  const capital_base_cajita = round2(Math.max(total_asignado_cajita, gran_total_cajita - rendimientos_ganados_nu));
+  const saldo_base_disponible = Math.max(0, round2(capital_base_cajita - total_asignado_cajita));
 
   const rendimiento_anual_cajita = round2(gran_total_cajita * tasa_nu);
   const rendimiento_mensual_cajita = round2(rendimiento_anual_cajita / 12.0);
@@ -614,6 +623,8 @@ export function computeFuturo(
       cajita_turbo: {
         gran_total: gran_total_cajita,
         capital_base: capital_base_cajita,
+        total_asignado: total_asignado_cajita,
+        saldo_base_disponible,
         rendimientos_ganados: rendimientos_ganados_nu,
         rendimientos_ganados_nu: rendimientos_ganados_nu,
         rendimiento_real_ganado: rendimientos_ganados_nu,
@@ -649,7 +660,8 @@ export function computeFuturo(
           imprevistos: saldo_imprevistos,
           moto_80: saldo_moto_80,
           salidas_20: saldo_salidas_20,
-          rendimientos_ganados: rendimientos_ganados_nu
+          rendimientos_ganados: rendimientos_ganados_nu,
+          saldo_base_disponible: saldo_base_disponible
         },
         porciones: {
           ocio: {
@@ -687,6 +699,12 @@ export function computeFuturo(
             gasto_real: 0,
             monto: 0,
             pct: 0
+          },
+          disponible: {
+            presupuesto: 0,
+            gasto_real: 0,
+            monto: saldo_base_disponible,
+            pct: gran_total_cajita > 0 ? Math.round((saldo_base_disponible / gran_total_cajita) * 1000) / 10 : 0
           },
           rendimientos: {
             presupuesto: rendimientos_ganados_nu,
