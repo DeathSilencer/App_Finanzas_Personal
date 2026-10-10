@@ -69,23 +69,49 @@ export default function GeneralCajitaTurbo({
   };
   const tieneRendimientos = rendimientosActuales > 0 || (porcRendimientos.monto || 0) > 0;
 
+  const capitalBaseNu = Number(cajita.capital_base) || (Number(totalFuturo) + Number(totalGastosDigital)) || 0;
+
   // Estado y lógica para modal de conciliación con Nu
   const [showModalConciliar, setShowModalConciliar] = useState(false);
-  const [inputSaldoReal, setInputSaldoReal] = useState(granTotal || 0);
-  const [inputRendimiento, setInputRendimiento] = useState(rendimientosActuales || 0);
+  const [inputSaldoReal, setInputSaldoReal] = useState(granTotal ? Number(granTotal).toFixed(2) : '0.00');
+  const [inputRendimiento, setInputRendimiento] = useState(rendimientosActuales ? Number(rendimientosActuales).toFixed(2) : '0.00');
   const [savingAjuste, setSavingAjuste] = useState(false);
 
   useEffect(() => {
-    if (granTotal) {
-      setInputSaldoReal(granTotal);
+    if (!showModalConciliar) {
+      if (granTotal) {
+        setInputSaldoReal(Number(granTotal).toFixed(2));
+      }
+      setInputRendimiento(Number(rendimientosActuales || 0).toFixed(2));
     }
-    setInputRendimiento(rendimientosActuales);
-  }, [granTotal, rendimientosActuales]);
+  }, [granTotal, rendimientosActuales, showModalConciliar]);
 
   const handleOpenConciliar = () => {
-    if (granTotal) setInputSaldoReal(granTotal);
-    setInputRendimiento(rendimientosActuales);
+    const curRend = Number(rendimientosActuales || 0);
+    const curSaldo = granTotal ? Number(granTotal) : (capitalBaseNu + curRend);
+    setInputSaldoReal(curSaldo.toFixed(2));
+    setInputRendimiento(curRend.toFixed(2));
     setShowModalConciliar(true);
+  };
+
+  const handleRendimientoChange = (e) => {
+    const val = e.target.value;
+    setInputRendimiento(val);
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      const nuevoSaldo = Math.round((capitalBaseNu + Math.max(0, num)) * 100) / 100;
+      setInputSaldoReal(nuevoSaldo.toFixed(2));
+    }
+  };
+
+  const handleSaldoChange = (e) => {
+    const val = e.target.value;
+    setInputSaldoReal(val);
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      const nuevoRend = Math.round(Math.max(0, num - capitalBaseNu) * 100) / 100;
+      setInputRendimiento(nuevoRend.toFixed(2));
+    }
   };
 
   const handleGuardarConciliacion = async (e) => {
@@ -766,18 +792,18 @@ export default function GeneralCajitaTurbo({
               <div className="p-3.5 rounded-2xl bg-purple-950/40 border border-purple-500/30 space-y-2">
                 <div className="flex items-center justify-between text-slate-300">
                   <span>Capital Base Presupuestado:</span>
-                  <b className="text-white font-mono text-sm">{fmt(cajita.capital_base || 3678)}</b>
+                  <b className="text-white font-mono text-sm">{fmt(capitalBaseNu)}</b>
                 </div>
                 <div className="flex items-center justify-between text-slate-300">
                   <span>Rendimientos Netos Acreditados:</span>
                   <b className="text-emerald-400 font-mono text-sm">
-                    +{fmt(parseFloat(inputRendimiento) || Math.max(0, (parseFloat(inputSaldoReal) || 0) - (cajita.capital_base || 3678)))}
+                    +{fmt(parseFloat(inputRendimiento) || 0)}
                   </b>
                 </div>
                 <div className="pt-2 border-t border-purple-500/20 flex items-center justify-between text-xs">
                   <span className="font-bold text-purple-200">Total Sincronizado en App:</span>
                   <b className="text-base font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-emerald-300">
-                    {fmt(parseFloat(inputSaldoReal) || 0)}
+                    {fmt(parseFloat(inputSaldoReal) || (capitalBaseNu + (parseFloat(inputRendimiento) || 0)))}
                   </b>
                 </div>
               </div>
@@ -791,12 +817,12 @@ export default function GeneralCajitaTurbo({
                   step="0.01"
                   required
                   value={inputSaldoReal}
-                  onChange={(e) => setInputSaldoReal(e.target.value)}
-                  placeholder="Ej. 3682.95"
+                  onChange={handleSaldoChange}
+                  placeholder="Ej. 9776.61"
                   className="form-input font-bold text-white text-base"
                 />
                 <p className="form-helper">
-                  Copia exactamente el número de "Total en Cajitas" de tu app Nu (ej. $3,682.95).
+                  Copia exactamente el número de "Total en Cajitas" de tu app Nu. Al cambiarlo, el rendimiento se actualiza automáticamente.
                 </p>
               </div>
 
@@ -808,12 +834,12 @@ export default function GeneralCajitaTurbo({
                   type="number"
                   step="0.01"
                   value={inputRendimiento}
-                  onChange={(e) => setInputRendimiento(e.target.value)}
-                  placeholder="Ej. 5.88"
+                  onChange={handleRendimientoChange}
+                  placeholder="Ej. 97.71"
                   className="form-input font-bold text-emerald-400"
                 />
                 <p className="form-helper">
-                  Monto verde de "Así ha crecido tu saldo en Cajitas: ↗ $5.88".
+                  Monto verde de "Así ha crecido tu saldo en Cajitas: ↗ $97.71". Al escribirlo, el saldo total se calcula al centavo.
                 </p>
               </div>
 
