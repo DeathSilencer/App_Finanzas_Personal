@@ -1,11 +1,12 @@
 import React from 'react';
-import { LayoutGrid, Table, CheckCircle2, Sliders, Wallet } from 'lucide-react';
+import { LayoutGrid, Table, CheckCircle2, Sliders, Wallet, RotateCcw } from 'lucide-react';
 import { fmt } from '../../utils/formatters';
 
 export default function ResumenPresupuesto({
   data,
   onOpenCerrarQuincena,
-  onOpenConfig
+  onOpenConfig,
+  onRevertirCierre
 }) {
   const resumen = data?.resumen || {};
   const categorias = data?.categorias || [];
@@ -197,8 +198,18 @@ export default function ResumenPresupuesto({
               Total Gastado: {fmt(gastoReal)}
             </span>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <span className="text-xs font-bold text-emerald-400">Disponible: {fmt(remanente)}</span>
+            {onRevertirCierre && (
+              <button
+                onClick={() => onRevertirCierre()}
+                className="btn-base bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 !py-1 !px-2.5 !text-xs !min-h-[32px]"
+                title="Revertir la última quincena cerrada y restaurar sus gastos a la pantalla activa"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Revertir Quincena</span>
+              </button>
+            )}
             <button
               onClick={onOpenCerrarQuincena}
               className="btn-success !py-1 !px-2.5 !text-xs !min-h-[32px]"

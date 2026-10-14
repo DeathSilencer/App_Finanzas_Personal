@@ -619,6 +619,91 @@ export async function borrarCierreGastos(id) {
   return { status: "success", message: "Quincena eliminada del histórico" };
 }
 
+export async function revertirQuincenaGastos(id) {
+  let targetDoc = null;
+  let targetId = id ? String(id) : null;
+
+  if (targetId) {
+    targetDoc = memoryState.historicoGastos.find(c => String(c.id) === targetId);
+    if (!targetDoc) {
+      const snap = await getDoc(doc(db, "historico_quincenas_gastos", targetId));
+      if (snap.exists()) {
+        targetDoc = { id: snap.id, ...snap.data() };
+      }
+    }
+  } else {
+    const sorted = [...memoryState.historicoGastos].sort((a, b) => 
+      (b.fecha_cierre || b.created_at || '').localeCompare(a.fecha_cierre || a.created_at || '')
+    );
+    if (sorted.length > 0) {
+      targetDoc = sorted[0];
+      targetId = String(targetDoc.id);
+    }
+  }
+
+  if (!targetDoc) {
+    throw new Error("No se encontró la quincena archivada para revertir");
+  }
+
+  let registros = [];
+  try {
+    const det = typeof targetDoc.detalle_json === 'string'
+      ? JSON.parse(targetDoc.detalle_json)
+      : (targetDoc.detalle_json || {});
+    const allRegs = Array.isArray(det.registros) ? det.registros : [];
+    registros = allRegs.filter(r => r.metodo_pago !== 'TDC Nu' || r.origen_tipo === 'gasto_diario');
+  } catch (e) {
+    console.warn("Error al parsear detalle_json:", e);
+  }
+
+  const batch = writeBatch(db);
+  for (const r of registros) {
+    const cleanRecord = {
+      fecha: r.fecha || new Date().toISOString().split('T')[0],
+      dia: r.dia || "Lunes",
+      monto: round2(Number(r.monto) || 0),
+      categoria: r.categoria || "🚌 Pasajes Combi (Efectivo)",
+      concepto: r.concepto || "",
+      metodo_pago: r.metodo_pago || "Efectivo",
+      retirado: r.retirado || "Sí (Efectivo)",
+      created_at: r.created_at || new Date().toISOString()
+    };
+    if (r.id) {
+      batch.set(doc(db, "gastos_diarios", String(r.id)), cleanRecord);
+    } else {
+      const newRef = doc(collection(db, "gastos_diarios"));
+      batch.set(newRef, cleanRecord);
+    }
+  }
+
+  const comprasAfectadas = memoryState.comprasTdc.filter(c => c.periodo_cierre === targetDoc.periodo);
+  for (const c of comprasAfectadas) {
+    if (c.id) {
+      batch.update(doc(db, "compras_tdc", String(c.id)), {
+        quincena_cerrada: false,
+        periodo_cierre: null
+      });
+    }
+  }
+
+  batch.delete(doc(db, "historico_quincenas_gastos", targetId));
+  await batch.commit();
+
+  memoryState.historicoGastos = memoryState.historicoGastos.filter(c => String(c.id) !== targetId);
+  const existingIds = new Set(memoryState.gastosDiarios.map(g => String(g.id)));
+  const toAdd = registros.filter(r => !existingIds.has(String(r.id)));
+  memoryState.gastosDiarios = [...toAdd, ...memoryState.gastosDiarios];
+  memoryState.comprasTdc = memoryState.comprasTdc.map(c => 
+    c.periodo_cierre === targetDoc.periodo ? { ...c, quincena_cerrada: false, periodo_cierre: null } : c
+  );
+
+  notifyListeners();
+  return {
+    status: "success",
+    message: `Quincena "${targetDoc.periodo}" revertida exitosamente. Se restauraron los registros a tu quincena activa.`
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // OPERACIONES DE PLAN A FUTURO, CAJITA TURBO Y OCIO
 // ─────────────────────────────────────────────────────────────────────────────
@@ -768,6 +853,76 @@ export async function borrarCierreFuturo(id) {
   notifyListeners();
   await deleteDoc(doc(db, "historico_quincenas_futuro", idStr));
   return { status: "success", message: "Quincena de Futuro eliminada" };
+}
+
+export async function revertirQuincenaFuturo(id) {
+  let targetDoc = null;
+  let targetId = id ? String(id) : null;
+
+  if (targetId) {
+    targetDoc = memoryState.historicoFuturo.find(c => String(c.id) === targetId);
+    if (!targetDoc) {
+      const snap = await getDoc(doc(db, "historico_quincenas_futuro", targetId));
+      if (snap.exists()) {
+        targetDoc = { id: snap.id, ...snap.data() };
+      }
+    }
+  } else {
+    const sorted = [...memoryState.historicoFuturo].sort((a, b) => 
+      (b.fecha_cierre || b.created_at || '').localeCompare(a.fecha_cierre || a.created_at || '')
+    );
+    if (sorted.length > 0) {
+      targetDoc = sorted[0];
+      targetId = String(targetDoc.id);
+    }
+  }
+
+  if (!targetDoc) {
+    throw new Error("No se encontró la quincena archivada para revertir");
+  }
+
+  let registros = [];
+  try {
+    const det = typeof targetDoc.detalle_json === 'string'
+      ? JSON.parse(targetDoc.detalle_json)
+      : (targetDoc.detalle_json || {});
+    registros = Array.isArray(det.registros_ocio) ? det.registros_ocio : [];
+  } catch (e) {
+    console.warn("Error al parsear detalle_json:", e);
+  }
+
+  const batch = writeBatch(db);
+  for (const r of registros) {
+    const cleanRecord = {
+      fecha: r.fecha || new Date().toISOString().split('T')[0],
+      dia: r.dia || "Lunes",
+      monto: round2(Number(r.monto) || 0),
+      categoria: r.categoria || "✨ Otros Gustos",
+      concepto: r.concepto || "",
+      metodo_pago: r.metodo_pago || "Débito Nu",
+      created_at: r.created_at || new Date().toISOString()
+    };
+    if (r.id) {
+      batch.set(doc(db, "gastos_ocio", String(r.id)), cleanRecord);
+    } else {
+      const newRef = doc(collection(db, "gastos_ocio"));
+      batch.set(newRef, cleanRecord);
+    }
+  }
+
+  batch.delete(doc(db, "historico_quincenas_futuro", targetId));
+  await batch.commit();
+
+  memoryState.historicoFuturo = memoryState.historicoFuturo.filter(c => String(c.id) !== targetId);
+  const existingIds = new Set(memoryState.gastosOcio.map(g => String(g.id)));
+  const toAdd = registros.filter(r => !existingIds.has(String(r.id)));
+  memoryState.gastosOcio = [...toAdd, ...memoryState.gastosOcio];
+
+  notifyListeners();
+  return {
+    status: "success",
+    message: `Quincena "${targetDoc.periodo}" revertida exitosamente. Se restauraron ${registros.length} registros a tu quincena activa.`
+  };
 }
 
 export async function ajustarCajitaTurbo(data) {

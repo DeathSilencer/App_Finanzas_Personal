@@ -7,7 +7,8 @@ import {
   X,
   Trash2,
   Printer,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import { fmt, round2 } from '../../utils/formatters';
 
@@ -17,7 +18,8 @@ export default function HistoricoFuturo({
   futuroData = {},
   onReload,
   onOpenCerrarQuincena,
-  onDeleteCierre
+  onDeleteCierre,
+  onRevertirCierre
 }) {
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -236,6 +238,17 @@ export default function HistoricoFuturo({
             <span>Actualizar</span>
           </button>
 
+          {cierres.length > 0 && onRevertirCierre && (
+            <button
+              onClick={() => onRevertirCierre(cierres[0]?.id)}
+              className="btn-base bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 shadow-lg shadow-amber-950/30"
+              title="Revertir la última quincena archivada y restaurar sus gastos a la quincena activa"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Revertir Última Quincena</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenCerrarQuincena}
             className="btn-success"
@@ -350,6 +363,16 @@ export default function HistoricoFuturo({
                           <Eye className="w-3.5 h-3.5" />
                           <span>Ver</span>
                         </button>
+                        {onRevertirCierre && (
+                          <button
+                            onClick={() => onRevertirCierre(c.id)}
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center space-x-1"
+                            title="Revertir este cierre y restaurar sus gastos a la quincena activa"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Revertir</span>
+                          </button>
+                        )}
                         {onDeleteCierre && (
                           <button
                             onClick={() => onDeleteCierre(c.id)}

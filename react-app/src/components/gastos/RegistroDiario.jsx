@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Zap, PlusCircle, List, Trash2, Eraser, CheckCircle2, CreditCard } from 'lucide-react';
+import { Zap, PlusCircle, List, Trash2, Eraser, CheckCircle2, CreditCard, RotateCcw } from 'lucide-react';
 import { fmt, getTodayDate } from '../../utils/formatters';
 
 export default function RegistroDiario({
@@ -7,7 +7,8 @@ export default function RegistroDiario({
   onAddGasto,
   onDeleteGasto,
   onLimpiarRegistro,
-  onOpenCerrarQuincena
+  onOpenCerrarQuincena,
+  onRevertirCierre
 }) {
   const [fecha, setFecha] = useState(getTodayDate());
   const [monto, setMonto] = useState('');
@@ -207,6 +208,16 @@ export default function RegistroDiario({
             <span className="badge-slate">
               {registros?.length || 0} registros
             </span>
+            {onRevertirCierre && (
+              <button
+                onClick={() => onRevertirCierre()}
+                className="btn-base bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 !py-1 !px-2.5 !text-xs !min-h-[32px]"
+                title="Revertir la última quincena cerrada y restaurar sus gastos a esta pantalla"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Revertir Quincena</span>
+              </button>
+            )}
             <button
               onClick={onLimpiarRegistro}
               className="btn-danger !py-1 !px-2.5 !text-xs !min-h-[32px]"

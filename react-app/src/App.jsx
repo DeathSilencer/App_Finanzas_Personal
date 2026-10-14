@@ -184,6 +184,18 @@ export default function App() {
     }
   };
 
+  const handleRevertirCierreGastos = async (id) => {
+    const targetId = (typeof id === 'string' || typeof id === 'number') ? id : null;
+    if (!window.confirm('¿Revertir esta quincena archivada? Se restaurarán todos sus gastos a la quincena diaria activa y se reactivarán las compras TDC asociadas.')) return;
+    try {
+      const res = await api.revertirQuincenaGastos(targetId);
+      addToast(res.message, 'success');
+      await Promise.all([loadHistorialGastosData(), loadGastos(), loadFuturo()]);
+    } catch (err) {
+      addToast(err.message, 'error');
+    }
+  };
+
   const handleMotoAporte = async (monto, modo) => {
     try {
       const res = await api.motoAporte(monto, modo);
@@ -251,6 +263,18 @@ export default function App() {
     try {
       const res = await api.borrarCierreFuturo(id);
       addToast(res.message, 'warning');
+      await Promise.all([loadHistorialFuturoData(), loadFuturo()]);
+    } catch (err) {
+      addToast(err.message, 'error');
+    }
+  };
+
+  const handleRevertirCierreFuturo = async (id) => {
+    const targetId = (typeof id === 'string' || typeof id === 'number') ? id : null;
+    if (!window.confirm('¿Revertir esta quincena archivada? Se restaurarán todos sus gastos de ocio a la quincena activa y se eliminará el cierre del histórico para que puedas continuar registrando.')) return;
+    try {
+      const res = await api.revertirQuincenaFuturo(targetId);
+      addToast(res.message, 'success');
       await Promise.all([loadHistorialFuturoData(), loadFuturo()]);
     } catch (err) {
       addToast(err.message, 'error');
@@ -396,6 +420,7 @@ export default function App() {
                 data={gastosData}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaGastosOpen(true)}
                 onOpenConfig={() => setIsConfigGastosOpen(true)}
+                onRevertirCierre={handleRevertirCierreGastos}
               />
             )}
 
@@ -406,6 +431,7 @@ export default function App() {
                 onDeleteGasto={handleDeleteGasto}
                 onLimpiarRegistro={handleLimpiarGastos}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaGastosOpen(true)}
+                onRevertirCierre={handleRevertirCierreGastos}
               />
             )}
 
@@ -414,6 +440,7 @@ export default function App() {
                 historialData={historialGastos}
                 currentResumen={gastosData?.resumen}
                 onDeleteCierre={handleDeleteCierreGastos}
+                onRevertirCierre={handleRevertirCierreGastos}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaGastosOpen(true)}
               />
             )}
@@ -541,6 +568,7 @@ export default function App() {
                 onAddGastoOcio={handleAddGastoOcio}
                 onDeleteGastoOcio={handleDeleteGastoOcio}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaFuturoOpen(true)}
+                onRevertirCierre={() => handleRevertirCierreFuturo()}
               />
             )}
 
@@ -552,6 +580,7 @@ export default function App() {
                 onReload={loadHistorialFuturoData}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaFuturoOpen(true)}
                 onDeleteCierre={handleDeleteCierreFuturo}
+                onRevertirCierre={handleRevertirCierreFuturo}
               />
             )}
 

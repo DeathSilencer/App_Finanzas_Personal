@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { PartyPopper, Zap, PlusCircle, List, Trash2, CheckCircle2, CreditCard } from 'lucide-react';
+import { PartyPopper, Zap, PlusCircle, List, Trash2, CheckCircle2, CreditCard, RotateCcw } from 'lucide-react';
 import { fmt, getTodayDate } from '../../utils/formatters';
 
 export default function RegistroOcio({
   futuroData = {},
   onAddGastoOcio,
   onDeleteGastoOcio,
-  onOpenCerrarQuincena
+  onOpenCerrarQuincena,
+  onRevertirCierre
 }) {
   const of = futuroData?.otros_fondos || {};
   const ocio = of.ocio || {};
@@ -107,8 +108,18 @@ export default function RegistroOcio({
               Gastado: {fmt(gastado)}
             </span>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
             <span className="text-xs font-bold text-emerald-400">Disponible: {fmt(disponible)}</span>
+            {onRevertirCierre && (
+              <button
+                onClick={() => onRevertirCierre()}
+                className="btn-base bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 !py-1 !px-2.5 !text-xs !min-h-[32px]"
+                title="Revertir la última quincena cerrada y restaurar sus gastos a esta pantalla"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Revertir Quincena</span>
+              </button>
+            )}
             <button
               onClick={onOpenCerrarQuincena}
               className="btn-success !py-1 !px-2.5 !text-xs !min-h-[32px]"
@@ -252,6 +263,16 @@ export default function RegistroOcio({
               <span className="badge-slate">
                 {registros.length} registros
               </span>
+              {onRevertirCierre && (
+                <button
+                  onClick={() => onRevertirCierre()}
+                  className="btn-base bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 !py-1 !px-2.5 !text-xs !min-h-[32px]"
+                  title="Revertir la última quincena cerrada y restaurar sus gastos a esta pantalla"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Revertir Quincena</span>
+                </button>
+              )}
               <button
                 onClick={onOpenCerrarQuincena}
                 className="btn-success !py-1 !px-2.5 !text-xs !min-h-[32px]"

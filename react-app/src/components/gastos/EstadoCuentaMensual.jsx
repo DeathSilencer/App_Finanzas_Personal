@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, Printer, PlusCircle, Trash2 } from 'lucide-react';
+import { FileText, Printer, PlusCircle, Trash2, RotateCcw } from 'lucide-react';
 import { fmt, round2 } from '../../utils/formatters';
 
 export default function EstadoCuentaMensual({
   historialData = {},
   currentResumen = {},
   onDeleteCierre,
+  onRevertirCierre,
   onOpenCerrarQuincena
 }) {
   // Obtener meses y cierres desde historialData
@@ -427,6 +428,17 @@ export default function EstadoCuentaMensual({
             <span>Imprimir / Guardar PDF</span>
           </button>
 
+          {onRevertirCierre && (
+            <button
+              onClick={() => onRevertirCierre()}
+              className="btn-base bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30"
+              title="Revertir la última quincena cerrada y restaurar sus gastos a la pantalla activa"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Revertir Quincena</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenCerrarQuincena}
             className="btn-success"
@@ -501,14 +513,26 @@ export default function EstadoCuentaMensual({
                     <td className="table-modern-td text-right text-emerald-400 font-black">{fmt(q.remanente)}</td>
                     <td className="table-modern-td text-right text-purple-300 font-bold">{fmt(q.ahorro_moto_80)}</td>
                     <td className="table-modern-td text-center">
-                      <button
-                        onClick={() => onDeleteCierre(q.id)}
-                        className="btn-danger !min-h-[32px] !py-1 !px-2.5 mx-auto"
-                        title="Eliminar quincena del histórico"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Eliminar</span>
-                      </button>
+                      <div className="flex items-center justify-center space-x-1.5">
+                        {onRevertirCierre && (
+                          <button
+                            onClick={() => onRevertirCierre(q.id)}
+                            className="btn-base bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 !min-h-[32px] !py-1 !px-2.5"
+                            title="Revertir este cierre y restaurar sus gastos a la pantalla activa"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Revertir</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onDeleteCierre(q.id)}
+                          className="btn-danger !min-h-[32px] !py-1 !px-2.5"
+                          title="Eliminar quincena del histórico"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Eliminar</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -906,13 +930,25 @@ export default function EstadoCuentaMensual({
                         <td className="text-right font-black text-indigo-900">{fmt(q.ahorro_moto_80)}</td>
                         <td className="text-center font-semibold text-slate-700">{q.num_movimientos || q.num_transacciones || 0} reg.</td>
                         <td className="text-center whitespace-nowrap no-print">
-                          <button
-                            onClick={() => onDeleteCierre(q.id)}
-                            className="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-bold transition flex items-center space-x-1 mx-auto"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Eliminar</span>
-                          </button>
+                          <div className="flex items-center justify-center space-x-1">
+                            {onRevertirCierre && (
+                              <button
+                                onClick={() => onRevertirCierre(q.id)}
+                                className="px-2 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-bold transition flex items-center space-x-1"
+                                title="Revertir quincena y restaurar gastos"
+                              >
+                                <RotateCcw className="w-3 h-3" />
+                                <span>Revertir</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => onDeleteCierre(q.id)}
+                              className="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-[10px] font-bold transition flex items-center space-x-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              <span>Eliminar</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
