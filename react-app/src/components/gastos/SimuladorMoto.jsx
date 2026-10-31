@@ -10,12 +10,15 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
   const ahorroExtraVacaciones = simulador.ahorro_extra_vacaciones || 1250;
   const diasLibres = simulador.dias_libres_cuatri || 25;
   const excedenteQ = simulador.excedente_quincenal_80 || 1400;
-  const cuatrisEstimados = simulador.cuatris_estimados || 2.81;
-  const mesesEstimados = simulador.meses_estimados || 11.2;
+  const cuatrisEstimados = simulador.cuatris_estimados ?? 2.5;
+  const mesesEstimados = simulador.meses_estimados ?? 10.0;
+  const quincenasEstimadas = simulador.quincenas_estimadas ?? 20;
   const totalAhorrado = simulador.total_ahorrado_acumulado || 0;
+  const montoRestante = simulador.monto_restante ?? Math.max(0, meta - totalAhorrado);
   const pctCumplido = simulador.pct_meta_cumplido || 0;
   const aportacionesDirectas = simulador.aportaciones_directas || 0;
   const ahorroHistorico = simulador.ahorro_acumulado_historico || 0;
+  const extraMotoDirecto = simulador.extra_moto_directo || 0;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -43,16 +46,17 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
             </p>
           </div>
           <div className="text-right shrink-0 p-4 rounded-2xl bg-slate-900/90 border border-indigo-500/30">
-            <span className="kpi-label">Tiempo Estimado</span>
+            <span className="kpi-label">Tiempo Restante Estimado</span>
             <h3 className="text-2xl sm:text-3xl font-black text-emerald-400 mt-0.5">{cuatrisEstimados} Cuatris</h3>
-            <p className="text-xs text-slate-400 mt-1 font-semibold">(~{mesesEstimados} meses)</p>
+            <p className="text-xs text-slate-300 mt-1 font-semibold">(~{mesesEstimados} meses · {quincenasEstimadas} qnas)</p>
+            <p className="text-[10px] text-indigo-300 mt-1 font-medium">Para liquidar los {fmt(montoRestante)} restantes</p>
           </div>
         </div>
 
         {/* Barra de progreso de la meta */}
         <div className="mt-6 pt-6 border-t border-indigo-500/20 space-y-3">
           <div className="flex justify-between text-xs font-semibold">
-            <span className="text-slate-300">Progreso hacia los {fmt(meta)} (Quincenas Cerradas):</span>
+            <span className="text-slate-300">Progreso hacia los {fmt(meta)} (Total en Cajita Nu):</span>
             <span className="text-emerald-400 font-bold">{pctCumplido}% completado</span>
           </div>
           <div className="w-full h-3.5 bg-slate-800 rounded-full overflow-hidden shadow-inner">
@@ -62,16 +66,20 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
             ></div>
           </div>
           <div className="flex justify-between text-[11px] text-slate-400">
-            <span>Ahorrado Cerrado (Histórico): <b className="text-white">{fmt(totalAhorrado)}</b></span>
+            <span>Total Fondo Moto (Cajita Nu): <b className="text-emerald-400 font-bold">{fmt(totalAhorrado)}</b></span>
             <span>Resta: <b className="text-rose-400">{fmt(Math.max(0, meta - totalAhorrado))}</b></span>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] text-slate-400 bg-slate-900/70 p-2.5 rounded-xl border border-indigo-500/20">
-            <div className="flex items-center space-x-1.5">
+            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
               <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-              <span>Quincenas cerradas resguardadas: <b className="text-white">{fmt(ahorroHistorico)}</b></span>
+              <span>Cerradas: <b className="text-white">{fmt(ahorroHistorico)}</b></span>
+              {extraMotoDirecto > 0 && (
+                <span className="text-amber-300 font-semibold">| Bono: +{fmt(extraMotoDirecto)}</span>
+              )}
+              <span className="text-indigo-300 font-semibold">| Quincena Activa: +{fmt(excedenteQ)}</span>
             </div>
-            <div className="text-purple-300 font-medium">
-              💡 Quincena activa (+{fmt(excedenteQ)} en Cajita Nu) se sumará al histórico al <b>Cerrar Quincena</b>.
+            <div className="text-emerald-300 font-semibold text-right">
+              ✓ Sincronizado con Cajita Turbo ({fmt(totalAhorrado)})
             </div>
           </div>
         </div>
@@ -118,7 +126,8 @@ export default function SimuladorMoto({ simulador = {}, onMotoAporte }) {
               <label className="form-label">Monto a abonar ($ MXN)</label>
               <input
                 type="number"
-                step="50"
+                step="any"
+                min="0.01"
                 required
                 placeholder="0.00"
                 value={montoAporte}

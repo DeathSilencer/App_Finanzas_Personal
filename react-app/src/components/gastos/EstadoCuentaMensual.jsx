@@ -997,7 +997,9 @@ export default function EstadoCuentaMensual({
                           <td className="font-bold text-slate-900">{tx.concepto}</td>
                           <td className="text-slate-600 whitespace-nowrap">{tx.categoria}</td>
                           <td className="text-slate-600 whitespace-nowrap">{tx.metodo_pago || tx.metodo || 'Efectivo'}</td>
-                          <td className="text-right font-black ec-red">-{fmt(tx.monto)}</td>
+                          <td className={`text-right font-black ${tx.tipo_movimiento === 'ingreso' ? 'ec-green text-emerald-700 font-extrabold' : 'ec-red'}`}>
+                            {tx.tipo_movimiento === 'ingreso' ? '+' + fmt(tx.monto) : '-' + fmt(tx.monto)}
+                          </td>
                         </tr>
                       ))
                     )}

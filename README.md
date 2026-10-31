@@ -136,10 +136,23 @@ El cierre de quincena es la operación que garantiza la acumulación patrimonial
 * **Meta de Compra de Contado:** **\$42,000.00 MXN**.
 * **Fuentes de Ahorro:**
   1. Excedente quincenal base del 80%: **\$1,355.20/Q** (\$2,710.40/mes).
-  2. Aportaciones directas opcionales.
+  2. Aportaciones directas opcionales e ingresos extra asignados a moto.
   3. **Ahorro Extra por Vacaciones Escolares:**
      * En cuatrimestres escolares, hay aproximadamente **25 días hábiles (Lunes a Viernes) sin clases**.
      * En cada día sin clases, el usuario no gasta sus pasajes (\$37.60) ni comida escolar (\$18.00), generando un ahorro extra de **+\$1,250.00** a **+\$1,390.00** por periodo vacacional, acelerando la compra de la motocicleta a menos de 3 cuatrimestres (~10 a 11 meses).
+
+---
+
+### Regla 7: Agregador de Dinero Extra & Bonos (Modalidad C Híbrida)
+Permite capturar cualquier dinero extraordinario (bonos laborales, regalos, ventas) sin esperar a la quincena regular:
+1. **Modalidad Fondo Específico (100%):** El usuario destina el total a una meta prioritaria: Acelerador Moto, Fondo de Emergencia, Gustos & Ocio, Presupuesto Quincenal (Gastos), Refuerzo Salidas (20%), CETES o Retiro SAT.
+2. **Modalidad Distribución Patrimonial (Regla 50/30/10/5/5):** Aplica la proporción matemática maestra:
+   * **50%:** Acelerador Moto / Básicos
+   * **30%:** Gustos & Ocio
+   * **10%:** Fondo de Emergencia
+   * **5%:** Inversión Involuntaria CETES
+   * **5%:** AFORE / Retiro SAT
+3. **Persistencia y Conciliación:** Se almacena en la colección reactiva `ingresos_extra/`. En Cajita Nu, el motor financiero suma inmediatamente las asignaciones a los fondos vivos y al balance total. Al cerrar quincena, se archivan inmutablemente en el histórico.
 
 ---
 
@@ -200,6 +213,16 @@ cloud_firestore/
 │       ├── monto: number
 │       └── metodo_pago: string
 │
+├── ingresos_extra/
+│   └── {docId}             # Bitácora de bonos y dinero extraordinario (Modalidad C Híbrida)
+│       ├── fecha: string ("YYYY-MM-DD")
+│       ├── concepto: string
+│       ├── monto: number
+│       ├── modalidad: string ("especifico" | "patrimonial")
+│       ├── destino: string ("moto" | "emergencia" | "ocio" | "presupuesto_gastos" | ...)
+│       ├── quincena_cerrada: boolean
+│       └── created_at: timestamp
+│
 └── ajustes_cajita/
     └── current             # Conciliación de saldo real con la App Nu
         ├── saldo_real_ajustado: number (ej. 10322.26)
@@ -233,6 +256,7 @@ react-app/
 │   │   └── shared/                  # Componentes compartidos
 │   │       ├── Navbar.jsx           # Navegación y selector de módulos
 │   │       ├── Toast.jsx            # Notificaciones flotantes
+│   │       ├── ModalIngresoExtra.jsx# ⭐ Agregador de dinero extra y bonos (Modalidad C)
 │   │       └── TdcSideReminder.jsx  # Widget lateral flotante de TDC Nu
 │   │
 │   ├── services/

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/common/Navbar';
 import Toast from './components/common/Toast';
 import TDCSideReminder from './components/common/TDCSideReminder';
+import ModalIngresoExtra from './components/common/ModalIngresoExtra';
 import { fmt } from './utils/formatters';
 
 // Módulos Gastos
@@ -66,6 +67,7 @@ export default function App() {
   const [isCerrarQuincenaGastosOpen, setIsCerrarQuincenaGastosOpen] = useState(false);
   const [isConfigFuturoOpen, setIsConfigFuturoOpen] = useState(false);
   const [isCerrarQuincenaFuturoOpen, setIsCerrarQuincenaFuturoOpen] = useState(false);
+  const [isIngresoExtraOpen, setIsIngresoExtraOpen] = useState(false);
   const [ajusteAporteTipo, setAjusteAporteTipo] = useState(null); // 'cetes' | 'emergencia' | 'retiro' | null
   const [isTDCReminderOpen, setIsTDCReminderOpen] = useState(false);
 
@@ -216,6 +218,28 @@ export default function App() {
     }
   };
 
+  // Manejadores Dinero Extra / Bonos (Modalidad C Híbrida)
+  const handleAddIngresoExtra = async (payload) => {
+    try {
+      const res = await api.addIngresoExtra(payload);
+      addToast(res.message || 'Dinero extra registrado con éxito', 'success');
+      await Promise.all([loadGastos(), loadFuturo()]);
+    } catch (err) {
+      addToast(err.message || 'Error al registrar dinero extra', 'error');
+    }
+  };
+
+  const handleDeleteIngresoExtra = async (id) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este registro de dinero extra?')) return;
+    try {
+      const res = await api.deleteIngresoExtra(id);
+      addToast(res.message || 'Dinero extra eliminado', 'warning');
+      await Promise.all([loadGastos(), loadFuturo()]);
+    } catch (err) {
+      addToast(err.message || 'Error al eliminar dinero extra', 'error');
+    }
+  };
+
   // Manejadores Plan a Futuro
   const handleAddGastoOcio = async (payload) => {
     try {
@@ -353,6 +377,7 @@ export default function App() {
             setIsCerrarQuincenaFuturoOpen(true);
           }
         }}
+        onOpenIngresoExtra={() => setIsIngresoExtraOpen(true)}
         onToggleTDC={() => setIsTDCReminderOpen(!isTDCReminderOpen)}
       />
 
@@ -420,6 +445,7 @@ export default function App() {
                 data={gastosData}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaGastosOpen(true)}
                 onOpenConfig={() => setIsConfigGastosOpen(true)}
+                onOpenIngresoExtra={() => setIsIngresoExtraOpen(true)}
                 onRevertirCierre={handleRevertirCierreGastos}
               />
             )}
@@ -557,6 +583,7 @@ export default function App() {
                 onGoToOcio={() => setFuturoTab('ocio')}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaFuturoOpen(true)}
                 onOpenAjusteAporte={(tipo) => setAjusteAporteTipo(tipo)}
+                onOpenIngresoExtra={() => setIsIngresoExtraOpen(true)}
                 onReloadFuturo={loadFuturo}
                 addToast={addToast}
               />
@@ -659,6 +686,19 @@ export default function App() {
         tipo={ajusteAporteTipo}
         futuroData={futuroData}
         onSave={handleUpdateAportacion}
+      />
+
+      {/* Modal Dinero Extra / Bonos (Modalidad C Híbrida) */}
+      <ModalIngresoExtra
+        isOpen={isIngresoExtraOpen}
+        onClose={() => setIsIngresoExtraOpen(false)}
+        onSave={handleAddIngresoExtra}
+        onDelete={handleDeleteIngresoExtra}
+        ingresosExtra={
+          futuroData?.otros_fondos?.cajita_turbo?.ingresos_extra?.list ||
+          gastosData?.resumen?.ingresos_extra ||
+          []
+        }
       />
     </div>
   );

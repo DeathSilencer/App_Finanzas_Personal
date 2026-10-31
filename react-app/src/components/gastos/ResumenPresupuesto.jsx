@@ -1,11 +1,12 @@
 import React from 'react';
-import { LayoutGrid, Table, CheckCircle2, Sliders, Wallet, RotateCcw } from 'lucide-react';
+import { LayoutGrid, Table, CheckCircle2, Sliders, Wallet, RotateCcw, Sparkles } from 'lucide-react';
 import { fmt } from '../../utils/formatters';
 
 export default function ResumenPresupuesto({
   data,
   onOpenCerrarQuincena,
   onOpenConfig,
+  onOpenIngresoExtra,
   onRevertirCierre
 }) {
   const resumen = data?.resumen || {};
@@ -19,6 +20,8 @@ export default function ResumenPresupuesto({
   const excedente = resumen.excedente_base_fijo || 1694;
   const excedenteMoto = resumen.excedente_80_moto || 1355.2;
   const excedenteSalidas = resumen.excedente_20_salidas || 338.8;
+  const totalIngresosExtra = resumen.total_ingresos_extra || 0;
+  const extraPresupuestoGastos = resumen.extra_presupuesto_gastos || 0;
 
   // Variables de Efectivo y Compensación Inteligente
   const montoCombi = resumen.monto_combi || 376;
@@ -55,7 +58,15 @@ export default function ResumenPresupuesto({
           <span className="kpi-label">Presupuesto Quincenal</span>
           <h3 className="kpi-val-white">{fmt(presupuestoTotal)}</h3>
           <p className="kpi-subtext">
-            <span>Gastos fijos:</span> <b className="text-slate-300">{fmt(totalFijos)}</b>
+            {extraPresupuestoGastos > 0 ? (
+              <span className="text-amber-300 font-semibold truncate block">
+                Base: {fmt(resumen.presupuesto_base || 2500)} (+{fmt(extraPresupuestoGastos)} extra)
+              </span>
+            ) : (
+              <>
+                <span>Gastos fijos:</span> <b className="text-slate-300">{fmt(totalFijos)}</b>
+              </>
+            )}
           </p>
         </div>
 
@@ -92,6 +103,39 @@ export default function ResumenPresupuesto({
             80% Moto ({fmt(excedenteMoto)}) | 20% Salidas ({fmt(excedenteSalidas)})
           </p>
         </div>
+      </div>
+
+      {/* ────────────────────────────────────────────────────────────────── */}
+      {/* BANNER DINERO EXTRA & BONOS (MODALIDAD C HÍBRIDA) */}
+      {/* ────────────────────────────────────────────────────────────────── */}
+      <div className="card-glass p-3.5 sm:p-4 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/30 via-slate-900 to-amber-950/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs sm:text-sm font-bold text-white flex items-center space-x-2">
+              <span>Agregador de Dinero Extra &amp; Bonos</span>
+              {totalIngresosExtra > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-extrabold border border-emerald-500/30">
+                  +{fmt(totalIngresosExtra)} activo
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400">
+              {totalIngresosExtra > 0 
+                ? `${resumen.ingresos_extra?.length || 1} movimiento(s) de dinero extra integrado(s) a tus fondos esta quincena.`
+                : '¿Recibiste un bono o dinero extra? Repártelo con la regla 50/30/10/5/5 o asígnalo 100% a un fondo.'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onOpenIngresoExtra}
+          className="btn-amber px-3.5 py-1.5 text-xs font-bold rounded-xl flex items-center space-x-1.5 shrink-0 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20 transition"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>{totalIngresosExtra > 0 ? 'Ver / Agregar Extra' : '+ Registrar Dinero Extra'}</span>
+        </button>
       </div>
 
       {/* ────────────────────────────────────────────────────────────────── */}

@@ -58,7 +58,8 @@ export default function AjusteAporteModal({
             <label className="form-label">Monto Aportado ($ MXN)</label>
             <input
               type="number"
-              step="10"
+              step="any"
+              min="0"
               required
               value={monto}
               onChange={(e) => setMonto(e.target.value)}

@@ -34,7 +34,8 @@ let memoryState = {
   gastosOcio: [...INITIAL_GASTOS_OCIO],
   comprasTdc: [...INITIAL_COMPRAS_TDC],
   historicoGastos: [],
-  historicoFuturo: []
+  historicoFuturo: [],
+  ingresosExtra: []
 };
 
 // Función inteligente para inferir el mes exacto del período o fecha de cierre
@@ -129,6 +130,24 @@ export function buildHistorialGastos(cierres = []) {
           }
         }
       }
+      if (Array.isArray(det.ingresos_extra)) {
+        for (const ie of det.ingresos_extra) {
+          const ieId = String(ie.id || `${ie.fecha}-${ie.concepto}-${ie.monto}`);
+          if (!transIds.has(ieId)) {
+            transIds.add(ieId);
+            m.transacciones.push({
+              id: ie.id,
+              fecha: ie.fecha || c.fecha_cierre,
+              quincena: c.periodo,
+              concepto: `💰 ${ie.concepto || 'Dinero Extra / Bono'}`,
+              categoria: ie.modalidad === '50_30_10_5_5' ? '⚖️ Regla 50/30/10/5/5' : `🎯 Fondo ${ie.fondo_destino || 'Específico'}`,
+              metodo_pago: 'Abono / Ingreso',
+              monto: Number(ie.monto) || 0,
+              tipo_movimiento: 'ingreso'
+            });
+          }
+        }
+      }
     } catch (e) {}
   }
 
@@ -214,7 +233,8 @@ function notifyListeners() {
     memoryState.configGastos,
     memoryState.gastosDiarios,
     memoryState.historicoGastos,
-    memoryState.comprasTdc
+    memoryState.comprasTdc,
+    memoryState.ingresosExtra
   );
   const futuro = computeFuturo(
     memoryState.configFuturo,
@@ -223,7 +243,8 @@ function notifyListeners() {
     memoryState.comprasTdc,
     memoryState.gastosDiarios,
     memoryState.historicoFuturo,
-    memoryState.historicoGastos
+    memoryState.historicoGastos,
+    memoryState.ingresosExtra
   );
   const hGastos = buildHistorialGastos(memoryState.historicoGastos);
   const hFuturo = buildHistorialFuturo(memoryState.historicoFuturo);
@@ -233,7 +254,8 @@ function notifyListeners() {
         gastos,
         futuro,
         historialGastos: hGastos,
-        historialFuturo: hFuturo
+        historialFuturo: hFuturo,
+        ingresosExtra: memoryState.ingresosExtra
       });
     } catch (e) {
       console.error("Error en listener de Firestore:", e);
@@ -372,6 +394,24 @@ export async function initFirestoreListeners() {
       notifyListeners();
     }, (err) => console.warn("historico_quincenas_futuro snapshot:", err.message));
 
+    // 8. Ingresos Extra / Bonos (Deduplicación estricta)
+    const qIngresos = query(collection(db, "ingresos_extra"));
+    onSnapshot(qIngresos, (snapshot) => {
+      const map = new Map();
+      snapshot.forEach((d) => {
+        map.set(d.id, { ...d.data(), id: d.id, fila: d.id });
+      });
+      const list = Array.from(map.values());
+      list.sort((a, b) => {
+        const d1 = b.fecha || '';
+        const d2 = a.fecha || '';
+        if (d1 !== d2) return d1.localeCompare(d2);
+        return (b.created_at || '').localeCompare(a.created_at || '');
+      });
+      memoryState.ingresosExtra = list;
+      notifyListeners();
+    }, (err) => console.warn("ingresos_extra snapshot:", err.message));
+
   } catch (error) {
     console.warn("Error al inicializar Firestore:", error);
   }
@@ -390,7 +430,8 @@ export function subscribeFinancialData(callback) {
       memoryState.configGastos,
       memoryState.gastosDiarios,
       memoryState.historicoGastos,
-      memoryState.comprasTdc
+      memoryState.comprasTdc,
+      memoryState.ingresosExtra
     ),
     futuro: computeFuturo(
       memoryState.configFuturo,
@@ -399,10 +440,12 @@ export function subscribeFinancialData(callback) {
       memoryState.comprasTdc,
       memoryState.gastosDiarios,
       memoryState.historicoFuturo,
-      memoryState.historicoGastos
+      memoryState.historicoGastos,
+      memoryState.ingresosExtra
     ),
     historialGastos: buildHistorialGastos(memoryState.historicoGastos),
-    historialFuturo: buildHistorialFuturo(memoryState.historicoFuturo)
+    historialFuturo: buildHistorialFuturo(memoryState.historicoFuturo),
+    ingresosExtra: memoryState.ingresosExtra
   });
   return () => listeners.delete(callback);
 }
@@ -416,7 +459,8 @@ export async function getGastos() {
     memoryState.configGastos,
     memoryState.gastosDiarios,
     memoryState.historicoGastos,
-    memoryState.comprasTdc
+    memoryState.comprasTdc,
+    memoryState.ingresosExtra
   );
 }
 
@@ -534,7 +578,8 @@ export async function cerrarQuincenaGastos(data) {
     memoryState.configGastos,
     memoryState.gastosDiarios,
     memoryState.historicoGastos,
-    memoryState.comprasTdc
+    memoryState.comprasTdc,
+    memoryState.ingresosExtra
   );
   const res = current.resumen;
 
@@ -565,15 +610,16 @@ export async function cerrarQuincenaGastos(data) {
     gastos_fijos: res.total_gastos_fijos,
     gasto_real: res.gasto_total_real,
     remanente: res.remanente_total,
-    ahorro_moto_80: res.excedente_80_moto,
-    refuerzo_gustos_20: res.excedente_20_salidas,
+    ahorro_moto_80: round2(res.excedente_80_moto + (res.extra_moto_directo || 0)),
+    refuerzo_gustos_20: round2(res.excedente_20_salidas + (res.extra_salidas_20 || 0)),
     num_movimientos: todosMovimientos.length,
     detalle_json: JSON.stringify({
       registros: todosMovimientos,
       compras_tdc: tdcComoMovimientos,
       desglose_categorias: res,
       monto_copias: res.monto_copias,
-      monto_imprevistos: res.monto_imprevistos
+      monto_imprevistos: res.monto_imprevistos,
+      ingresos_extra: memoryState.ingresosExtra.filter(i => !i.quincena_cerrada)
     }),
     created_at: new Date().toISOString()
   };
@@ -581,7 +627,7 @@ export async function cerrarQuincenaGastos(data) {
   // Guardar quincena archivada
   await addDoc(collection(db, "historico_quincenas_gastos"), cierreData);
 
-  // Batch en Firestore: limpiar gastos diarios y marcar compras TDC como archivadas
+  // Batch en Firestore: limpiar gastos diarios y marcar compras TDC e ingresos extra como archivadas
   const snap = await getDocs(collection(db, "gastos_diarios"));
   const batch = writeBatch(db);
   snap.forEach((d) => batch.delete(d.ref));
@@ -594,12 +640,27 @@ export async function cerrarQuincenaGastos(data) {
       });
     }
   }
+
+  const ingresosExtraActivos = memoryState.ingresosExtra.filter(i => !i.quincena_cerrada);
+  for (const ie of ingresosExtraActivos) {
+    if (ie.id) {
+      batch.update(doc(db, "ingresos_extra", String(ie.id)), {
+        quincena_cerrada: true,
+        periodo_cierre: periodo
+      });
+    }
+  }
   await batch.commit();
 
   // Actualizar estado en memoria
   memoryState.gastosDiarios = [];
   memoryState.comprasTdc = memoryState.comprasTdc.map(c => ({
     ...c,
+    quincena_cerrada: true,
+    periodo_cierre: periodo
+  }));
+  memoryState.ingresosExtra = memoryState.ingresosExtra.map(ie => ({
+    ...ie,
     quincena_cerrada: true,
     periodo_cierre: periodo
   }));
@@ -686,6 +747,16 @@ export async function revertirQuincenaGastos(id) {
     }
   }
 
+  const ingresosAfectados = memoryState.ingresosExtra.filter(i => i.periodo_cierre === targetDoc.periodo);
+  for (const ie of ingresosAfectados) {
+    if (ie.id) {
+      batch.update(doc(db, "ingresos_extra", String(ie.id)), {
+        quincena_cerrada: false,
+        periodo_cierre: null
+      });
+    }
+  }
+
   batch.delete(doc(db, "historico_quincenas_gastos", targetId));
   await batch.commit();
 
@@ -695,6 +766,9 @@ export async function revertirQuincenaGastos(id) {
   memoryState.gastosDiarios = [...toAdd, ...memoryState.gastosDiarios];
   memoryState.comprasTdc = memoryState.comprasTdc.map(c => 
     c.periodo_cierre === targetDoc.periodo ? { ...c, quincena_cerrada: false, periodo_cierre: null } : c
+  );
+  memoryState.ingresosExtra = memoryState.ingresosExtra.map(ie =>
+    ie.periodo_cierre === targetDoc.periodo ? { ...ie, quincena_cerrada: false, periodo_cierre: null } : ie
   );
 
   notifyListeners();
@@ -716,7 +790,8 @@ export async function getFuturo() {
     memoryState.comprasTdc,
     memoryState.gastosDiarios,
     memoryState.historicoFuturo,
-    memoryState.historicoGastos
+    memoryState.historicoGastos,
+    memoryState.ingresosExtra
   );
 }
 
@@ -802,7 +877,8 @@ export async function cerrarQuincenaFuturo(data) {
     memoryState.comprasTdc,
     memoryState.gastosDiarios,
     memoryState.historicoFuturo,
-    memoryState.historicoGastos
+    memoryState.historicoGastos,
+    memoryState.ingresosExtra
   );
 
   const ocio = current.otros_fondos.ocio;
@@ -1019,4 +1095,38 @@ export async function saveConfigFuturo(data) {
   notifyListeners();
   await setDoc(doc(db, "config_futuro", "main"), updated);
   return { status: "success", message: "Configuración de Futuro guardada" };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OPERACIONES DE INGRESOS EXTRA / BONOS (Modalidad C Híbrida)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function addIngresoExtra(data) {
+  const monto = round2(data.monto);
+  if (isNaN(monto) || monto <= 0) {
+    throw new Error("El monto del ingreso extra debe ser mayor a 0");
+  }
+
+  const docData = {
+    fecha: data.fecha || new Date().toISOString().split('T')[0],
+    concepto: data.concepto ? data.concepto.trim() : "Bono / Dinero Extra",
+    monto: monto,
+    modalidad: data.modalidad || "especifico", // "especifico" | "patrimonial"
+    destino: data.destino || "moto",
+    quincena_cerrada: false,
+    periodo_cierre: null,
+    created_at: new Date().toISOString()
+  };
+
+  const docRef = await addDoc(collection(db, "ingresos_extra"), docData);
+  return { status: "success", id: docRef.id, message: "Dinero extra registrado con éxito" };
+}
+
+export async function deleteIngresoExtra(id) {
+  if (!id) throw new Error("ID de ingreso extra requerido");
+  const idStr = String(id);
+  memoryState.ingresosExtra = memoryState.ingresosExtra.filter(i => String(i.id) !== idStr);
+  notifyListeners();
+  await deleteDoc(doc(db, "ingresos_extra", idStr));
+  return { status: "success", message: "Ingreso extra eliminado" };
 }

@@ -24,8 +24,25 @@ export function getDiaSemana(fechaStr) {
 /**
  * Calcula todo el estado financiero de Gastos Básicos.
  */
-export function computeGastos(config = {}, registros = [], historico = [], comprasTdc = []) {
-  const presupuesto_asignado = Number(config.presupuesto_asignado ?? 2500);
+export function computeGastos(config = {}, registros = [], historico = [], comprasTdc = [], ingresosExtra = []) {
+  const ingresos_activos = (ingresosExtra || []).filter(i => !i.quincena_cerrada);
+
+  const extra_presupuesto_gastos = round2(
+    ingresos_activos
+      .filter(i => i.modalidad === 'especifico' && i.destino === 'presupuesto_gastos')
+      .reduce((sum, i) => sum + (Number(i.monto) || 0), 0)
+  );
+
+  const extra_moto_directo = round2(
+    ingresos_activos.reduce((sum, i) => {
+      if (i.modalidad === 'especifico' && i.destino === 'moto') return sum + (Number(i.monto) || 0);
+      if (i.modalidad === 'patrimonial') return sum + ((Number(i.monto) || 0) * 0.50);
+      return sum;
+    }, 0)
+  );
+
+  const presupuesto_base = Number(config.presupuesto_asignado ?? 2500);
+  const presupuesto_asignado = round2(presupuesto_base + extra_presupuesto_gastos);
   const monto_combi = Number(config.monto_combi ?? 376);
   const monto_comida = Number(config.monto_comida ?? 180);
   const monto_copias = Number(config.monto_copias ?? 50);
@@ -188,7 +205,9 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
 
   // Simulador Moto
   const ahorro_acumulado_historico = round2(historico.reduce((sum, h) => sum + (Number(h.ahorro_moto_80) || 0), 0));
-  const total_ahorrado_moto = round2(ahorro_acumulado_historico + aportaciones_directas);
+  // Total Fondo Moto en Cajita Nu: Quincenas cerradas + aportaciones directas + bonos extra + quincena activa
+  const total_ahorrado_moto = round2(ahorro_acumulado_historico + aportaciones_directas + extra_moto_directo + excedente_80_moto);
+  const ahorro_cerrado_solo = round2(ahorro_acumulado_historico + aportaciones_directas);
 
   const costo_diario_combi_escolar = 32.0;
   const costo_diario_comida = monto_comida / 10.0;
@@ -196,8 +215,12 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
   const ahorro_extra_vacaciones = round2(dias_libres_cuatri * costo_diario_escolar);
 
   const ahorro_cuatri = round2((excedente_80_moto * quincenas_cuatri) + ahorro_extra_vacaciones);
-  const cuatris_necesarios = ahorro_cuatri > 0 ? round2(meta_moto / ahorro_cuatri) : 0;
+  const monto_restante_moto = Math.max(0, round2(meta_moto - total_ahorrado_moto));
+  const cuatris_necesarios = ahorro_cuatri > 0 ? round2(monto_restante_moto / ahorro_cuatri) : 0;
   const meses_estimados = Math.round(cuatris_necesarios * 4 * 10) / 10;
+  const quincenas_estimadas = Math.ceil(cuatris_necesarios * quincenas_cuatri);
+  const cuatris_totales = ahorro_cuatri > 0 ? round2(meta_moto / ahorro_cuatri) : 0;
+  const meses_totales = Math.round(cuatris_totales * 4 * 10) / 10;
 
   const simulador_moto = {
     meta_total: meta_moto,
@@ -207,10 +230,16 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
     excedente_quincenal_80: excedente_80_moto,
     quincenas_cuatri,
     ahorro_por_cuatrimestre: ahorro_cuatri,
+    monto_restante: monto_restante_moto,
     cuatris_estimados: cuatris_necesarios,
     meses_estimados,
+    quincenas_estimadas,
+    cuatris_totales,
+    meses_totales,
     aportaciones_directas,
+    extra_moto_directo,
     ahorro_acumulado_historico,
+    ahorro_cerrado_solo,
     total_ahorrado_acumulado: total_ahorrado_moto,
     pct_meta_cumplido: meta_moto > 0 ? Math.round((total_ahorrado_moto / meta_moto) * 1000) / 10 : 0
   };
@@ -219,6 +248,11 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
     status: 'success',
     resumen: {
       presupuesto_total: presupuesto_asignado,
+      presupuesto_base,
+      extra_presupuesto_gastos,
+      total_ingresos_extra: round2(ingresos_activos.reduce((sum, i) => sum + (Number(i.monto) || 0), 0)),
+      extra_moto_directo,
+      ingresos_extra: ingresos_activos,
       gasto_total_real,
       gasto_efectivo_total,
       gasto_tdc_total,
@@ -268,8 +302,68 @@ export function computeFuturo(
   comprasTdc = [],
   registrosGastos = [],
   historicoFuturo = [],
-  historicoGastos = []
+  historicoGastos = [],
+  ingresosExtra = []
 ) {
+  // Ingresos Extra activos
+  const ingresos_activos = (ingresosExtra || []).filter(i => !i.quincena_cerrada);
+
+  const extra_moto = round2(
+    ingresos_activos.reduce((sum, i) => {
+      if (i.modalidad === 'especifico' && i.destino === 'moto') return sum + (Number(i.monto) || 0);
+      if (i.modalidad === 'patrimonial') return sum + ((Number(i.monto) || 0) * 0.50);
+      return sum;
+    }, 0)
+  );
+
+  const extra_ocio = round2(
+    ingresos_activos.reduce((sum, i) => {
+      if (i.modalidad === 'especifico' && i.destino === 'ocio') return sum + (Number(i.monto) || 0);
+      if (i.modalidad === 'patrimonial') return sum + ((Number(i.monto) || 0) * 0.30);
+      return sum;
+    }, 0)
+  );
+
+  const extra_emergencia = round2(
+    ingresos_activos.reduce((sum, i) => {
+      if (i.modalidad === 'especifico' && i.destino === 'emergencia') return sum + (Number(i.monto) || 0);
+      if (i.modalidad === 'patrimonial') return sum + ((Number(i.monto) || 0) * 0.10);
+      return sum;
+    }, 0)
+  );
+
+  const extra_cetes = round2(
+    ingresos_activos.reduce((sum, i) => {
+      if (i.modalidad === 'especifico' && i.destino === 'cetes') return sum + (Number(i.monto) || 0);
+      if (i.modalidad === 'patrimonial') return sum + ((Number(i.monto) || 0) * 0.05);
+      return sum;
+    }, 0)
+  );
+
+  const extra_retiro = round2(
+    ingresos_activos.reduce((sum, i) => {
+      if (i.modalidad === 'especifico' && i.destino === 'retiro') return sum + (Number(i.monto) || 0);
+      if (i.modalidad === 'patrimonial') return sum + ((Number(i.monto) || 0) * 0.05);
+      return sum;
+    }, 0)
+  );
+
+  const extra_salidas_20 = round2(
+    ingresos_activos.reduce((sum, i) => {
+      if (i.modalidad === 'especifico' && i.destino === 'salidas_20') return sum + (Number(i.monto) || 0);
+      return sum;
+    }, 0)
+  );
+
+  const extra_presupuesto_gastos = round2(
+    ingresos_activos.reduce((sum, i) => {
+      if (i.modalidad === 'especifico' && i.destino === 'presupuesto_gastos') return sum + (Number(i.monto) || 0);
+      return sum;
+    }, 0)
+  );
+
+  const extra_total_cajita = round2(extra_moto + extra_ocio + extra_emergencia + extra_salidas_20);
+
   const ingreso_base = Number(configFuturo.ingreso_base ?? 5000);
   const tasa_nu = Number(configFuturo.tasa_nu ?? 0.13);
   const tasa_cetes = Number(configFuturo.tasa_cetes ?? 0.0645);
@@ -390,10 +484,10 @@ export function computeFuturo(
   const hist_emg = ultimoCierreFuturo ? round2(Number(ultimoCierreFuturo.aporte_emergencia) || 0) : 0.0;
 
   const aporte_emergencia_quincenal = round2(ingreso_base * pct_p3);
-  const saldo_emergencia = Math.max(emergencia_aportado, round2(hist_emg + aporte_emergencia_quincenal));
+  const saldo_emergencia = Math.max(emergencia_aportado + extra_emergencia, round2(hist_emg + aporte_emergencia_quincenal + extra_emergencia));
 
   const presupuesto_ocio_base = round2(ingreso_base * pct_p7);
-  const presupuesto_ocio = round2(presupuesto_ocio_base + hist_rem_ocio);
+  const presupuesto_ocio = round2(presupuesto_ocio_base + hist_rem_ocio + extra_ocio);
   const formatted_ocio = registrosOcio.map(r => ({ ...r, fila: r.id }));
   const gasto_real_ocio = round2(formatted_ocio.reduce((sum, r) => sum + (Number(r.monto) || 0), 0));
   const remanente_ocio = Math.max(0, round2(presupuesto_ocio - gasto_real_ocio));
@@ -518,8 +612,8 @@ export function computeFuturo(
   // Por lo tanto, Copias NO está en Cajita Nu (saldo_copias = 0). Pertenece a la cartera física.
   const saldo_copias = 0.0;
   const saldo_imprevistos = Math.max(0, round2(hist_imprevistos + m_imprevistos - gasto_real_imprevistos));
-  const saldo_moto_80 = Math.max(0, round2(hist_moto + monto_moto_80 + aporte_dir_moto - gasto_real_moto_80));
-  const saldo_salidas_20 = Math.max(0, round2(hist_salidas + monto_salidas_20 - gasto_real_salidas_20));
+  const saldo_moto_80 = Math.max(0, round2(hist_moto + monto_moto_80 + aporte_dir_moto + extra_moto - gasto_real_moto_80));
+  const saldo_salidas_20 = Math.max(0, round2(hist_salidas + monto_salidas_20 + extra_salidas_20 - gasto_real_salidas_20));
   const total_digital_gastos = round2(saldo_imprevistos + saldo_moto_80 + saldo_salidas_20);
 
   const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia);
@@ -537,7 +631,6 @@ export function computeFuturo(
 
   // Gran Total en Cajita Nu:
   // Si el usuario ingresó su saldo total real de Nu (ej. $10,231.88), ese es exactamente el Gran Total en Nu.
-  // De lo contrario, es la suma de los fondos asignados + los rendimientos ganados.
   let gran_total_cajita = round2(total_asignado_cajita + rendimientos_ganados_nu);
   if (saldo_real_ajustado !== null && saldo_real_ajustado !== undefined && !isNaN(Number(saldo_real_ajustado)) && Number(saldo_real_ajustado) > 0) {
     gran_total_cajita = round2(Number(saldo_real_ajustado));
@@ -599,20 +692,24 @@ export function computeFuturo(
     otros_fondos: {
       cetes: {
         presupuesto: ingreso_base * pct_p1,
-        aportado: cetes_aportado,
+        aportado: round2(cetes_aportado + extra_cetes),
+        extra_ingreso: extra_cetes,
         estado: cetes_estado
       },
       emergencia: {
         presupuesto: ingreso_base * pct_p3,
         aportado: saldo_emergencia,
+        extra_ingreso: extra_emergencia,
         meta: meta_emergencia
       },
       retiro: {
         presupuesto: ingreso_base * pct_p6,
-        aportado: retiro_aportado
+        aportado: round2(retiro_aportado + extra_retiro),
+        extra_ingreso: extra_retiro
       },
       ocio: {
         presupuesto: presupuesto_ocio,
+        extra_ingreso: extra_ocio,
         gasto_real: gasto_real_ocio,
         remanente: remanente_ocio,
         pct_consumido: pct_consumido_ocio,
@@ -630,6 +727,18 @@ export function computeFuturo(
         rendimiento_real_ganado: rendimientos_ganados_nu,
         rendimiento_real_nu: rendimientos_ganados_nu,
         saldo_real_ajustado,
+        ingresos_extra: {
+          list: ingresos_activos,
+          total: round2(ingresos_activos.reduce((s, i) => s + (Number(i.monto) || 0), 0)),
+          extra_total_cajita,
+          extra_moto,
+          extra_ocio,
+          extra_emergencia,
+          extra_salidas_20,
+          extra_cetes,
+          extra_retiro,
+          extra_presupuesto_gastos
+        },
         rendimiento_anual: rendimiento_anual_cajita,
         rendimiento_mensual: rendimiento_mensual_cajita,
         total_futuro: total_futuro_cajita,

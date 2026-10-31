@@ -115,7 +115,8 @@ export default function RegistroDiario({
               <label className="form-label">Monto ($ MXN)</label>
               <input
                 type="number"
-                step="0.5"
+                step="any"
+                min="0.01"
                 required
                 placeholder="0.00"
                 value={monto}

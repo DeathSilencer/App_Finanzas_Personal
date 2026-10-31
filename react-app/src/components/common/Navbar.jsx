@@ -1,10 +1,11 @@
 import React from 'react';
-import { Wallet, TrendingUp, CreditCard, CheckCircle2, Database, Cloud } from 'lucide-react';
+import { Wallet, TrendingUp, CreditCard, CheckCircle2, Database, Cloud, Sparkles } from 'lucide-react';
 
 export default function Navbar({
   activeModule,
   setActiveModule,
   onOpenCerrarQuincena,
+  onOpenIngresoExtra,
   onToggleTDC
 }) {
   return (
@@ -31,6 +32,17 @@ export default function Navbar({
 
         {/* Acciones y Switcher de Módulos (Mobile Touch Friendly) */}
         <div className="flex items-center space-x-1.5 sm:space-x-2.5">
+          {/* Botón Dinero Extra / Bonos */}
+          <button
+            onClick={onOpenIngresoExtra}
+            className="btn-amber min-h-[36px] sm:min-h-[38px] px-2.5 sm:px-3 text-xs py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl flex items-center space-x-1.5 transition font-bold"
+            title="Registrar bono o dinero extra"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="hidden sm:inline">+ Dinero Extra</span>
+            <span className="sm:hidden text-[11px]">+ Extra</span>
+          </button>
+
           {/* Botón Cerrar Quincena */}
           <button
             onClick={onOpenCerrarQuincena}

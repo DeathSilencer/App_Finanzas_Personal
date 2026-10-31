@@ -26,6 +26,7 @@ export default function GeneralCajitaTurbo({
   onGoToOcio,
   onOpenCerrarQuincena,
   onOpenAjusteAporte,
+  onOpenIngresoExtra,
   onReloadFuturo,
   addToast
 }) {
@@ -218,6 +219,14 @@ export default function GeneralCajitaTurbo({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={onOpenIngresoExtra}
+                className="btn-amber !text-xs !min-h-[40px] flex-1 sm:flex-initial bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold"
+                title="Registrar bono o dinero extra"
+              >
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span>+ Dinero Extra</span>
+              </button>
               <button
                 onClick={handleOpenConciliar}
                 className="btn-ghost !text-xs !min-h-[40px] text-purple-300 border-purple-500/40 flex-1 sm:flex-initial"

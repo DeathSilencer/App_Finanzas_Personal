@@ -292,9 +292,9 @@ export default function DashboardMaestro({
             </div>
           </div>
           <div className="text-right shrink-0">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">Tiempo Estimado</span>
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">Tiempo Restante Estimado</span>
             <span className="text-xl sm:text-2xl font-black text-emerald-400">~{mesesMoto} meses</span>
-            <span className="text-xs text-slate-400 block font-medium">(2.81 Cuatris)</span>
+            <span className="text-xs text-slate-400 block font-medium">({simMoto.cuatris_estimados ?? 2.5} Cuatris)</span>
           </div>
         </div>
 
