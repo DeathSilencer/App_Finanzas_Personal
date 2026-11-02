@@ -21,21 +21,21 @@ const DESTINOS = [
   {
     id: 'moto',
     titulo: 'Acelerador de Moto',
-    subtitulo: 'Suma directo a la meta de $42,000 en Cajita Nu',
+    subtitulo: 'Suma directo a tu meta de Moto de Contado',
     icon: Bike,
     color: 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300'
   },
   {
     id: 'emergencia',
     titulo: 'Fondo de Emergencia',
-    subtitulo: 'Refuerza tu blindaje en Cajita Nu',
+    subtitulo: 'Refuerza tu blindaje en Bóvedas',
     icon: ShieldCheck,
     color: 'border-blue-500/40 bg-blue-950/30 text-blue-300'
   },
   {
     id: 'ocio',
     titulo: 'Gustos & Ocio',
-    subtitulo: 'Aumenta tu saldo disponible en Cajita Nu',
+    subtitulo: 'Aumenta tu saldo disponible para gustos y ocio',
     icon: PartyPopper,
     color: 'border-amber-500/40 bg-amber-950/30 text-amber-300'
   },
@@ -49,7 +49,7 @@ const DESTINOS = [
   {
     id: 'salidas_20',
     titulo: 'Refuerzo Salidas (20%)',
-    subtitulo: 'Colchón adicional para salidas en Cajita Nu',
+    subtitulo: 'Colchón adicional para salidas (Débito DiDi 15%)',
     icon: IceCream,
     color: 'border-pink-500/40 bg-pink-950/30 text-pink-300'
   },

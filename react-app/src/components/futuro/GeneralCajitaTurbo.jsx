@@ -23,7 +23,7 @@ import {
   Zap
 } from 'lucide-react';
 import { fmt } from '../../utils/formatters';
-import { ajustarCajitaTurbo } from '../../services/api';
+import { ajustarCajitaTurbo, motoAporte } from '../../services/api';
 
 export default function GeneralCajitaTurbo({
   futuroData = {},
@@ -176,6 +176,48 @@ export default function GeneralCajitaTurbo({
   };
 
   const totalFondosExternos = (cetes.aportado || 250) + (ret.aportado || 250);
+
+  // Cálculos de Auditoría y Detección de Sobrantes/Faltantes en la Conciliación
+  const valNu = parseFloat(inputSaldoNu) || 0;
+  const valRendNu = parseFloat(inputRendNu) || 0;
+  const baseNu = Math.max(0, valNu - valRendNu);
+
+  const valDiDi = parseFloat(inputSaldoDiDi) || 0;
+  const valRendDiDi = parseFloat(inputRendDiDi) || 0;
+  const baseDiDi = Math.max(0, valDiDi - valRendDiDi);
+
+  const valOpen = parseFloat(inputSaldoOpen) || 0;
+  const valRendOpen = parseFloat(inputRendOpen) || 0;
+  const baseOpen = Math.max(0, valOpen - valRendOpen);
+
+  const totalBaseBancos = Math.round((baseNu + baseDiDi + baseOpen) * 100) / 100;
+  const totalAsignadoFondos = Math.round((
+    (porcEmg.monto || 0) +
+    (porcOcio.monto || 0) +
+    (porcMoto.monto || 0) +
+    (porcSalidas.monto || 0) +
+    (porcImp.monto || 0)
+  ) * 100) / 100;
+  const diferenciaCuadre = Math.round((totalBaseBancos - totalAsignadoFondos) * 100) / 100;
+
+  const handleAutoAsignarDiferencia = async (montoDif) => {
+    try {
+      setSavingAjuste(true);
+      await motoAporte(montoDif, 'sumar');
+      if (addToast) {
+        if (montoDif > 0) {
+          addToast(`Sobrante de +${fmt(montoDif)} asignado a la Moto. ¡Cuadre al 100%!`, 'success');
+        } else {
+          addToast(`Faltante de -${fmt(Math.abs(montoDif))} absorbido en la Moto. ¡Cuadre al 100%!`, 'info');
+        }
+      }
+      if (onReloadFuturo) await onReloadFuturo();
+    } catch (e) {
+      if (addToast) addToast(e.message || 'Error al auto-asignar diferencia', 'error');
+    } finally {
+      setSavingAjuste(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -971,6 +1013,64 @@ export default function GeneralCajitaTurbo({
                   </div>
                 </div>
               )}
+
+              {/* BLOQUE DE AUDITORÍA Y DETECCIÓN DE SOBRANTES / FALTANTES */}
+              <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400 font-semibold uppercase tracking-wider">Auditoría de Cuadre Tríada:</span>
+                  <span className="font-mono text-slate-300">
+                    Bancos: <b>{fmt(totalBaseBancos)}</b> vs Fondos: <b>{fmt(totalAsignadoFondos)}</b>
+                  </span>
+                </div>
+
+                {Math.abs(diferenciaCuadre) < 0.05 ? (
+                  <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center space-x-2 text-emerald-300">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <div>
+                      <p className="font-bold text-xs">🟢 Cuadre Matemático 100% Perfecto</p>
+                      <p className="text-[10px] text-slate-300">Tus cuentas bancarias coinciden con tus fondos asignados. Cero dinero fantasma ni fugas.</p>
+                    </div>
+                  </div>
+                ) : diferenciaCuadre > 0.05 ? (
+                  <div className="p-2.5 rounded-xl bg-amber-950/50 border border-amber-500/50 space-y-2 text-amber-300">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 shrink-0 text-amber-400" />
+                      <div>
+                        <p className="font-bold text-xs">🟡 Sobrante Detectado: +{fmt(diferenciaCuadre)} MXN</p>
+                        <p className="text-[10px] text-slate-300">Tus bancos tienen {fmt(diferenciaCuadre)} más de lo que está asignado en tus presupuestos.</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={savingAjuste}
+                      onClick={() => handleAutoAsignarDiferencia(diferenciaCuadre)}
+                      className="w-full py-1.5 px-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] transition flex items-center justify-center space-x-1.5 shadow-md shadow-amber-500/20"
+                    >
+                      <Bike className="w-3.5 h-3.5" />
+                      <span>Asignar Sobrante a la Moto (+{fmt(diferenciaCuadre)})</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-rose-950/50 border border-rose-500/50 space-y-2 text-rose-300">
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                      <div>
+                        <p className="font-bold text-xs">🔴 Faltante Detectado: -{fmt(Math.abs(diferenciaCuadre))} MXN</p>
+                        <p className="text-[10px] text-slate-300">Tus bancos tienen menos saldo que tus presupuestos (posible gasto no registrado).</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={savingAjuste}
+                      onClick={() => handleAutoAsignarDiferencia(diferenciaCuadre)}
+                      className="w-full py-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] transition flex items-center justify-center space-x-1.5 shadow-md shadow-rose-600/20"
+                    >
+                      <Bike className="w-3.5 h-3.5" />
+                      <span>Compensar Faltante en la Moto (-{fmt(Math.abs(diferenciaCuadre))})</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="pt-2 flex items-center justify-end space-x-2.5">
                 <button

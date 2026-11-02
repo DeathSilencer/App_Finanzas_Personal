@@ -56,6 +56,9 @@ export default function DashboardMaestro({
   const mCombi = resumenGastos.monto_combi ?? 376;
   const mComida = resumenGastos.monto_comida ?? 180;
   const mCopias = resumenGastos.monto_copias ?? 50;
+  const mImprevistos = resumenGastos.monto_imprevistos ?? 200;
+  const montoMoto80 = resumenGastos.excedente_80_moto ?? 1355.20;
+  const montoSalidas20 = resumenGastos.excedente_20_salidas ?? 338.80;
 
   // Datos de Moto
   const simMoto = gastosData?.simulador_moto || {};
@@ -86,17 +89,17 @@ export default function DashboardMaestro({
         },
         {
           label: 'Fondo Acelerador Moto (80% Excedente)',
-          val: `${fmt(saldoMotoVivo)} (Nu 13% + DiDi 15%) (+$1,355.20/Q)`,
+          val: `${fmt(saldoMotoVivo)} (Nu 13% + DiDi 15%) (+${fmt(montoMoto80)}/Q)`,
           tipo: 'nu'
         },
         {
           label: 'Refuerzo Salidas (20% Excedente)',
-          val: `${fmt(saldoSalidasVivo)} en Débito DiDi (15%) (+$338.80/Q)`,
+          val: `${fmt(saldoSalidasVivo)} en Débito DiDi (15%) (+${fmt(montoSalidas20)}/Q)`,
           tipo: 'nu'
         },
         {
           label: 'Imprevistos Escolares',
-          val: `${fmt(saldoImprevistosVivo)} en DiDi Cuenta (15%) (+$200/Q)`,
+          val: `${fmt(saldoImprevistosVivo)} en DiDi Cuenta (15%) (+${fmt(mImprevistos)}/Q)`,
           tipo: 'nu'
         }
       ]
@@ -119,7 +122,7 @@ export default function DashboardMaestro({
           tipo: 'base'
         },
         {
-          label: 'Remanente de Septiembre Acumulado',
+          label: 'Remanente Acumulado Anterior',
           val: `+$${(saldoOcioVivo - (ingresoQ * 0.30) > 0 ? (saldoOcioVivo - (ingresoQ * 0.30)).toFixed(2) : '0.00')} resguardado`,
           tipo: 'ahorro'
         },
@@ -295,7 +298,7 @@ export default function DashboardMaestro({
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                Alimentado con el 80% de tu excedente de gastos básicos (+{fmt(resumenGastos.excedente_80_moto || 1355.20)}/quincena) + días hábiles de vacaciones.
+                Alimentado con el 80% de tu excedente de gastos básicos (+{fmt(montoMoto80)}/quincena) + días hábiles de vacaciones.
               </p>
             </div>
           </div>
@@ -310,7 +313,7 @@ export default function DashboardMaestro({
         <div className="space-y-2 pt-2 border-t border-slate-800/80">
           <div className="flex justify-between text-xs font-bold">
             <span className="text-slate-300">
-              Saldo Ahorrado para Moto (Bóvedas 13%): <b className="text-purple-300">{fmt(saldoMotoVivo)}</b> ({pctCumplidoVivo}%)
+              Saldo Ahorrado para Moto (Bóvedas 13%-15%): <b className="text-purple-300">{fmt(saldoMotoVivo)}</b> ({pctCumplidoVivo}%)
             </span>
             <span className="text-emerald-400">
               Quincenas Cerradas: {fmt(ahorradoHistoricoMoto)} ({pctCumplidoHistorico}%)
@@ -327,7 +330,7 @@ export default function DashboardMaestro({
               🔒 Ahorro archivado en histórico: <b className="text-white">{fmt(ahorradoHistoricoMoto)}</b>
             </span>
             <span>
-              ⚡ Quincena activa resguardada en Cajita Nu: <b className="text-purple-300">+{fmt(resumenGastos.excedente_80_moto || 1355.20)}</b>
+              ⚡ Quincena activa resguardada en Bóvedas (DiDi 15%): <b className="text-amber-300">+{fmt(montoMoto80)}</b>
             </span>
             <span>
               Resta para la meta: <b className="text-rose-400">{fmt(Math.max(0, metaMoto - saldoMotoVivo))}</b>
