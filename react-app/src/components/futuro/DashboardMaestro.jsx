@@ -74,7 +74,7 @@ export default function DashboardMaestro({
       quincenal: ingresoQ * 0.50,
       mensual: ingresoM * 0.50,
       saldoVivo: totalGastosDigitalVivo,
-      saldoVivoLabel: 'Saldo Vivo Resguardado en Cajita Nu',
+      saldoVivoLabel: 'Saldo Vivo en Bóvedas al 13%',
       color: 'border-indigo-500/40 text-indigo-400 bg-indigo-950/20',
       badgeColor: 'border-indigo-500/40 bg-indigo-500/20 text-indigo-300',
       detalles: [
@@ -85,17 +85,17 @@ export default function DashboardMaestro({
         },
         {
           label: 'Fondo Acelerador Moto (80% Excedente)',
-          val: `${fmt(saldoMotoVivo)} en Cajita Nu (+$1,355.20/Q)`,
+          val: `${fmt(saldoMotoVivo)} (Nu + Openbank) (+$1,355.20/Q)`,
           tipo: 'nu'
         },
         {
           label: 'Refuerzo Salidas (20% Excedente)',
-          val: `${fmt(saldoSalidasVivo)} en Cajita Nu (+$338.80/Q)`,
+          val: `${fmt(saldoSalidasVivo)} en Débito Openbank (+$338.80/Q)`,
           tipo: 'nu'
         },
         {
           label: 'Imprevistos Escolares',
-          val: `${fmt(saldoImprevistosVivo)} en Cajita Nu (+$200/Q)`,
+          val: `${fmt(saldoImprevistosVivo)} en Openbank Apartados (+$200/Q)`,
           tipo: 'nu'
         }
       ]
@@ -124,7 +124,7 @@ export default function DashboardMaestro({
         },
         {
           label: 'Medio de Pago Recomendado',
-          val: 'Débito Nu / TDC Nu liquidable en fecha',
+          val: '🔴 Débito Openbank / 💳 TDC Nu / 🟣 Débito Nu',
           tipo: 'info'
         }
       ]
@@ -137,7 +137,7 @@ export default function DashboardMaestro({
       quincenal: ingresoQ * 0.10,
       mensual: ingresoM * 0.10,
       saldoVivo: saldoEmergenciaVivo,
-      saldoVivoLabel: 'Saldo Blindado Vivo en Cajita Nu',
+      saldoVivoLabel: 'Saldo Blindado Vivo en Nu (13%)',
       color: 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20',
       badgeColor: 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300',
       detalles: [
@@ -153,7 +153,7 @@ export default function DashboardMaestro({
         },
         {
           label: 'Disponibilidad y Tasa',
-          val: 'Líquido 24/7 generando 13% Anual Nu',
+          val: 'Líquido 24/7 generando 13% Anual en Nu',
           tipo: 'nu'
         }
       ]
@@ -238,7 +238,7 @@ export default function DashboardMaestro({
             <span className="text-sm sm:text-base font-medium text-slate-400 ml-2">({fmt(ingresoM)}/mes)</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Consolidado maestro que une tus <b className="text-white">Gastos Básicos</b> con tu <b className="text-white">Plan Patrimonial a Futuro</b>. El dinero se asigna con disciplina matemática y se resguarda en tu cuenta Nu.
+            Consolidado maestro que une tus <b className="text-white">Gastos Básicos</b> con tu <b className="text-white">Plan Patrimonial a Futuro</b>. El dinero se asigna con disciplina matemática y se resguarda en tus Bóvedas al 13% (Nu y Openbank).
           </p>
         </div>
 
@@ -248,15 +248,19 @@ export default function DashboardMaestro({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
                 <Landmark className="w-3.5 h-3.5 text-purple-400" />
-                <span>Capital Vivo en Cajita Nu</span>
+                <span>Bóveda Dual al 13%</span>
               </span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-950 text-purple-300 border border-purple-800">
-                13% Anual
+                Nu + Openbank
               </span>
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-white mt-1.5">
               {fmt(granTotalNu)}
             </h3>
+            <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1 font-mono">
+              <span className="text-purple-300 font-semibold">Nu: {fmt(saldoNu)}</span>
+              <span className="text-rose-400 font-semibold">Openbank: {fmt(saldoOpenbank)}</span>
+            </div>
             <p className="text-xs text-emerald-400 mt-1 font-semibold flex items-center space-x-1">
               <Sparkles className="w-3.5 h-3.5" />
               <span>+{fmt(rendMensualEstimado)}/mes estimado de rendimientos</span>
