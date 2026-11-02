@@ -37,6 +37,8 @@ export default function DashboardMaestro({
 
   const granTotalNu = cajita.gran_total ?? 0;
   const rendMensualEstimado = cajita.rendimiento_mensual ?? (granTotalNu * (0.13 / 12));
+  const saldoNu = cajita.saldo_nu ?? 25045.17;
+  const saldoOpenbank = cajita.saldo_openbank ?? 3489.34;
 
   // Saldos vivos reales en Nu
   const saldoOcioVivo = desglose.ocio ?? ocio.remanente ?? 0;
@@ -302,7 +304,7 @@ export default function DashboardMaestro({
         <div className="space-y-2 pt-2 border-t border-slate-800/80">
           <div className="flex justify-between text-xs font-bold">
             <span className="text-slate-300">
-              Saldo Vivo en Cajita Nu para Moto: <b className="text-purple-300">{fmt(saldoMotoVivo)}</b> ({pctCumplidoVivo}%)
+              Saldo Ahorrado para Moto (Bóvedas 13%): <b className="text-purple-300">{fmt(saldoMotoVivo)}</b> ({pctCumplidoVivo}%)
             </span>
             <span className="text-emerald-400">
               Quincenas Cerradas: {fmt(ahorradoHistoricoMoto)} ({pctCumplidoHistorico}%)

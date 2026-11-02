@@ -382,6 +382,10 @@ export function computeFuturo(
   const retiro_aportado = Number(configFuturo.retiro_aportado_activo ?? 250);
   const rendimiento_real_nu = Number(configFuturo.rendimiento_real_nu ?? 0);
   const saldo_real_ajustado = configFuturo.saldo_real_ajustado != null ? Number(configFuturo.saldo_real_ajustado) : null;
+  const saldo_real_openbank = configFuturo.saldo_real_openbank != null ? Number(configFuturo.saldo_real_openbank) : 0;
+  const rendimiento_real_openbank = Number(configFuturo.rendimiento_real_openbank ?? 0);
+  const nu_check_mensual = configFuturo.nu_check_mensual !== false;
+  const openbank_check_mensual = configFuturo.openbank_check_mensual === true;
 
   // 1. Distribución
   const distribucion = {
@@ -619,29 +623,54 @@ export function computeFuturo(
   const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia);
   const total_asignado_cajita = round2(total_futuro_cajita + total_digital_gastos);
 
-  // Rendimientos ganados en Nu (13% anual):
-  // 1. Si el usuario ingresó su rendimiento real de Nu (monto verde), se respeta con máxima prioridad.
-  // 2. Si no hay rendimiento explícito pero hay un saldo real que excede los fondos asignados, la diferencia son los rendimientos.
-  let rendimientos_ganados_nu = 0;
-  if (rendimiento_real_nu !== undefined && rendimiento_real_nu !== null && !isNaN(Number(rendimiento_real_nu)) && Number(rendimiento_real_nu) > 0) {
-    rendimientos_ganados_nu = round2(Number(rendimiento_real_nu));
-  } else if (saldo_real_ajustado !== null && saldo_real_ajustado !== undefined && !isNaN(Number(saldo_real_ajustado)) && Number(saldo_real_ajustado) > total_asignado_cajita) {
-    rendimientos_ganados_nu = round2(Number(saldo_real_ajustado) - total_asignado_cajita);
-  }
+  // --- BÓVEDA DUAL UNIFICADA AL 13% ANUAL (Nu Cajita Turbo + Openbank Apartados) ---
+  const saldo_nu = saldo_real_ajustado != null ? round2(Number(saldo_real_ajustado)) : 25045.17;
+  const rendimientos_nu = round2(Number(rendimiento_real_nu) || 0);
+  const capital_base_nu = round2(Math.max(0, saldo_nu - rendimientos_nu));
 
-  // Gran Total en Cajita Nu:
-  // Si el usuario ingresó su saldo total real de Nu (ej. $10,231.88), ese es exactamente el Gran Total en Nu.
-  let gran_total_cajita = round2(total_asignado_cajita + rendimientos_ganados_nu);
-  if (saldo_real_ajustado !== null && saldo_real_ajustado !== undefined && !isNaN(Number(saldo_real_ajustado)) && Number(saldo_real_ajustado) > 0) {
-    gran_total_cajita = round2(Number(saldo_real_ajustado));
-  }
+  const saldo_openbank = round2(Number(saldo_real_openbank) || 0);
+  const rendimientos_openbank = round2(Number(rendimiento_real_openbank) || 0);
+  const capital_base_openbank = round2(Math.max(0, saldo_openbank - rendimientos_openbank));
 
-  // Capital base en Nu (Saldo Total menos Rendimientos Netos):
-  const capital_base_cajita = round2(Math.max(total_asignado_cajita, gran_total_cajita - rendimientos_ganados_nu));
-  const saldo_base_disponible = Math.max(0, round2(capital_base_cajita - total_asignado_cajita));
+  const gran_total_liquido = round2(saldo_nu + saldo_openbank);
+  const rendimientos_totales = round2(rendimientos_nu + rendimientos_openbank);
+  const capital_base_total = round2(capital_base_nu + capital_base_openbank);
 
-  const rendimiento_anual_cajita = round2(gran_total_cajita * tasa_nu);
-  const rendimiento_mensual_cajita = round2(rendimiento_anual_cajita / 12.0);
+  const tope_nu = 25000.0;
+  const tope_openbank = 30000.0;
+  const tope_total_13 = 55000.0;
+
+  // Rendimientos diarios al 13% (año bancario comercial de 360 días)
+  const rend_diario_nu = round2((saldo_nu * tasa_nu) / 360.0);
+  const saldo_openbank_13 = Math.min(saldo_openbank, tope_openbank);
+  const saldo_openbank_excedente = Math.max(0, saldo_openbank - tope_openbank);
+  const rend_diario_openbank = round2(((saldo_openbank_13 * 0.13) + (saldo_openbank_excedente * 0.07)) / 360.0);
+  const rend_diario_total = round2(rend_diario_nu + rend_diario_openbank);
+  const rend_mensual_total = round2(rend_diario_total * 30.0);
+  const rend_anual_total = round2((saldo_nu * tasa_nu) + (saldo_openbank_13 * 0.13) + (saldo_openbank_excedente * 0.07));
+
+  const pct_llenado_nu = Math.min(100.0, Math.round((saldo_nu / tope_nu) * 1000) / 10);
+  const pct_llenado_openbank = Math.min(100.0, Math.round((saldo_openbank / tope_openbank) * 1000) / 10);
+  const pct_llenado_total = Math.min(100.0, Math.round((gran_total_liquido / tope_total_13) * 1000) / 10);
+  const capacidad_restante_openbank = Math.max(0, round2(tope_openbank - saldo_openbank));
+  const capacidad_restante_total = Math.max(0, round2(tope_total_13 - gran_total_liquido));
+
+  // Distribución física de los 5 fondos entre las dos bóvedas (CERO FUGAS):
+  // 1. En Nu Turbo se resguardan primero los fondos intocables de mayor plazo: Emergencia + Ocio
+  // y la porción de la Moto que cabe en el capital base de Nu ($24,818.49).
+  const parte_moto_nu = Math.max(0, Math.min(saldo_moto_80, round2(capital_base_nu - saldo_emergencia - remanente_ocio)));
+  // 2. En Openbank se resguardan la porción activa de la Moto, Refuerzo Salidas 20% e Imprevistos.
+  const parte_moto_openbank = Math.max(0, round2(saldo_moto_80 - parte_moto_nu));
+
+  // Saldo libre en el sistema (CERO cuando todo está asignado):
+  const saldo_base_disponible = Math.max(0, round2(capital_base_total - total_asignado_cajita));
+
+  // Compatibilidad hacia atrás con el objeto cajita_turbo:
+  const gran_total_cajita = gran_total_liquido;
+  const capital_base_cajita = capital_base_total;
+  const rendimientos_ganados_nu = rendimientos_totales;
+  const rendimiento_anual_cajita = rend_anual_total;
+  const rendimiento_mensual_cajita = rend_mensual_total;
 
   const tdc_payload = {
     limite: tdc_limite,
@@ -719,14 +748,70 @@ export function computeFuturo(
       compras_tdc: formatted_tdc,
       cajita_turbo: {
         gran_total: gran_total_cajita,
+        gran_total_liquido,
         capital_base: capital_base_cajita,
         total_asignado: total_asignado_cajita,
         saldo_base_disponible,
-        rendimientos_ganados: rendimientos_ganados_nu,
-        rendimientos_ganados_nu: rendimientos_ganados_nu,
-        rendimiento_real_ganado: rendimientos_ganados_nu,
-        rendimiento_real_nu: rendimientos_ganados_nu,
-        saldo_real_ajustado,
+        saldo_nu,
+        saldo_openbank,
+        rendimientos_nu,
+        rendimientos_openbank,
+        rendimientos_totales,
+        rendimientos_ganados: rendimientos_nu,
+        rendimientos_ganados_nu: rendimientos_nu,
+        rendimiento_real_ganado: rendimientos_nu,
+        rendimiento_real_nu: rendimientos_nu,
+        saldo_real_ajustado: saldo_nu,
+        saldo_real_openbank,
+        rendimiento_real_openbank,
+        nu_check_mensual,
+        openbank_check_mensual,
+        tope_nu,
+        tope_openbank,
+        tope_total_13,
+        pct_llenado_nu,
+        pct_llenado_openbank,
+        pct_llenado_total,
+        capacidad_restante_openbank,
+        capacidad_restante_total,
+        rend_diario_nu,
+        rend_diario_openbank,
+        rend_diario_total,
+        desglose_bovedas: {
+          nu: {
+            nombre: "Nu Cajita Turbo 🚀",
+            saldo: saldo_nu,
+            capital_base: capital_base_nu,
+            rendimientos: rendimientos_nu,
+            tope: tope_nu,
+            pct_llenado: pct_llenado_nu,
+            rend_diario: rend_diario_nu,
+            rend_mensual: round2(rend_diario_nu * 30),
+            check_mensual: nu_check_mensual,
+            fondos: {
+              emergencia: saldo_emergencia,
+              ocio: remanente_ocio,
+              moto_80: parte_moto_nu
+            }
+          },
+          openbank: {
+            nombre: "Openbank Apartado Open 🔴",
+            saldo: saldo_openbank,
+            capital_base: capital_base_openbank,
+            rendimientos: rendimientos_openbank,
+            tope: tope_openbank,
+            pct_llenado: pct_llenado_openbank,
+            capacidad_restante: capacidad_restante_openbank,
+            rend_diario: rend_diario_openbank,
+            rend_mensual: round2(rend_diario_openbank * 30),
+            check_mensual: openbank_check_mensual,
+            fondos: {
+              moto_80: parte_moto_openbank,
+              salidas_20: saldo_salidas_20,
+              imprevistos: saldo_imprevistos
+            }
+          }
+        },
         ingresos_extra: {
           list: ingresos_activos,
           total: round2(ingresos_activos.reduce((s, i) => s + (Number(i.monto) || 0), 0)),

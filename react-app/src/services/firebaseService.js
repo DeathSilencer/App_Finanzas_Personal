@@ -1017,11 +1017,27 @@ export async function ajustarCajitaTurbo(data) {
     updated.rendimiento_real_nu = round2(Number(rendReal));
   }
 
+  // Soporte Openbank
+  if (data.saldo_real_openbank !== undefined) {
+    updated.saldo_real_openbank = (data.saldo_real_openbank !== null && data.saldo_real_openbank !== '' && !isNaN(Number(data.saldo_real_openbank))) ? round2(Number(data.saldo_real_openbank)) : 0;
+  }
+  if (data.rendimiento_real_openbank !== undefined) {
+    updated.rendimiento_real_openbank = (data.rendimiento_real_openbank !== null && data.rendimiento_real_openbank !== '' && !isNaN(Number(data.rendimiento_real_openbank))) ? round2(Number(data.rendimiento_real_openbank)) : 0;
+  }
+  if (data.nu_check_mensual !== undefined) {
+    updated.nu_check_mensual = Boolean(data.nu_check_mensual);
+  }
+  if (data.openbank_check_mensual !== undefined) {
+    updated.openbank_check_mensual = Boolean(data.openbank_check_mensual);
+  }
+
   memoryState.configFuturo = updated;
   notifyListeners();
   await setDoc(doc(db, "config_futuro", "main"), updated);
-  return { status: "success", message: "Cajita Turbo conciliada correctamente" };
+  return { status: "success", message: "Bóvedas conciliadas correctamente" };
 }
+
+export const ajustarBovedaDual = ajustarCajitaTurbo;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OPERACIONES DE TARJETA DE CRÉDITO NU (TDC)
