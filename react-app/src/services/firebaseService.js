@@ -1017,7 +1017,18 @@ export async function ajustarCajitaTurbo(data) {
     updated.rendimiento_real_nu = round2(Number(rendReal));
   }
 
-  // Soporte Openbank
+  // Soporte DiDi Cuenta (15%)
+  if (data.saldo_real_didi !== undefined) {
+    updated.saldo_real_didi = (data.saldo_real_didi !== null && data.saldo_real_didi !== '' && !isNaN(Number(data.saldo_real_didi))) ? round2(Number(data.saldo_real_didi)) : 0;
+  }
+  if (data.rendimiento_real_didi !== undefined) {
+    updated.rendimiento_real_didi = (data.rendimiento_real_didi !== null && data.rendimiento_real_didi !== '' && !isNaN(Number(data.rendimiento_real_didi))) ? round2(Number(data.rendimiento_real_didi)) : 0;
+  }
+  if (data.didi_check_mensual !== undefined) {
+    updated.didi_check_mensual = Boolean(data.didi_check_mensual);
+  }
+
+  // Soporte Openbank (13%)
   if (data.saldo_real_openbank !== undefined) {
     updated.saldo_real_openbank = (data.saldo_real_openbank !== null && data.saldo_real_openbank !== '' && !isNaN(Number(data.saldo_real_openbank))) ? round2(Number(data.saldo_real_openbank)) : 0;
   }
@@ -1034,10 +1045,11 @@ export async function ajustarCajitaTurbo(data) {
   memoryState.configFuturo = updated;
   notifyListeners();
   await setDoc(doc(db, "config_futuro", "main"), updated);
-  return { status: "success", message: "Bóvedas conciliadas correctamente" };
+  return { status: "success", message: "Tríada de bóvedas conciliada correctamente" };
 }
 
 export const ajustarBovedaDual = ajustarCajitaTurbo;
+export const ajustarTriada = ajustarCajitaTurbo;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OPERACIONES DE TARJETA DE CRÉDITO NU (TDC)

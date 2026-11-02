@@ -35,10 +35,11 @@ export default function DashboardMaestro({
   const retiro = of.retiro || {};
   const desglose = cajita.desglose || {};
 
-  const granTotalNu = cajita.gran_total ?? 0;
-  const rendMensualEstimado = cajita.rendimiento_mensual ?? (granTotalNu * (0.13 / 12));
+  const granTotalNu = cajita.gran_total_liquido ?? cajita.gran_total ?? 28534.51;
+  const rendMensualEstimado = cajita.rendimiento_mensual ?? 314.80;
   const saldoNu = cajita.saldo_nu ?? 25045.17;
-  const saldoOpenbank = cajita.saldo_openbank ?? 3489.34;
+  const saldoDiDi = cajita.saldo_didi ?? 3489.34;
+  const saldoOpenbank = cajita.saldo_openbank ?? 0.0;
 
   // Saldos vivos reales en Nu
   const saldoOcioVivo = desglose.ocio ?? ocio.remanente ?? 0;
@@ -74,7 +75,7 @@ export default function DashboardMaestro({
       quincenal: ingresoQ * 0.50,
       mensual: ingresoM * 0.50,
       saldoVivo: totalGastosDigitalVivo,
-      saldoVivoLabel: 'Saldo Vivo en Bóvedas al 13%',
+      saldoVivoLabel: 'Saldo Vivo en Bóvedas al 13%-15%',
       color: 'border-indigo-500/40 text-indigo-400 bg-indigo-950/20',
       badgeColor: 'border-indigo-500/40 bg-indigo-500/20 text-indigo-300',
       detalles: [
@@ -85,17 +86,17 @@ export default function DashboardMaestro({
         },
         {
           label: 'Fondo Acelerador Moto (80% Excedente)',
-          val: `${fmt(saldoMotoVivo)} (Nu + Openbank) (+$1,355.20/Q)`,
+          val: `${fmt(saldoMotoVivo)} (Nu 13% + DiDi 15%) (+$1,355.20/Q)`,
           tipo: 'nu'
         },
         {
           label: 'Refuerzo Salidas (20% Excedente)',
-          val: `${fmt(saldoSalidasVivo)} en Débito Openbank (+$338.80/Q)`,
+          val: `${fmt(saldoSalidasVivo)} en Débito DiDi (15%) (+$338.80/Q)`,
           tipo: 'nu'
         },
         {
           label: 'Imprevistos Escolares',
-          val: `${fmt(saldoImprevistosVivo)} en Openbank Apartados (+$200/Q)`,
+          val: `${fmt(saldoImprevistosVivo)} en DiDi Cuenta (15%) (+$200/Q)`,
           tipo: 'nu'
         }
       ]
@@ -124,7 +125,7 @@ export default function DashboardMaestro({
         },
         {
           label: 'Medio de Pago Recomendado',
-          val: '🔴 Débito Openbank / 💳 TDC Nu / 🟣 Débito Nu',
+          val: '🟠 Débito DiDi (15%) / 🔴 Débito Openbank / 💳 TDC Nu / 🟣 Débito Nu',
           tipo: 'info'
         }
       ]
@@ -238,37 +239,38 @@ export default function DashboardMaestro({
             <span className="text-sm sm:text-base font-medium text-slate-400 ml-2">({fmt(ingresoM)}/mes)</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Consolidado maestro que une tus <b className="text-white">Gastos Básicos</b> con tu <b className="text-white">Plan Patrimonial a Futuro</b>. El dinero se asigna con disciplina matemática y se resguarda en tus Bóvedas al 13% (Nu y Openbank).
+            Consolidado maestro que une tus <b className="text-white">Gastos Básicos</b> con tu <b className="text-white">Plan Patrimonial a Futuro</b>. El dinero se asigna con disciplina matemática y se resguarda en tu Tríada de Bóvedas al 13%-15% (Nu, DiDi y Openbank).
           </p>
         </div>
 
-        {/* Card Capital Consolidado en Nu */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-purple-500/40 shadow-xl flex flex-col justify-between shrink-0 min-w-[280px]">
+        {/* Card Capital Consolidado en Tríada */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-amber-500/40 shadow-xl flex flex-col justify-between shrink-0 min-w-[280px]">
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
-                <Landmark className="w-3.5 h-3.5 text-purple-400" />
-                <span>Bóveda Dual al 13%</span>
+                <Landmark className="w-3.5 h-3.5 text-amber-400" />
+                <span>Tríada al 13%-15%</span>
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-950 text-purple-300 border border-purple-800">
-                Nu + Openbank
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-950/80 text-amber-300 border border-amber-800">
+                Nu + DiDi + Open
               </span>
             </div>
             <h3 className="text-2xl sm:text-3xl font-black text-white mt-1.5">
               {fmt(granTotalNu)}
             </h3>
-            <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1 font-mono">
+            <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400 mt-1 font-mono">
               <span className="text-purple-300 font-semibold">Nu: {fmt(saldoNu)}</span>
-              <span className="text-rose-400 font-semibold">Openbank: {fmt(saldoOpenbank)}</span>
+              <span className="text-amber-400 font-semibold">DiDi: {fmt(saldoDiDi)}</span>
+              <span className="text-rose-400 font-semibold">Open: {fmt(saldoOpenbank)}</span>
             </div>
-            <p className="text-xs text-emerald-400 mt-1 font-semibold flex items-center space-x-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>+{fmt(rendMensualEstimado)}/mes estimado de rendimientos</span>
+            <p className="text-xs text-emerald-400 mt-1.5 font-semibold flex items-center space-x-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>+{fmt(rendMensualEstimado)}/mes estimado (~+{fmt(cajita.rend_diario_total || 10.49)}/día)</span>
             </p>
           </div>
           <button
             onClick={onOpenConfig}
-            className="mt-4 w-full py-2 bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5"
+            className="mt-4 w-full py-2 bg-amber-600/20 hover:bg-amber-600/40 text-amber-200 border border-amber-500/40 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5"
           >
             <span>Ajustar Parámetros Maestros</span>
             <ArrowRight className="w-3 h-3" />

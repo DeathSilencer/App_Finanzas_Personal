@@ -158,12 +158,14 @@ export default function RegistroDiario({
                   onChange={(e) => {
                     const m = e.target.value;
                     setMetodo(m);
-                    if (m === 'Débito Openbank') setRetirado('Apartado Openbank');
+                    if (m === 'Débito DiDi') setRetirado('DiDi Cuenta');
+                    else if (m === 'Débito Openbank') setRetirado('Apartado Openbank');
                     else if (m === 'Débito Nu') setRetirado('En Cajita Nu');
                     else if (m === 'Efectivo') setRetirado('Sí (Efectivo)');
                   }}
                   className="form-select"
                 >
+                  <option value="Débito DiDi">🟠 Débito DiDi (15%)</option>
                   <option value="Débito Openbank">🔴 Débito Openbank</option>
                   <option value="TDC Nu">💳 TDC Nu</option>
                   <option value="Efectivo">💵 Efectivo</option>
@@ -177,6 +179,7 @@ export default function RegistroDiario({
                   onChange={(e) => setRetirado(e.target.value)}
                   className="form-select"
                 >
+                  <option value="DiDi Cuenta">DiDi Cuenta (15%)</option>
                   <option value="Apartado Openbank">Apartado Openbank</option>
                   <option value="En Cajita Nu">En Cajita Nu</option>
                   <option value="Sí (Efectivo)">Sí (Efectivo)</option>

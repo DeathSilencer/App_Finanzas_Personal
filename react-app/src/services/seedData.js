@@ -96,9 +96,16 @@ export const INITIAL_CONFIG_FUTURO = {
   cetes_estado: "Aportado (Cetesdirecto)",
   emergencia_aportado_activo: 500.0,
   retiro_aportado_activo: 250.0,
-  rendimiento_real_nu: 5.88,
-  saldo_real_ajustado: 3682.95,
-  updated_at: "2026-09-04 14:08:39"
+  rendimiento_real_nu: 226.68,
+  saldo_real_ajustado: 25045.17,
+  saldo_real_didi: 3489.34,
+  rendimiento_real_didi: 0.0,
+  saldo_real_openbank: 0.0,
+  rendimiento_real_openbank: 0.0,
+  nu_check_mensual: true,
+  didi_check_mensual: true,
+  openbank_check_mensual: false,
+  updated_at: "2026-11-02 13:30:00"
 };
 
 export const INITIAL_GASTOS_OCIO = [

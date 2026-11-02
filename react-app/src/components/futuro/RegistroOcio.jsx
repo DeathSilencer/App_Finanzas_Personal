@@ -225,6 +225,7 @@ export default function RegistroOcio({
                   onChange={(e) => setMetodo(e.target.value)}
                   className="form-select"
                 >
+                  <option value="Débito DiDi">🟠 Débito DiDi (15%)</option>
                   <option value="Débito Openbank">🔴 Débito Openbank (Apartados)</option>
                   <option value="TDC Nu">💳 TDC Nu</option>
                   <option value="Débito Nu">🟣 Débito Nu (Cajita)</option>

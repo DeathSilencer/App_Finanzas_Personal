@@ -382,9 +382,12 @@ export function computeFuturo(
   const retiro_aportado = Number(configFuturo.retiro_aportado_activo ?? 250);
   const rendimiento_real_nu = Number(configFuturo.rendimiento_real_nu ?? 0);
   const saldo_real_ajustado = configFuturo.saldo_real_ajustado != null ? Number(configFuturo.saldo_real_ajustado) : null;
+  const saldo_real_didi = configFuturo.saldo_real_didi != null ? Number(configFuturo.saldo_real_didi) : 0;
+  const rendimiento_real_didi = Number(configFuturo.rendimiento_real_didi ?? 0);
   const saldo_real_openbank = configFuturo.saldo_real_openbank != null ? Number(configFuturo.saldo_real_openbank) : 0;
   const rendimiento_real_openbank = Number(configFuturo.rendimiento_real_openbank ?? 0);
   const nu_check_mensual = configFuturo.nu_check_mensual !== false;
+  const didi_check_mensual = configFuturo.didi_check_mensual !== false;
   const openbank_check_mensual = configFuturo.openbank_check_mensual === true;
 
   // 1. Distribución
@@ -623,44 +626,64 @@ export function computeFuturo(
   const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia);
   const total_asignado_cajita = round2(total_futuro_cajita + total_digital_gastos);
 
-  // --- BÓVEDA DUAL UNIFICADA AL 13% ANUAL (Nu Cajita Turbo + Openbank Apartados) ---
+  // --- TRÍADA DE ALTO RENDIMIENTO (Nu 13% + DiDi 15% + Openbank 13% • Capacidad $65,000 MXN) ---
   const saldo_nu = saldo_real_ajustado != null ? round2(Number(saldo_real_ajustado)) : 25045.17;
   const rendimientos_nu = round2(Number(rendimiento_real_nu) || 0);
   const capital_base_nu = round2(Math.max(0, saldo_nu - rendimientos_nu));
+
+  const saldo_didi = round2(Number(saldo_real_didi) || 0);
+  const rendimientos_didi = round2(Number(rendimiento_real_didi) || 0);
+  const capital_base_didi = round2(Math.max(0, saldo_didi - rendimientos_didi));
 
   const saldo_openbank = round2(Number(saldo_real_openbank) || 0);
   const rendimientos_openbank = round2(Number(rendimiento_real_openbank) || 0);
   const capital_base_openbank = round2(Math.max(0, saldo_openbank - rendimientos_openbank));
 
-  const gran_total_liquido = round2(saldo_nu + saldo_openbank);
-  const rendimientos_totales = round2(rendimientos_nu + rendimientos_openbank);
-  const capital_base_total = round2(capital_base_nu + capital_base_openbank);
+  const gran_total_liquido = round2(saldo_nu + saldo_didi + saldo_openbank);
+  const rendimientos_totales = round2(rendimientos_nu + rendimientos_didi + rendimientos_openbank);
+  const capital_base_total = round2(capital_base_nu + capital_base_didi + capital_base_openbank);
 
   const tope_nu = 25000.0;
+  const tope_didi = 10000.0;
   const tope_openbank = 30000.0;
-  const tope_total_13 = 55000.0;
+  const tope_total_triada = 65000.0;
+  const tope_total_13 = tope_total_triada;
 
-  // Rendimientos diarios al 13% (año bancario comercial de 360 días)
+  // Rendimientos diarios al 13%-15% (año bancario comercial de 360 días)
   const rend_diario_nu = round2((saldo_nu * tasa_nu) / 360.0);
+  const saldo_didi_15 = Math.min(saldo_didi, tope_didi);
+  const saldo_didi_excedente = Math.max(0, saldo_didi - tope_didi);
+  const rend_diario_didi = round2(((saldo_didi_15 * 0.15) + (saldo_didi_excedente * 0.07)) / 360.0);
   const saldo_openbank_13 = Math.min(saldo_openbank, tope_openbank);
   const saldo_openbank_excedente = Math.max(0, saldo_openbank - tope_openbank);
   const rend_diario_openbank = round2(((saldo_openbank_13 * 0.13) + (saldo_openbank_excedente * 0.07)) / 360.0);
-  const rend_diario_total = round2(rend_diario_nu + rend_diario_openbank);
+  const rend_diario_total = round2(rend_diario_nu + rend_diario_didi + rend_diario_openbank);
   const rend_mensual_total = round2(rend_diario_total * 30.0);
-  const rend_anual_total = round2((saldo_nu * tasa_nu) + (saldo_openbank_13 * 0.13) + (saldo_openbank_excedente * 0.07));
+  const rend_anual_total = round2(
+    (saldo_nu * tasa_nu) +
+    (saldo_didi_15 * 0.15) + (saldo_didi_excedente * 0.07) +
+    (saldo_openbank_13 * 0.13) + (saldo_openbank_excedente * 0.07)
+  );
 
   const pct_llenado_nu = Math.min(100.0, Math.round((saldo_nu / tope_nu) * 1000) / 10);
+  const pct_llenado_didi = Math.min(100.0, Math.round((saldo_didi / tope_didi) * 1000) / 10);
   const pct_llenado_openbank = Math.min(100.0, Math.round((saldo_openbank / tope_openbank) * 1000) / 10);
-  const pct_llenado_total = Math.min(100.0, Math.round((gran_total_liquido / tope_total_13) * 1000) / 10);
+  const pct_llenado_total = Math.min(100.0, Math.round((gran_total_liquido / tope_total_triada) * 1000) / 10);
+  const capacidad_restante_didi = Math.max(0, round2(tope_didi - saldo_didi));
   const capacidad_restante_openbank = Math.max(0, round2(tope_openbank - saldo_openbank));
-  const capacidad_restante_total = Math.max(0, round2(tope_total_13 - gran_total_liquido));
+  const capacidad_restante_total = Math.max(0, round2(tope_total_triada - gran_total_liquido));
 
-  // Distribución física de los 5 fondos entre las dos bóvedas (CERO FUGAS):
+  // Distribución física de los 5 fondos entre las tres bóvedas (CERO FUGAS):
   // 1. En Nu Turbo se resguardan primero los fondos intocables de mayor plazo: Emergencia + Ocio
   // y la porción de la Moto que cabe en el capital base de Nu ($24,818.49).
   const parte_moto_nu = Math.max(0, Math.min(saldo_moto_80, round2(capital_base_nu - saldo_emergencia - remanente_ocio)));
-  // 2. En Openbank se resguardan la porción activa de la Moto, Refuerzo Salidas 20% e Imprevistos.
-  const parte_moto_openbank = Math.max(0, round2(saldo_moto_80 - parte_moto_nu));
+  const remanente_moto = Math.max(0, round2(saldo_moto_80 - parte_moto_nu));
+
+  // 2. En DiDi Cuenta (Prioridad #1 al 15%) se resguardan la porción activa de la Moto, Refuerzo Salidas 20% e Imprevistos.
+  const parte_moto_didi = Math.min(remanente_moto, Math.max(0, round2(capital_base_didi - saldo_salidas_20 - saldo_imprevistos)));
+
+  // 3. En Openbank (Receptor de Cascada al 13%) se resguarda el excedente de moto restante:
+  const parte_moto_openbank = Math.max(0, round2(remanente_moto - parte_moto_didi));
 
   // Saldo libre en el sistema (CERO cuando todo está asignado):
   const saldo_base_disponible = Math.max(0, round2(capital_base_total - total_asignado_cajita));
@@ -753,30 +776,42 @@ export function computeFuturo(
         total_asignado: total_asignado_cajita,
         saldo_base_disponible,
         saldo_nu,
+        saldo_didi,
         saldo_openbank,
         rendimientos_nu,
+        rendimientos_didi,
         rendimientos_openbank,
         rendimientos_totales,
-        rendimientos_ganados: rendimientos_nu,
+        rendimientos_ganados: rendimientos_totales,
         rendimientos_ganados_nu: rendimientos_nu,
-        rendimiento_real_ganado: rendimientos_nu,
+        rendimiento_real_ganado: rendimientos_totales,
         rendimiento_real_nu: rendimientos_nu,
-        saldo_real_ajustado: saldo_nu,
-        saldo_real_openbank,
+        rendimiento_real_didi,
         rendimiento_real_openbank,
+        saldo_real_ajustado: saldo_nu,
+        saldo_real_didi,
+        saldo_real_openbank,
         nu_check_mensual,
+        didi_check_mensual,
         openbank_check_mensual,
         tope_nu,
+        tope_didi,
         tope_openbank,
+        tope_total_triada,
         tope_total_13,
         pct_llenado_nu,
+        pct_llenado_didi,
         pct_llenado_openbank,
         pct_llenado_total,
+        capacidad_restante_didi,
         capacidad_restante_openbank,
         capacidad_restante_total,
         rend_diario_nu,
+        rend_diario_didi,
         rend_diario_openbank,
         rend_diario_total,
+        rend_mensual: rend_mensual_total,
+        rend_anual: rend_anual_total,
         desglose_bovedas: {
           nu: {
             nombre: "Nu Cajita Turbo 🚀",
@@ -784,6 +819,7 @@ export function computeFuturo(
             capital_base: capital_base_nu,
             rendimientos: rendimientos_nu,
             tope: tope_nu,
+            tasa: 0.13,
             pct_llenado: pct_llenado_nu,
             rend_diario: rend_diario_nu,
             rend_mensual: round2(rend_diario_nu * 30),
@@ -794,21 +830,38 @@ export function computeFuturo(
               moto_80: parte_moto_nu
             }
           },
+          didi: {
+            nombre: "DiDi Cuenta ⚡ (15%)",
+            saldo: saldo_didi,
+            capital_base: capital_base_didi,
+            rendimientos: rendimientos_didi,
+            tope: tope_didi,
+            tasa: 0.15,
+            pct_llenado: pct_llenado_didi,
+            capacidad_restante: capacidad_restante_didi,
+            rend_diario: rend_diario_didi,
+            rend_mensual: round2(rend_diario_didi * 30),
+            check_mensual: didi_check_mensual,
+            fondos: {
+              moto_80: parte_moto_didi,
+              salidas_20: saldo_salidas_20,
+              imprevistos: saldo_imprevistos
+            }
+          },
           openbank: {
             nombre: "Openbank Apartado Open 🔴",
             saldo: saldo_openbank,
             capital_base: capital_base_openbank,
             rendimientos: rendimientos_openbank,
             tope: tope_openbank,
+            tasa: 0.13,
             pct_llenado: pct_llenado_openbank,
             capacidad_restante: capacidad_restante_openbank,
             rend_diario: rend_diario_openbank,
             rend_mensual: round2(rend_diario_openbank * 30),
             check_mensual: openbank_check_mensual,
             fondos: {
-              moto_80: parte_moto_openbank,
-              salidas_20: saldo_salidas_20,
-              imprevistos: saldo_imprevistos
+              moto_80: parte_moto_openbank
             }
           }
         },
