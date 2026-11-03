@@ -40,7 +40,7 @@ export default function RegistroDiario({
   ];
 
   const catActualInfo = (categorias || []).find(c => c.categoria === categoria);
-  const disponibleCatActual = catActualInfo ? Number(catActualInfo.remanente) || 0 : Infinity;
+  const disponibleCatActual = catActualInfo ? Number(catActualInfo.total_disponible ?? catActualInfo.total_con_acumulado ?? catActualInfo.remanente) || 0 : Infinity;
 
   // Lista consolidada de categorías donantes con saldo disponible (Gastos + Ocio Futuro)
   const categoriasParaCompensar = [
@@ -97,7 +97,7 @@ export default function RegistroDiario({
   const handleQuickClick = async (item) => {
     if (isSubmitting) return;
     const catItemInfo = (categorias || []).find(c => c.categoria === item.cat);
-    const dispItem = catItemInfo ? Number(catItemInfo.remanente) || 0 : Infinity;
+    const dispItem = catItemInfo ? Number(catItemInfo.total_disponible ?? catItemInfo.total_con_acumulado ?? catItemInfo.remanente) || 0 : Infinity;
 
     if (item.monto > dispItem) {
       setGastoPendiente({
@@ -268,13 +268,17 @@ export default function RegistroDiario({
               <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 text-[11px]">
                 <span className="text-slate-400 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Disponible para gastar:</span>
+                  <span>
+                    {catActualInfo.gasto_real > catActualInfo.presupuesto_base
+                      ? 'Cuota Q agotada (Colchón activo):'
+                      : 'Disponible en quincena:'}
+                  </span>
                 </span>
-                <span className={`font-mono font-bold ${disponibleCatActual > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {fmt(disponibleCatActual)}
-                  {catActualInfo.acumulado_anterior > 0 && (
-                    <span className="text-[10px] text-amber-300 font-normal ml-1">
-                      (+{fmt(catActualInfo.acumulado_anterior)} ant.)
+                <span className={`font-mono font-bold ${catActualInfo.remanente > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {fmt(catActualInfo.remanente)}
+                  {catActualInfo.detalle_excedido?.reserva_restante !== undefined && catActualInfo.detalle_excedido.exceso_quincena > 0 && (
+                    <span className="text-[10px] text-blue-300 font-normal ml-1">
+                      (reserva)
                     </span>
                   )}
                 </span>

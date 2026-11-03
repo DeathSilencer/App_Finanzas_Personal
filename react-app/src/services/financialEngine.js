@@ -196,14 +196,14 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
     }
   }
 
-  // Categorías con validación y colchón de quincenas anteriores
+  // Categorías mostrando ÚNICAMENTE el presupuesto real asignado para la quincena activa
+  // (para disciplina psicológica) y activando el colchón acumulado solo si se rebasa la cuota.
   const categorias_def = [
     {
       categoria: "🚌 Pasajes Combi (Efectivo)",
       mecanica: "$32 diarios x 10 días hábiles de escuela",
       presupuesto_base: monto_combi,
       acumulado_anterior: 0,
-      presupuesto: monto_combi,
       pct: presupuesto_asignado > 0 ? Math.round((monto_combi / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
@@ -211,23 +211,20 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
       mecanica: "Comidas ligeras en días escolares",
       presupuesto_base: monto_comida,
       acumulado_anterior: 0,
-      presupuesto: monto_comida,
       pct: presupuesto_asignado > 0 ? Math.round((monto_comida / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
       categoria: "📄 Copias, Material & Papelería",
-      mecanica: hist_copias > 0 ? ("Material escolar ($" + monto_copias.toFixed(2) + " Q + $" + hist_copias.toFixed(2) + " acum. ant.)") : "Material escolar, copias e impresiones (Efectivo Físico en Cartera)",
+      mecanica: "Material escolar, copias e impresiones (Efectivo Físico en Cartera)",
       presupuesto_base: monto_copias,
       acumulado_anterior: hist_copias,
-      presupuesto: round2(monto_copias + hist_copias),
       pct: presupuesto_asignado > 0 ? Math.round((monto_copias / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
       categoria: "🛡️ Imprevistos / Por si acaso",
-      mecanica: hist_imprevistos > 0 ? ("Fondo escolar ($" + monto_imprevistos.toFixed(2) + " Q + $" + hist_imprevistos.toFixed(2) + " acum. ant.)") : "Fondo de contingencia escolar",
+      mecanica: "Fondo de contingencia escolar",
       presupuesto_base: monto_imprevistos,
       acumulado_anterior: hist_imprevistos,
-      presupuesto: round2(monto_imprevistos + hist_imprevistos),
       pct: presupuesto_asignado > 0 ? Math.round((monto_imprevistos / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
@@ -235,50 +232,78 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
       mecanica: "Ahorro acelerado para compra de moto de contado",
       presupuesto_base: excedente_80_moto,
       acumulado_anterior: hist_moto,
-      presupuesto: excedente_80_moto,
       pct: presupuesto_asignado > 0 ? Math.round((excedente_80_moto / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
       categoria: "🍕 Excedente 20%: Refuerzo Gustos / Salidas",
-      mecanica: hist_salidas > 0 ? ("Refuerzo salidas ($" + excedente_20_salidas.toFixed(2) + " Q + $" + hist_salidas.toFixed(2) + " acum. ant.)") : "Refuerzo para ocio y salidas de fin de semana",
+      mecanica: "Refuerzo para ocio y salidas de fin de semana",
       presupuesto_base: excedente_20_salidas,
       acumulado_anterior: hist_salidas,
-      presupuesto: round2(excedente_20_salidas + hist_salidas),
       pct: presupuesto_asignado > 0 ? Math.round((excedente_20_salidas / presupuesto_asignado) * 1000) / 10 : 0
     }
   ];
 
   const categorias = categorias_def.map(cat_info => {
     const real = gastos_por_cat[cat_info.categoria] || 0;
-    const total_disponible = round2(cat_info.presupuesto_base + (cat_info.acumulado_anterior || 0));
-    const rem = Math.max(0, round2(total_disponible - real));
-    const pct_c = total_disponible > 0 ? Math.round((real / total_disponible) * 1000) / 10 : 0;
-    
+    const base = cat_info.presupuesto_base;
+    const acum = cat_info.acumulado_anterior || 0;
+    const total_con_acumulado = round2(base + acum);
+
+    let remanente = 0;
+    let pct_consumido = 0;
     let semaforo = "🟢 Sin consumo";
+    let detalle_excedido = null;
+
     if (real === 0) {
+      remanente = base;
+      pct_consumido = 0;
       semaforo = "🟢 Sin consumo";
-    } else if (real <= cat_info.presupuesto_base) {
-      if (pct_c <= 75) semaforo = "🟢 En Presupuesto";
-      else if (pct_c <= 100) semaforo = "🟡 Cuidado";
+    } else if (real <= base) {
+      // Dentro de la cuota quincenal normal: solo mostramos cuota quincenal
+      remanente = round2(base - real);
+      pct_consumido = base > 0 ? Math.round((real / base) * 1000) / 10 : 0;
+      if (pct_consumido <= 75) semaforo = "🟢 En Presupuesto";
+      else if (pct_consumido <= 100) semaforo = "🟡 Cuidado";
       else semaforo = "🔴 Excedido";
-    } else if (real <= total_disponible) {
-      // Excedió la cuota quincenal pero está 100% cubierto por el remanente de quincenas anteriores
+    } else if (real <= total_con_acumulado) {
+      // Se pasó de la quincena, pero está 100% cubierto por el acumulado anterior ("ya si me paso que salga")
+      const exceso_quincena = round2(real - base);
+      const reserva_restante = Math.max(0, round2(total_con_acumulado - real));
+      remanente = reserva_restante;
+      pct_consumido = base > 0 ? Math.round((real / base) * 1000) / 10 : 100.0;
       semaforo = "🔵 Cubierto con Acumulado";
+      detalle_excedido = {
+        exceso_quincena: exceso_quincena,
+        absorbido_reserva: exceso_quincena,
+        reserva_restante: reserva_restante,
+        acumulado_total: acum
+      };
     } else {
+      // Se pasó incluso con todo y acumulado anterior
+      remanente = 0.0;
+      pct_consumido = base > 0 ? Math.round((real / base) * 1000) / 10 : 100;
       semaforo = "🔴 Excedido";
+      detalle_excedido = {
+        exceso_quincena: round2(real - base),
+        faltante_descubierto: round2(real - total_con_acumulado),
+        acumulado_total: acum
+      };
     }
 
     return {
       categoria: cat_info.categoria,
       mecanica: cat_info.mecanica,
-      presupuesto_base: cat_info.presupuesto_base,
-      acumulado_anterior: cat_info.acumulado_anterior || 0,
-      presupuesto: total_disponible,
+      presupuesto: base, // ¡LO REAL ASIGNADO PARA LA QUINCENA! ($338.80, $200, $50, etc.)
+      presupuesto_base: base,
+      acumulado_anterior: acum,
+      total_con_acumulado,
+      total_disponible: Math.max(0, round2(total_con_acumulado - real)),
       pct: cat_info.pct,
       gasto_real: real,
-      remanente: rem,
-      pct_consumido: pct_c,
-      semaforo
+      remanente,
+      pct_consumido,
+      semaforo,
+      detalle_excedido
     };
   });
 

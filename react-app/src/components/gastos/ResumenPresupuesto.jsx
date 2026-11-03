@@ -324,22 +324,35 @@ export default function ResumenPresupuesto({
                   <td className="table-modern-td text-slate-400 text-xs">{cat.mecanica}</td>
                   <td className="table-modern-td text-right font-semibold text-white">
                     <div>{fmt(cat.presupuesto)}</div>
-                    {cat.acumulado_anterior > 0 && (
-                      <div className="text-[10px] text-amber-300/90 font-medium">
-                        Base: {fmt(cat.presupuesto_base)} + {fmt(cat.acumulado_anterior)} ant.
+                    {cat.detalle_excedido?.exceso_quincena > 0 && (
+                      <div className="text-[10px] text-blue-300 font-medium" title="Cubierto automáticamente con el colchón acumulado de quincenas anteriores">
+                        +{fmt(cat.detalle_excedido.exceso_quincena)} de reserva
                       </div>
                     )}
                   </td>
                   <td className="table-modern-td text-center text-slate-300 font-semibold">{cat.pct}%</td>
                   <td className="table-modern-td text-right font-bold text-rose-400">{fmt(cat.gasto_real)}</td>
-                  <td className="table-modern-td text-right font-black text-emerald-400">{fmt(cat.remanente)}</td>
+                  <td className="table-modern-td text-right font-black text-emerald-400">
+                    <div className={cat.detalle_excedido?.exceso_quincena > 0 ? "text-blue-300" : "text-emerald-400"}>
+                      {fmt(cat.remanente)}
+                    </div>
+                    {cat.detalle_excedido?.reserva_restante !== undefined && cat.detalle_excedido.exceso_quincena > 0 && (
+                      <div className="text-[10px] text-blue-300/80 font-normal">
+                        Reserva restante
+                      </div>
+                    )}
+                  </td>
                   <td className="table-modern-td text-center font-bold text-slate-300">{cat.pct_consumido}%</td>
                   <td className="table-modern-td text-center">
                     <span className={`badge-slate whitespace-nowrap ${
                       cat.semaforo?.includes('Cubierto') 
-                        ? '!text-blue-300 !border-blue-500/40 !bg-blue-500/20 font-bold' 
+                        ? '!text-blue-300 !border-blue-500/40 !bg-blue-500/20 font-bold shadow-sm' 
                         : cat.semaforo?.includes('Excedido') 
-                        ? '!text-rose-400 !border-rose-500/40 !bg-rose-500/20 font-bold' 
+                        ? '!text-rose-400 !border-rose-500/40 !bg-rose-500/20 font-bold shadow-sm' 
+                        : cat.semaforo?.includes('En Presupuesto')
+                        ? '!text-emerald-300 !border-emerald-500/40 !bg-emerald-500/20'
+                        : cat.semaforo?.includes('Cuidado')
+                        ? '!text-amber-300 !border-amber-500/40 !bg-amber-500/20'
                         : ''
                     }`}>
                       {cat.semaforo}
