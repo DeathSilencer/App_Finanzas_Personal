@@ -90,10 +90,10 @@ export default function GeneralCajitaTurbo({
   // Estado y lógica para modal de conciliación Tríada de Bóvedas
   const [showModalConciliar, setShowModalConciliar] = useState(false);
   const [tabConciliar, setTabConciliar] = useState('didi'); // 'nu' | 'didi' | 'openbank'
-  const [inputSaldoNu, setInputSaldoNu] = useState(saldoNu ? Number(saldoNu).toFixed(2) : '25045.17');
-  const [inputRendNu, setInputRendNu] = useState(rendNu ? Number(rendNu).toFixed(2) : '226.68');
-  const [inputSaldoDiDi, setInputSaldoDiDi] = useState(saldoDiDi ? Number(saldoDiDi).toFixed(2) : '3489.34');
-  const [inputRendDiDi, setInputRendDiDi] = useState(rendDiDi ? Number(rendDiDi).toFixed(2) : '0.00');
+  const [inputSaldoNu, setInputSaldoNu] = useState(saldoNu ? Number(saldoNu).toFixed(2) : '25054.21');
+  const [inputRendNu, setInputRendNu] = useState(rendNu ? Number(rendNu).toFixed(2) : '235.72');
+  const [inputSaldoDiDi, setInputSaldoDiDi] = useState(saldoDiDi ? Number(saldoDiDi).toFixed(2) : '3218.51');
+  const [inputRendDiDi, setInputRendDiDi] = useState(rendDiDi ? Number(rendDiDi).toFixed(2) : '1.45');
   const [inputSaldoOpen, setInputSaldoOpen] = useState(saldoOpenbank ? Number(saldoOpenbank).toFixed(2) : '0.00');
   const [inputRendOpen, setInputRendOpen] = useState(rendOpenbank ? Number(rendOpenbank).toFixed(2) : '0.00');
   const [inputCheckNu, setInputCheckNu] = useState(nuCheckMensual);
@@ -103,10 +103,10 @@ export default function GeneralCajitaTurbo({
 
   useEffect(() => {
     if (!showModalConciliar) {
-      setInputSaldoNu(saldoNu ? Number(saldoNu).toFixed(2) : '25045.17');
-      setInputRendNu(rendNu ? Number(rendNu).toFixed(2) : '226.68');
-      setInputSaldoDiDi(saldoDiDi ? Number(saldoDiDi).toFixed(2) : '3489.34');
-      setInputRendDiDi(rendDiDi ? Number(rendDiDi).toFixed(2) : '0.00');
+      setInputSaldoNu(saldoNu ? Number(saldoNu).toFixed(2) : '25054.21');
+      setInputRendNu(rendNu ? Number(rendNu).toFixed(2) : '235.72');
+      setInputSaldoDiDi(saldoDiDi ? Number(saldoDiDi).toFixed(2) : '3218.51');
+      setInputRendDiDi(rendDiDi ? Number(rendDiDi).toFixed(2) : '1.45');
       setInputSaldoOpen(saldoOpenbank ? Number(saldoOpenbank).toFixed(2) : '0.00');
       setInputRendOpen(rendOpenbank ? Number(rendOpenbank).toFixed(2) : '0.00');
       setInputCheckNu(nuCheckMensual);
@@ -117,10 +117,10 @@ export default function GeneralCajitaTurbo({
 
   const handleOpenConciliar = (targetTab = 'didi') => {
     setTabConciliar(targetTab);
-    setInputSaldoNu(Number(saldoNu || 25045.17).toFixed(2));
-    setInputRendNu(Number(rendNu || 226.68).toFixed(2));
-    setInputSaldoDiDi(Number(saldoDiDi || 3489.34).toFixed(2));
-    setInputRendDiDi(Number(rendDiDi || 0).toFixed(2));
+    setInputSaldoNu(Number(saldoNu || 25054.21).toFixed(2));
+    setInputRendNu(Number(rendNu || 235.72).toFixed(2));
+    setInputSaldoDiDi(Number(saldoDiDi || 3218.51).toFixed(2));
+    setInputRendDiDi(Number(rendDiDi || 1.45).toFixed(2));
     setInputSaldoOpen(Number(saldoOpenbank || 0).toFixed(2));
     setInputRendOpen(Number(rendOpenbank || 0).toFixed(2));
     setInputCheckNu(nuCheckMensual);

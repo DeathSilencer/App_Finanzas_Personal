@@ -505,11 +505,43 @@ export async function addGasto(data) {
     });
   }
 
+  // Sincronizar saldo vivo en Bóvedas si se pagó con Débito DiDi o Débito Nu
+  if (metodo_pago === 'Débito DiDi') {
+    const curDiDi = Number(memoryState.configFuturo?.saldo_real_didi ?? 3218.51);
+    const newDiDi = Math.max(0, round2(curDiDi - monto));
+    const upFuturo = { ...memoryState.configFuturo, saldo_real_didi: newDiDi, updated_at: new Date().toISOString() };
+    memoryState.configFuturo = upFuturo;
+    setDoc(doc(db, "config_futuro", "main"), upFuturo).catch(err => console.warn("Error sync didi:", err));
+  } else if (metodo_pago === 'Débito Nu') {
+    const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
+    const newNu = Math.max(0, round2(curNu - monto));
+    const upFuturo = { ...memoryState.configFuturo, saldo_real_ajustado: newNu, updated_at: new Date().toISOString() };
+    memoryState.configFuturo = upFuturo;
+    setDoc(doc(db, "config_futuro", "main"), upFuturo).catch(err => console.warn("Error sync nu:", err));
+  }
+
   return { status: "success", id: docRef.id, message: "Gasto registrado correctamente" };
 }
 
 export async function deleteGasto(id) {
   const idStr = String(id);
+  const gastoToDelete = memoryState.gastosDiarios.find(r => String(r.id) === idStr);
+  if (gastoToDelete) {
+    const m = round2(Number(gastoToDelete.monto) || 0);
+    const metodo = gastoToDelete.metodo_pago || 'Efectivo';
+    if (metodo === 'Débito DiDi') {
+      const curDiDi = Number(memoryState.configFuturo?.saldo_real_didi ?? 3218.51);
+      const upFuturo = { ...memoryState.configFuturo, saldo_real_didi: round2(curDiDi + m), updated_at: new Date().toISOString() };
+      memoryState.configFuturo = upFuturo;
+      setDoc(doc(db, "config_futuro", "main"), upFuturo).catch(err => console.warn("Error restore didi:", err));
+    } else if (metodo === 'Débito Nu') {
+      const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
+      const upFuturo = { ...memoryState.configFuturo, saldo_real_ajustado: round2(curNu + m), updated_at: new Date().toISOString() };
+      memoryState.configFuturo = upFuturo;
+      setDoc(doc(db, "config_futuro", "main"), upFuturo).catch(err => console.warn("Error restore nu:", err));
+    }
+  }
+
   // Remoción optimista inmediata en memoria
   memoryState.gastosDiarios = memoryState.gastosDiarios.filter(r => String(r.id) !== idStr);
   notifyListeners();
@@ -833,11 +865,43 @@ export async function addGastoOcio(data) {
     });
   }
 
+  // Sincronizar saldo vivo en Bóvedas si se pagó con Débito DiDi o Débito Nu
+  if (metodo_pago === 'Débito DiDi' || (categoria && (categoria.includes('Salidas') || categoria.includes('20%')) && metodo_pago.includes('DiDi'))) {
+    const curDiDi = Number(memoryState.configFuturo?.saldo_real_didi ?? 3218.51);
+    const newDiDi = Math.max(0, round2(curDiDi - monto));
+    const upFuturo = { ...memoryState.configFuturo, saldo_real_didi: newDiDi, updated_at: new Date().toISOString() };
+    memoryState.configFuturo = upFuturo;
+    setDoc(doc(db, "config_futuro", "main"), upFuturo).catch(err => console.warn("Error sync didi:", err));
+  } else if (metodo_pago === 'Débito Nu') {
+    const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
+    const newNu = Math.max(0, round2(curNu - monto));
+    const upFuturo = { ...memoryState.configFuturo, saldo_real_ajustado: newNu, updated_at: new Date().toISOString() };
+    memoryState.configFuturo = upFuturo;
+    setDoc(doc(db, "config_futuro", "main"), upFuturo).catch(err => console.warn("Error sync nu:", err));
+  }
+
   return { status: "success", id: docRef.id, message: "Gasto de ocio registrado" };
 }
 
 export async function deleteGastoOcio(id) {
   const idStr = String(id);
+  const gastoToDelete = memoryState.gastosOcio.find(r => String(r.id) === idStr);
+  if (gastoToDelete) {
+    const m = round2(Number(gastoToDelete.monto) || 0);
+    const metodo = gastoToDelete.metodo_pago || 'Débito Nu';
+    if (metodo === 'Débito DiDi') {
+      const curDiDi = Number(memoryState.configFuturo?.saldo_real_didi ?? 3218.51);
+      const upFuturo = { ...memoryState.configFuturo, saldo_real_didi: round2(curDiDi + m), updated_at: new Date().toISOString() };
+      memoryState.configFuturo = upFuturo;
+      setDoc(doc(db, "config_futuro", "main"), upFuturo).catch(err => console.warn("Error restore didi:", err));
+    } else if (metodo === 'Débito Nu') {
+      const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
+      const upFuturo = { ...memoryState.configFuturo, saldo_real_ajustado: round2(curNu + m), updated_at: new Date().toISOString() };
+      memoryState.configFuturo = upFuturo;
+      setDoc(doc(db, "config_futuro", "main"), upFuturo).catch(err => console.warn("Error restore nu:", err));
+    }
+  }
+
   memoryState.gastosOcio = memoryState.gastosOcio.filter(r => String(r.id) !== idStr);
   notifyListeners();
 

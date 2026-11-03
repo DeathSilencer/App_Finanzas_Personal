@@ -742,41 +742,35 @@ export function computeFuturo(
   const total_asignado_cajita = round2(total_futuro_cajita + total_digital_gastos);
 
   // --- TRÍADA DE ALTO RENDIMIENTO (Nu 13% + DiDi 15% + Openbank 13% • Capacidad $65,000 MXN) ---
-  // 1. Distribución física de los 5 fondos entre las tres bóvedas (CERO FUGAS):
-  // En Nu Turbo se resguardan primero los fondos intocables de mayor plazo: Emergencia + Ocio
-  // y la porción base de la Moto ($10,836.77) para topar el capital base de Nu ($24,818.49 + rendimientos).
-  const parte_moto_nu = Math.max(0, Math.min(saldo_moto_80, 10836.77));
-  const remanente_moto = Math.max(0, round2(saldo_moto_80 - parte_moto_nu));
-
-  // En DiDi Cuenta (Prioridad #1 al 15%) se resguardan la porción activa de la Moto, Refuerzo Salidas 20% e Imprevistos:
-  const parte_moto_didi = Math.min(remanente_moto, Math.max(0, round2(10000.0 - saldo_salidas_20 - saldo_imprevistos)));
-
-  // En Openbank (Receptor de Cascada al 13%) se resguarda el excedente de moto restante:
-  const parte_moto_openbank = Math.max(0, round2(remanente_moto - parte_moto_didi));
-
-  // Rendimientos netos por bóveda
   const rendimientos_nu = round2(Number(rendimiento_real_nu) || 0);
   const rendimientos_didi = round2(Number(rendimiento_real_didi) || 0);
   const rendimientos_openbank = round2(Number(rendimiento_real_openbank) || 0);
   const rendimientos_totales = round2(rendimientos_nu + rendimientos_didi + rendimientos_openbank);
 
-  // Capital base vivo por bóveda (descontando gastos en tiempo real de cada categoría correspondiente)
-  const capital_base_nu = round2(saldo_emergencia + remanente_ocio + parte_moto_nu);
-  const capital_base_didi = round2(parte_moto_didi + saldo_salidas_20 + saldo_imprevistos);
-  const capital_base_openbank = round2(parte_moto_openbank);
-  const capital_base_total = round2(capital_base_nu + capital_base_didi + capital_base_openbank);
+  // Saldos reales ingresados directamente por el usuario desde sus apps bancarias (fuente de verdad al centavo)
+  const saldo_nu = saldo_real_ajustado != null ? round2(Number(saldo_real_ajustado)) : 25054.21;
+  const capital_base_nu = round2(Math.max(0, saldo_nu - rendimientos_nu));
 
-  // Ajustes de conciliación manual (por si el usuario ajusta el saldo bancario en el modal)
-  const delta_nu = saldo_real_ajustado != null ? round2(Number(saldo_real_ajustado) - 25045.17) : 0;
-  const delta_didi = configFuturo.saldo_real_didi != null ? round2(Number(configFuturo.saldo_real_didi) - 3489.34) : 0;
-  const delta_openbank = configFuturo.saldo_real_openbank != null ? round2(Number(configFuturo.saldo_real_openbank) - 0.0) : 0;
+  const saldo_didi = configFuturo.saldo_real_didi != null ? round2(Number(configFuturo.saldo_real_didi)) : 3218.51;
+  const capital_base_didi = round2(Math.max(0, saldo_didi - rendimientos_didi));
 
-  // Saldo vivo total por bóveda (se reduce al instante con cada gasto y se sincroniza en vivo)
-  const saldo_nu = round2(capital_base_nu + rendimientos_nu + delta_nu);
-  const saldo_didi = round2(capital_base_didi + rendimientos_didi + delta_didi);
-  const saldo_openbank = round2(capital_base_openbank + rendimientos_openbank + delta_openbank);
+  const saldo_openbank = configFuturo.saldo_real_openbank != null ? round2(Number(configFuturo.saldo_real_openbank)) : 0.0;
+  const capital_base_openbank = round2(Math.max(0, saldo_openbank - rendimientos_openbank));
 
   const gran_total_liquido = round2(saldo_nu + saldo_didi + saldo_openbank);
+  const capital_base_total = round2(capital_base_nu + capital_base_didi + capital_base_openbank);
+
+  // Distribución física de los 5 fondos entre las tres bóvedas (CERO FUGAS):
+  // 1. En Nu Turbo se resguardan primero los fondos intocables de mayor plazo: Emergencia + Ocio
+  // y la porción de la Moto que cabe en el capital base de Nu:
+  const parte_moto_nu = Math.max(0, Math.min(saldo_moto_80, round2(capital_base_nu - saldo_emergencia - remanente_ocio)));
+  const remanente_moto = Math.max(0, round2(saldo_moto_80 - parte_moto_nu));
+
+  // 2. En DiDi Cuenta (Prioridad #1 al 15%) se resguardan la porción activa de la Moto, Refuerzo Salidas 20% e Imprevistos:
+  const parte_moto_didi = Math.min(remanente_moto, Math.max(0, round2(capital_base_didi - saldo_salidas_20 - saldo_imprevistos)));
+
+  // 3. En Openbank (Receptor de Cascada al 13%) se resguarda el excedente de moto restante:
+  const parte_moto_openbank = Math.max(0, round2(remanente_moto - parte_moto_didi));
 
   const tope_nu = 25000.0;
   const tope_didi = 10000.0;
