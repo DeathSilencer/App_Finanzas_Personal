@@ -155,60 +155,125 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
   const excedente_80_moto = round2(excedente_fijo * 0.80);
   const excedente_20_salidas = round2(excedente_fijo * 0.20);
 
-  // Categorías
+  // Calcular remanentes acumulados de quincenas anteriores para respaldar el presupuesto vivo
+  let hist_salidas = 0;
+  let hist_imprevistos = 0;
+  let hist_copias = 0;
+  const hist_moto = round2((historico || []).reduce((sum, h) => sum + (Number(h.ahorro_moto_80) || 0), 0));
+
+  for (const h of (historico || [])) {
+    try {
+      const det = typeof h.detalle_json === 'string' ? JSON.parse(h.detalle_json) : (h.detalle_json || {});
+      const allTx = [];
+      if (Array.isArray(det.registros)) allTx.push(...det.registros);
+      if (Array.isArray(det.compras_tdc)) {
+        const existingIds = new Set(allTx.map(t => String(t.id || (t.fecha + '-' + t.concepto + '-' + t.monto))));
+        for (const c of det.compras_tdc) {
+          const cId = String(c.id || (c.fecha + '-' + c.concepto + '-' + c.monto));
+          if (!existingIds.has(cId)) allTx.push(c);
+        }
+      }
+
+      if (det.desglose_categorias && det.desglose_categorias.saldo_copias_nu !== undefined) {
+        hist_copias += Number(det.desglose_categorias.saldo_copias_nu);
+      } else {
+        const g_cop = allTx.filter(t => (t.categoria || '').includes("Copias") || (t.categoria || '').includes("Material")).reduce((s, t) => s + (Number(t.monto) || 0), 0);
+        hist_copias += Math.max(0, Number(det.monto_copias ?? monto_copias) - g_cop);
+      }
+
+      if (det.desglose_categorias && det.desglose_categorias.saldo_imprevistos_nu !== undefined) {
+        hist_imprevistos += Number(det.desglose_categorias.saldo_imprevistos_nu);
+      } else {
+        const g_imp = allTx.filter(t => (t.categoria || '').includes("Imprevistos")).reduce((s, t) => s + (Number(t.monto) || 0), 0);
+        hist_imprevistos += Math.max(0, Number(det.monto_imprevistos ?? monto_imprevistos) - g_imp);
+      }
+
+      const g_sal = allTx.filter(t => (t.categoria || '').includes("Excedente 20%") || (t.categoria || '').includes("Salidas") || (t.categoria || '').includes("Refuerzo Gustos")).reduce((s, t) => s + (Number(t.monto) || 0), 0);
+      const pres_sal = Number(h.refuerzo_gustos_20 ?? excedente_20_salidas);
+      hist_salidas += Math.max(0, pres_sal - g_sal);
+    } catch (e) {
+      hist_salidas += Number(h.refuerzo_gustos_20 || 0);
+    }
+  }
+
+  // Categorías con validación y colchón de quincenas anteriores
   const categorias_def = [
     {
       categoria: "🚌 Pasajes Combi (Efectivo)",
       mecanica: "$32 diarios x 10 días hábiles de escuela",
+      presupuesto_base: monto_combi,
+      acumulado_anterior: 0,
       presupuesto: monto_combi,
       pct: presupuesto_asignado > 0 ? Math.round((monto_combi / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
       categoria: "🥪 Comidas en Escuela (Efectivo)",
       mecanica: "Comidas ligeras en días escolares",
+      presupuesto_base: monto_comida,
+      acumulado_anterior: 0,
       presupuesto: monto_comida,
       pct: presupuesto_asignado > 0 ? Math.round((monto_comida / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
       categoria: "📄 Copias, Material & Papelería",
-      mecanica: "Material escolar, copias e impresiones (Efectivo Físico en Cartera)",
-      presupuesto: monto_copias,
+      mecanica: hist_copias > 0 ? ("Material escolar ($" + monto_copias.toFixed(2) + " Q + $" + hist_copias.toFixed(2) + " acum. ant.)") : "Material escolar, copias e impresiones (Efectivo Físico en Cartera)",
+      presupuesto_base: monto_copias,
+      acumulado_anterior: hist_copias,
+      presupuesto: round2(monto_copias + hist_copias),
       pct: presupuesto_asignado > 0 ? Math.round((monto_copias / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
       categoria: "🛡️ Imprevistos / Por si acaso",
-      mecanica: "Fondo de contingencia escolar",
-      presupuesto: monto_imprevistos,
+      mecanica: hist_imprevistos > 0 ? ("Fondo escolar ($" + monto_imprevistos.toFixed(2) + " Q + $" + hist_imprevistos.toFixed(2) + " acum. ant.)") : "Fondo de contingencia escolar",
+      presupuesto_base: monto_imprevistos,
+      acumulado_anterior: hist_imprevistos,
+      presupuesto: round2(monto_imprevistos + hist_imprevistos),
       pct: presupuesto_asignado > 0 ? Math.round((monto_imprevistos / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
       categoria: "🛡️ Excedente 80%: Fondo Emergencia / Moto",
       mecanica: "Ahorro acelerado para compra de moto de contado",
+      presupuesto_base: excedente_80_moto,
+      acumulado_anterior: hist_moto,
       presupuesto: excedente_80_moto,
       pct: presupuesto_asignado > 0 ? Math.round((excedente_80_moto / presupuesto_asignado) * 1000) / 10 : 0
     },
     {
       categoria: "🍕 Excedente 20%: Refuerzo Gustos / Salidas",
-      mecanica: "Refuerzo para ocio y salidas de fin de semana",
-      presupuesto: excedente_20_salidas,
+      mecanica: hist_salidas > 0 ? ("Refuerzo salidas ($" + excedente_20_salidas.toFixed(2) + " Q + $" + hist_salidas.toFixed(2) + " acum. ant.)") : "Refuerzo para ocio y salidas de fin de semana",
+      presupuesto_base: excedente_20_salidas,
+      acumulado_anterior: hist_salidas,
+      presupuesto: round2(excedente_20_salidas + hist_salidas),
       pct: presupuesto_asignado > 0 ? Math.round((excedente_20_salidas / presupuesto_asignado) * 1000) / 10 : 0
     }
   ];
 
   const categorias = categorias_def.map(cat_info => {
     const real = gastos_por_cat[cat_info.categoria] || 0;
-    const rem = Math.max(0, round2(cat_info.presupuesto - real));
-    const pct_c = cat_info.presupuesto > 0 ? Math.round((real / cat_info.presupuesto) * 1000) / 10 : 0;
+    const total_disponible = round2(cat_info.presupuesto_base + (cat_info.acumulado_anterior || 0));
+    const rem = Math.max(0, round2(total_disponible - real));
+    const pct_c = total_disponible > 0 ? Math.round((real / total_disponible) * 1000) / 10 : 0;
+    
     let semaforo = "🟢 Sin consumo";
-    if (pct_c === 0) semaforo = "🟢 Sin consumo";
-    else if (pct_c <= 75) semaforo = "🟢 En Presupuesto";
-    else if (pct_c <= 100) semaforo = "🟡 Cuidado";
-    else semaforo = "🔴 Excedido";
+    if (real === 0) {
+      semaforo = "🟢 Sin consumo";
+    } else if (real <= cat_info.presupuesto_base) {
+      if (pct_c <= 75) semaforo = "🟢 En Presupuesto";
+      else if (pct_c <= 100) semaforo = "🟡 Cuidado";
+      else semaforo = "🔴 Excedido";
+    } else if (real <= total_disponible) {
+      // Excedió la cuota quincenal pero está 100% cubierto por el remanente de quincenas anteriores
+      semaforo = "🔵 Cubierto con Acumulado";
+    } else {
+      semaforo = "🔴 Excedido";
+    }
 
     return {
       categoria: cat_info.categoria,
       mecanica: cat_info.mecanica,
-      presupuesto: cat_info.presupuesto,
+      presupuesto_base: cat_info.presupuesto_base,
+      acumulado_anterior: cat_info.acumulado_anterior || 0,
+      presupuesto: total_disponible,
       pct: cat_info.pct,
       gasto_real: real,
       remanente: rem,

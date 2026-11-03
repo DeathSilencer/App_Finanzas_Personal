@@ -322,13 +322,26 @@ export default function ResumenPresupuesto({
                 <tr key={idx} className="table-modern-tr">
                   <td className="table-modern-td font-bold text-white whitespace-nowrap">{cat.categoria}</td>
                   <td className="table-modern-td text-slate-400 text-xs">{cat.mecanica}</td>
-                  <td className="table-modern-td text-right font-semibold text-white">{fmt(cat.presupuesto)}</td>
+                  <td className="table-modern-td text-right font-semibold text-white">
+                    <div>{fmt(cat.presupuesto)}</div>
+                    {cat.acumulado_anterior > 0 && (
+                      <div className="text-[10px] text-amber-300/90 font-medium">
+                        Base: {fmt(cat.presupuesto_base)} + {fmt(cat.acumulado_anterior)} ant.
+                      </div>
+                    )}
+                  </td>
                   <td className="table-modern-td text-center text-slate-300 font-semibold">{cat.pct}%</td>
                   <td className="table-modern-td text-right font-bold text-rose-400">{fmt(cat.gasto_real)}</td>
                   <td className="table-modern-td text-right font-black text-emerald-400">{fmt(cat.remanente)}</td>
                   <td className="table-modern-td text-center font-bold text-slate-300">{cat.pct_consumido}%</td>
                   <td className="table-modern-td text-center">
-                    <span className="badge-slate whitespace-nowrap">
+                    <span className={`badge-slate whitespace-nowrap ${
+                      cat.semaforo?.includes('Cubierto') 
+                        ? '!text-blue-300 !border-blue-500/40 !bg-blue-500/20 font-bold' 
+                        : cat.semaforo?.includes('Excedido') 
+                        ? '!text-rose-400 !border-rose-500/40 !bg-rose-500/20 font-bold' 
+                        : ''
+                    }`}>
                       {cat.semaforo}
                     </span>
                   </td>

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Zap, PlusCircle, List, Trash2, Eraser, CheckCircle2, CreditCard, RotateCcw } from 'lucide-react';
-import { fmt, getTodayDate } from '../../utils/formatters';
+import { Zap, PlusCircle, List, Trash2, Eraser, CheckCircle2, CreditCard, RotateCcw, ShieldCheck } from 'lucide-react';
+import { fmt, round2, getTodayDate } from '../../utils/formatters';
+import ModalCompensacionGasto from '../common/ModalCompensacionGasto';
 
 export default function RegistroDiario({
-  registros,
+  registros = [],
+  categorias = [],
+  futuroData = {},
   onAddGasto,
+  onAddGastoOcio,
   onDeleteGasto,
   onLimpiarRegistro,
   onOpenCerrarQuincena,
@@ -18,6 +22,12 @@ export default function RegistroDiario({
   const [retirado, setRetirado] = useState('Sí (Efectivo)');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estado del Modal de Compensación
+  const [isCompensacionOpen, setIsCompensacionOpen] = useState(false);
+  const [gastoPendiente, setGastoPendiente] = useState(null);
+  const [disponibleActual, setDisponibleActual] = useState(0);
+  const [faltante, setFaltante] = useState(0);
+
   const quickButtons = [
     { label: '🚌 Combi Ida', monto: 16, cat: '🚌 Pasajes Combi (Efectivo)', con: 'Combi de ida' },
     { label: '🚌 Combi Ida y Vuelta', monto: 32, cat: '🚌 Pasajes Combi (Efectivo)', con: 'Combi ida y regreso' },
@@ -29,10 +39,43 @@ export default function RegistroDiario({
     { label: '✏️ Papelería / Útiles', monto: 35, cat: '📄 Copias, Material & Papelería', con: 'Material escolar' }
   ];
 
+  const catActualInfo = (categorias || []).find(c => c.categoria === categoria);
+  const disponibleCatActual = catActualInfo ? Number(catActualInfo.remanente) || 0 : Infinity;
+
+  // Lista consolidada de categorías donantes con saldo disponible (Gastos + Ocio Futuro)
+  const categoriasParaCompensar = [
+    ...(categorias || []).map(c => ({
+      categoria: c.categoria,
+      remanente: Number(c.remanente) || 0,
+      origen: 'gastos'
+    })),
+    {
+      categoria: '🍕 Ocio & Estilo de Vida (30%)',
+      remanente: Number(futuroData?.otros_fondos?.ocio?.remanente) || 0,
+      origen: 'futuro'
+    }
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const val = parseFloat(monto);
     if (isNaN(val) || val <= 0 || isSubmitting) return;
+
+    // Validación preventiva: ¿supera el saldo disponible (incluyendo acumulado anterior)?
+    if (val > disponibleCatActual) {
+      setGastoPendiente({
+        fecha,
+        monto: val,
+        categoria,
+        concepto: concepto.trim() || 'Gasto registrado',
+        metodo,
+        retirado
+      });
+      setDisponibleActual(disponibleCatActual);
+      setFaltante(round2(val - disponibleCatActual));
+      setIsCompensacionOpen(true);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -53,6 +96,24 @@ export default function RegistroDiario({
 
   const handleQuickClick = async (item) => {
     if (isSubmitting) return;
+    const catItemInfo = (categorias || []).find(c => c.categoria === item.cat);
+    const dispItem = catItemInfo ? Number(catItemInfo.remanente) || 0 : Infinity;
+
+    if (item.monto > dispItem) {
+      setGastoPendiente({
+        fecha: getTodayDate(),
+        monto: item.monto,
+        categoria: item.cat,
+        concepto: item.con,
+        metodo: 'Efectivo',
+        retirado: 'Sí (Efectivo)'
+      });
+      setDisponibleActual(dispItem);
+      setFaltante(round2(item.monto - dispItem));
+      setIsCompensacionOpen(true);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onAddGasto({
@@ -68,8 +129,70 @@ export default function RegistroDiario({
     }
   };
 
+  const handleConfirmarCompensacion = async ({
+    gastoOriginal,
+    categoriaPrincipal,
+    montoPrincipal,
+    categoriaOrigen,
+    montoOrigen,
+    origenTipo
+  }) => {
+    try {
+      setIsSubmitting(true);
+      // 1. Si la categoría principal tenía saldo disponible parcial (> 0), registrar lo que alcanza
+      if (montoPrincipal > 0) {
+        await onAddGasto({
+          ...gastoOriginal,
+          monto: montoPrincipal,
+          concepto: `${gastoOriginal.concepto} (cubierto con saldo disponible)`
+        });
+      }
+
+      // 2. Registrar el faltante en la categoría donante
+      if (origenTipo === 'futuro' && onAddGastoOcio) {
+        await onAddGastoOcio({
+          fecha: gastoOriginal.fecha,
+          monto: montoOrigen,
+          categoria: '🍕 Ocio & Estilo de Vida (30%)',
+          concepto: `🔄 Apoyo a ${categoriaPrincipal}: ${gastoOriginal.concepto}`,
+          metodo: gastoOriginal.metodo === 'TDC Nu' ? 'TDC Nu' : 'Débito Nu'
+        });
+      } else {
+        await onAddGasto({
+          fecha: gastoOriginal.fecha,
+          monto: montoOrigen,
+          categoria: categoriaOrigen,
+          concepto: `🔄 Apoyo a ${categoriaPrincipal}: ${gastoOriginal.concepto}`,
+          metodo: gastoOriginal.metodo,
+          retirado: gastoOriginal.retirado
+        });
+      }
+
+      setMonto('');
+      setConcepto('');
+    } finally {
+      setIsSubmitting(false);
+      setIsCompensacionOpen(false);
+      setGastoPendiente(null);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Modal de Compensación */}
+      <ModalCompensacionGasto
+        isOpen={isCompensacionOpen}
+        onClose={() => {
+          setIsCompensacionOpen(false);
+          setGastoPendiente(null);
+        }}
+        gastoPendiente={gastoPendiente}
+        disponibleActual={disponibleActual}
+        faltante={faltante}
+        categoriasDisponibles={categoriasParaCompensar}
+        onConfirmarCompensacion={handleConfirmarCompensacion}
+      />
+
       {/* Columna Izquierda: Botones Rápidos + Formulario */}
       <div className="space-y-4 sm:space-y-6">
         {/* Botones Rápidos */}
@@ -121,7 +244,7 @@ export default function RegistroDiario({
                 placeholder="0.00"
                 value={monto}
                 onChange={(e) => setMonto(e.target.value)}
-                className="form-input font-bold text-emerald-400"
+                className="form-input font-bold text-emerald-400 text-sm"
               />
             </div>
             <div>
@@ -129,7 +252,7 @@ export default function RegistroDiario({
               <select
                 value={categoria}
                 onChange={(e) => setCategoria(e.target.value)}
-                className="form-select"
+                className="form-select font-bold"
               >
                 <option value="🚌 Pasajes Combi (Efectivo)">🚌 Pasajes Combi (Efectivo)</option>
                 <option value="🥪 Comidas en Escuela (Efectivo)">🥪 Comidas en Escuela (Efectivo)</option>
@@ -139,6 +262,25 @@ export default function RegistroDiario({
                 <option value="🍕 Excedente 20%: Refuerzo Gustos / Salidas">🍕 Excedente 20%: Refuerzo Gustos / Salidas</option>
               </select>
             </div>
+
+            {/* Indicador en vivo de saldo disponible en la categoría */}
+            {catActualInfo && (
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-800 text-[11px]">
+                <span className="text-slate-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Disponible para gastar:</span>
+                </span>
+                <span className={`font-mono font-bold ${disponibleCatActual > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {fmt(disponibleCatActual)}
+                  {catActualInfo.acumulado_anterior > 0 && (
+                    <span className="text-[10px] text-amber-300 font-normal ml-1">
+                      (+{fmt(catActualInfo.acumulado_anterior)} ant.)
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
+
             <div>
               <label className="form-label">Concepto / Detalle</label>
               <input
@@ -198,7 +340,7 @@ export default function RegistroDiario({
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`btn-primary w-full mt-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn-primary w-full mt-2 !py-2.5 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isSubmitting ? 'Guardando...' : 'Guardar Gasto en la Nube'}
             </button>
@@ -275,8 +417,12 @@ export default function RegistroDiario({
                     <td className="table-modern-td text-slate-300 whitespace-nowrap">{r.fecha}</td>
                     <td className="table-modern-td text-slate-400">{r.dia}</td>
                     <td className="table-modern-td text-right font-black text-rose-400">{fmt(r.monto)}</td>
-                    <td className="table-modern-td text-indigo-300 font-medium whitespace-nowrap">{r.categoria}</td>
-                    <td className="table-modern-td text-white font-medium">{r.concepto}</td>
+                    <td className="table-modern-td text-indigo-300 font-medium whitespace-nowrap">
+                      {r.categoria}
+                    </td>
+                    <td className="table-modern-td text-white font-medium">
+                      {r.concepto}
+                    </td>
                     <td className="table-modern-td text-slate-300">{r.metodo_pago}</td>
                     <td className="table-modern-td text-center">
                       <button

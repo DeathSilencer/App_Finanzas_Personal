@@ -453,7 +453,10 @@ export default function App() {
             {gastosTab === 'diario' && (
               <RegistroDiario
                 registros={gastosData?.registros}
+                categorias={gastosData?.categorias}
+                futuroData={futuroData}
                 onAddGasto={handleAddGasto}
+                onAddGastoOcio={handleAddGastoOcio}
                 onDeleteGasto={handleDeleteGasto}
                 onLimpiarRegistro={handleLimpiarGastos}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaGastosOpen(true)}
@@ -592,7 +595,9 @@ export default function App() {
             {futuroTab === 'ocio' && (
               <RegistroOcio
                 futuroData={futuroData}
+                gastosData={gastosData}
                 onAddGastoOcio={handleAddGastoOcio}
+                onAddGasto={handleAddGasto}
                 onDeleteGastoOcio={handleDeleteGastoOcio}
                 onOpenCerrarQuincena={() => setIsCerrarQuincenaFuturoOpen(true)}
                 onRevertirCierre={() => handleRevertirCierreFuturo()}

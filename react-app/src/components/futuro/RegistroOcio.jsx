@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { PartyPopper, Zap, PlusCircle, List, Trash2, CheckCircle2, CreditCard, RotateCcw, Sparkles } from 'lucide-react';
-import { fmt, getTodayDate } from '../../utils/formatters';
+import { PartyPopper, Zap, PlusCircle, List, Trash2, CheckCircle2, CreditCard, RotateCcw, Sparkles, ShieldCheck } from 'lucide-react';
+import { fmt, round2, getTodayDate } from '../../utils/formatters';
+import ModalCompensacionGasto from '../common/ModalCompensacionGasto';
 
 export const CAT_OCIO_30 = '🍕 Ocio & Estilo de Vida (30%)';
 export const CAT_EXCEDENTE_20 = '🍦 Excedente 20%: Refuerzo Gustos / Salidas';
 
 export default function RegistroOcio({
   futuroData = {},
+  gastosData = {},
   onAddGastoOcio,
+  onAddGasto,
   onDeleteGastoOcio,
   onOpenCerrarQuincena,
   onRevertirCierre
@@ -39,6 +42,12 @@ export default function RegistroOcio({
   const [metodo, setMetodo] = useState('Débito Nu');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Estado del Modal de Compensación
+  const [isCompensacionOpen, setIsCompensacionOpen] = useState(false);
+  const [gastoPendiente, setGastoPendiente] = useState(null);
+  const [disponibleActual, setDisponibleActual] = useState(0);
+  const [faltante, setFaltante] = useState(0);
+
   const quickItems = [
     { monto: 45, label: '☕ Café / Snack', cat: CAT_OCIO_30, metodo: 'Débito Nu', concepto: 'Café / Snack' },
     { monto: 150, label: '🍔 Comida Fuera', cat: CAT_EXCEDENTE_20, metodo: 'Débito DiDi', concepto: 'Comida en restaurante' },
@@ -57,10 +66,47 @@ export default function RegistroOcio({
     }
   };
 
+  const disponibleSeleccionado = categoria === CAT_EXCEDENTE_20 ? disponibleSalidas20 : disponibleOcio;
+
+  const categoriasParaCompensar = [
+    {
+      categoria: CAT_OCIO_30,
+      remanente: disponibleOcio,
+      origen: 'futuro'
+    },
+    {
+      categoria: CAT_EXCEDENTE_20,
+      remanente: disponibleSalidas20,
+      origen: 'futuro'
+    },
+    ...(gastosData?.categorias || [])
+      .filter(c => !c.categoria.includes("Excedente 20%"))
+      .map(c => ({
+        categoria: c.categoria,
+        remanente: Number(c.remanente) || 0,
+        origen: 'gastos'
+      }))
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const val = parseFloat(monto);
     if (isNaN(val) || val <= 0 || isSubmitting) return;
+
+    // Validación preventiva de sobregiro
+    if (val > disponibleSeleccionado) {
+      setGastoPendiente({
+        fecha,
+        monto: val,
+        categoria,
+        concepto: concepto.trim() || (categoria === CAT_EXCEDENTE_20 ? 'Salida de fin de semana' : 'Gasto de ocio'),
+        metodo
+      });
+      setDisponibleActual(disponibleSeleccionado);
+      setFaltante(round2(val - disponibleSeleccionado));
+      setIsCompensacionOpen(true);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -80,6 +126,22 @@ export default function RegistroOcio({
 
   const handleQuickClick = async (item) => {
     if (isSubmitting) return;
+    const dispItem = item.cat === CAT_EXCEDENTE_20 ? disponibleSalidas20 : disponibleOcio;
+
+    if (item.monto > dispItem) {
+      setGastoPendiente({
+        fecha: getTodayDate(),
+        monto: item.monto,
+        categoria: item.cat,
+        concepto: item.concepto,
+        metodo: item.metodo || 'Débito Nu'
+      });
+      setDisponibleActual(dispItem);
+      setFaltante(round2(item.monto - dispItem));
+      setIsCompensacionOpen(true);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onAddGastoOcio({
@@ -94,6 +156,54 @@ export default function RegistroOcio({
     }
   };
 
+  const handleConfirmarCompensacion = async ({
+    gastoOriginal,
+    categoriaPrincipal,
+    montoPrincipal,
+    categoriaOrigen,
+    montoOrigen,
+    origenTipo
+  }) => {
+    try {
+      setIsSubmitting(true);
+      // 1. Si la categoría principal tenía saldo disponible parcial (> 0), registrar lo que alcanza
+      if (montoPrincipal > 0) {
+        await onAddGastoOcio({
+          ...gastoOriginal,
+          monto: montoPrincipal,
+          concepto: `${gastoOriginal.concepto} (cubierto con disponible en ${categoriaPrincipal})`
+        });
+      }
+
+      // 2. Registrar el faltante en la categoría donante
+      if (categoriaOrigen === CAT_OCIO_30 || categoriaOrigen === CAT_EXCEDENTE_20) {
+        await onAddGastoOcio({
+          fecha: gastoOriginal.fecha,
+          monto: montoOrigen,
+          categoria: categoriaOrigen,
+          concepto: `🔄 Apoyo a ${categoriaPrincipal}: ${gastoOriginal.concepto}`,
+          metodo: gastoOriginal.metodo === 'TDC Nu' ? 'TDC Nu' : (categoriaOrigen === CAT_EXCEDENTE_20 ? 'Débito DiDi' : 'Débito Nu')
+        });
+      } else if (onAddGasto) {
+        await onAddGasto({
+          fecha: gastoOriginal.fecha,
+          monto: montoOrigen,
+          categoria: categoriaOrigen,
+          concepto: `🔄 Apoyo a ${categoriaPrincipal}: ${gastoOriginal.concepto}`,
+          metodo: gastoOriginal.metodo,
+          retirado: 'Sí'
+        });
+      }
+
+      setMonto('');
+      setConcepto('');
+    } finally {
+      setIsSubmitting(false);
+      setIsCompensacionOpen(false);
+      setGastoPendiente(null);
+    }
+  };
+
   const esExcedente20 = (cat = '') => {
     const c = String(cat).toLowerCase();
     return c.includes('excedente 20%') || c.includes('refuerzo');
@@ -101,6 +211,20 @@ export default function RegistroOcio({
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Modal de Compensación */}
+      <ModalCompensacionGasto
+        isOpen={isCompensacionOpen}
+        onClose={() => {
+          setIsCompensacionOpen(false);
+          setGastoPendiente(null);
+        }}
+        gastoPendiente={gastoPendiente}
+        disponibleActual={disponibleActual}
+        faltante={faltante}
+        categoriasDisponibles={categoriasParaCompensar}
+        onConfirmarCompensacion={handleConfirmarCompensacion}
+      />
+
       {/* 4 KPIs Clave: Ocio (Nu 13%) + Salidas (DiDi 15%) + Totales */}
       <div className="mobile-grid-kpi">
         <div className="card-kpi border-purple-500/30">
@@ -260,16 +384,26 @@ export default function RegistroOcio({
                 </select>
               </div>
 
-              {/* Banner Informativo del Fondo Seleccionado */}
+              {/* Banner Informativo del Fondo Seleccionado y Saldo Disponible */}
               {categoria === CAT_EXCEDENTE_20 ? (
-                <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-[11px] text-amber-200 flex items-center space-x-2">
-                  <span className="text-base">🟠</span>
-                  <span>Descuenta de tu <b>Excedente 20% (${fmt(disponibleSalidas20)} disp.)</b> albergado en <b>DiDi Cuenta al 15% anual</b>.</span>
+                <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/40 text-[11px] text-amber-200 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base">🟠</span>
+                    <span>En <b>DiDi Cuenta al 15% anual</b></span>
+                  </div>
+                  <span className="font-mono font-bold text-amber-300">
+                    {fmt(disponibleSalidas20)} disp.
+                  </span>
                 </div>
               ) : (
-                <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/40 text-[11px] text-purple-200 flex items-center space-x-2">
-                  <span className="text-base">🟣</span>
-                  <span>Descuenta de tu <b>Ocio 30% (${fmt(disponibleOcio)} disp.)</b> albergado en <b>Cajita Nu al 13% anual</b>.</span>
+                <div className="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/40 text-[11px] text-purple-200 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-base">🟣</span>
+                    <span>En <b>Cajita Nu al 13% anual</b></span>
+                  </div>
+                  <span className="font-mono font-bold text-purple-300">
+                    {fmt(disponibleOcio)} disp.
+                  </span>
                 </div>
               )}
 
