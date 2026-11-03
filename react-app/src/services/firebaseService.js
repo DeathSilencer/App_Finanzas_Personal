@@ -234,7 +234,8 @@ function notifyListeners() {
     memoryState.gastosDiarios,
     memoryState.historicoGastos,
     memoryState.comprasTdc,
-    memoryState.ingresosExtra
+    memoryState.ingresosExtra,
+    memoryState.gastosOcio
   );
   const futuro = computeFuturo(
     memoryState.configFuturo,
@@ -431,7 +432,8 @@ export function subscribeFinancialData(callback) {
       memoryState.gastosDiarios,
       memoryState.historicoGastos,
       memoryState.comprasTdc,
-      memoryState.ingresosExtra
+      memoryState.ingresosExtra,
+      memoryState.gastosOcio
     ),
     futuro: computeFuturo(
       memoryState.configFuturo,
@@ -460,7 +462,8 @@ export async function getGastos() {
     memoryState.gastosDiarios,
     memoryState.historicoGastos,
     memoryState.comprasTdc,
-    memoryState.ingresosExtra
+    memoryState.ingresosExtra,
+    memoryState.gastosOcio
   );
 }
 
@@ -579,7 +582,8 @@ export async function cerrarQuincenaGastos(data) {
     memoryState.gastosDiarios,
     memoryState.historicoGastos,
     memoryState.comprasTdc,
-    memoryState.ingresosExtra
+    memoryState.ingresosExtra,
+    memoryState.gastosOcio
   );
   const res = current.resumen;
 

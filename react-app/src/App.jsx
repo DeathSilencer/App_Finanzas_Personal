@@ -244,8 +244,8 @@ export default function App() {
   const handleAddGastoOcio = async (payload) => {
     try {
       const res = await api.addGastoOcio(payload);
-      addToast(res.message || 'Gasto de ocio registrado', 'success');
-      await loadFuturo();
+      addToast(res.message || 'Gasto registrado correctamente', 'success');
+      await Promise.all([loadFuturo(), loadGastos()]);
     } catch (err) {
       addToast(err.message, 'error');
     }
@@ -255,7 +255,7 @@ export default function App() {
     try {
       const res = await api.deleteGastoOcio(id);
       addToast(res.message || 'Gasto eliminado', 'warning');
-      await loadFuturo();
+      await Promise.all([loadFuturo(), loadGastos()]);
     } catch (err) {
       addToast(err.message, 'error');
     }

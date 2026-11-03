@@ -24,7 +24,12 @@ export function getDiaSemana(fechaStr) {
 /**
  * Calcula todo el estado financiero de Gastos Básicos.
  */
-export function computeGastos(config = {}, registros = [], historico = [], comprasTdc = [], ingresosExtra = []) {
+export const isGastoExcedente20 = (cat = '') => {
+  const c = String(cat).toLowerCase();
+  return c.includes('excedente 20%') || c.includes('refuerzo');
+};
+
+export function computeGastos(config = {}, registros = [], historico = [], comprasTdc = [], ingresosExtra = [], registrosOcio = []) {
   const ingresos_activos = (ingresosExtra || []).filter(i => !i.quincena_cerrada);
 
   const extra_presupuesto_gastos = round2(
@@ -92,8 +97,17 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
     }
   }
 
+  // Agregar gastos de ocio que pertenezcan a la categoría Excedente 20% (Refuerzo Salidas)
+  const gasto_salidas_desde_ocio = (registrosOcio || [])
+    .filter(r => isGastoExcedente20(r.categoria || ''))
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+  if (gasto_salidas_desde_ocio > 0) {
+    const catKey = "🍕 Excedente 20%: Refuerzo Gustos / Salidas";
+    gastos_por_cat[catKey] = (gastos_por_cat[catKey] || 0) + gasto_salidas_desde_ocio;
+  }
+
   const gasto_total_real = round2(
-    registros.reduce((sum, r) => sum + (Number(r.monto) || 0), 0) + total_tdc_adicional
+    registros.reduce((sum, r) => sum + (Number(r.monto) || 0), 0) + total_tdc_adicional + gasto_salidas_desde_ocio
   );
   const remanente_total = Math.max(0, round2(presupuesto_asignado - gasto_total_real));
   const pct_consumido = presupuesto_asignado > 0 ? Math.round((gasto_total_real / presupuesto_asignado) * 1000) / 10 : 0;
@@ -496,7 +510,11 @@ export function computeFuturo(
   const presupuesto_ocio_base = round2(ingreso_base * pct_p7);
   const presupuesto_ocio = round2(presupuesto_ocio_base + hist_rem_ocio + extra_ocio);
   const formatted_ocio = registrosOcio.map(r => ({ ...r, fila: r.id }));
-  const gasto_real_ocio = round2(formatted_ocio.reduce((sum, r) => sum + (Number(r.monto) || 0), 0));
+  const gasto_real_ocio = round2(
+    formatted_ocio
+      .filter(r => !isGastoExcedente20(r.categoria || ''))
+      .reduce((sum, r) => sum + (Number(r.monto) || 0), 0)
+  );
   const remanente_ocio = Math.max(0, round2(presupuesto_ocio - gasto_real_ocio));
   const pct_consumido_ocio = presupuesto_ocio > 0 ? Math.round((gasto_real_ocio / presupuesto_ocio) * 1000) / 10 : 0;
 
@@ -558,9 +576,13 @@ export function computeFuturo(
 
   // Filtrar gastos y compras TDC vinculadas a los fondos de la quincena activa
   const registrosGastosIds = new Set(registrosGastos.map(r => String(r.id)));
+  const registrosOcioIds = new Set(registrosOcio.map(r => String(r.id)));
   const comprasTdcIndependientes = comprasTdc.filter(c => {
     if (c.quincena_cerrada) return false;
     if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosGastosIds.has(String(c.origen_id)))) {
+      return false;
+    }
+    if (c.origen_tipo === 'gasto_ocio' || (c.origen_id && registrosOcioIds.has(String(c.origen_id)))) {
       return false;
     }
     return true;
@@ -591,12 +613,15 @@ export function computeFuturo(
 
   // Salidas 20% (Refuerzo Gustos / Salidas)
   const gasto_salidas_diarios = registrosGastos
-    .filter(r => (r.categoria || '').includes("Excedente 20%") || (r.categoria || '').includes("Salidas") || (r.categoria || '').includes("Gustos / Salidas"))
+    .filter(r => isGastoExcedente20(r.categoria || '') || (r.categoria || '').includes("Salidas") || (r.categoria || '').includes("Gustos / Salidas"))
     .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
   const gasto_salidas_tdc = comprasTdcIndependientes
-    .filter(c => (c.categoria || '').includes("Excedente 20%") || (c.categoria || '').includes("Salidas") || (c.categoria || '').includes("Gustos / Salidas"))
+    .filter(c => isGastoExcedente20(c.categoria || '') || (c.categoria || '').includes("Salidas") || (c.categoria || '').includes("Gustos / Salidas"))
     .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
-  const gasto_real_salidas_20 = round2(gasto_salidas_diarios + gasto_salidas_tdc);
+  const gasto_salidas_ocio = registrosOcio
+    .filter(r => isGastoExcedente20(r.categoria || ''))
+    .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
+  const gasto_real_salidas_20 = round2(gasto_salidas_diarios + gasto_salidas_tdc + gasto_salidas_ocio);
 
   // Moto 80% (Excedente Moto)
   const gasto_moto_diarios = registrosGastos
