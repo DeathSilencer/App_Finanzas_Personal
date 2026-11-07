@@ -20,7 +20,8 @@ import {
   ArrowRight,
   TrendingUp,
   AlertCircle,
-  Zap
+  Zap,
+  CreditCard
 } from 'lucide-react';
 import { fmt } from '../../utils/formatters';
 import { ajustarCajitaTurbo, motoAporte } from '../../services/api';
@@ -447,6 +448,12 @@ export default function GeneralCajitaTurbo({
               <span>🏍️ Moto (Resguardo Base):</span>
               <b className="text-purple-300">{fmt(desgNu.moto_80 || 10836.77)}</b>
             </div>
+            {Number(desgNu.apartado_tdc || 0) > 0 && (
+              <div className="flex justify-between text-purple-300 font-semibold border-t border-purple-500/20 pt-1">
+                <span>💳 Apartado Pago TDC Nu:</span>
+                <b className="text-rose-400">{fmt(desgNu.apartado_tdc)}</b>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between gap-2 pt-1">
@@ -689,6 +696,25 @@ export default function GeneralCajitaTurbo({
                 <span className="text-[9px] text-emerald-400 font-bold">🔒 Intocable en Nu</span>
               </div>
             </div>
+
+            {/* Apartado en Cajita para TDC Nu si hay compras pendientes */}
+            {Number(cajita.apartado_tdc_nu || 0) > 0 && (
+              <div className="p-3 bg-purple-950/40 rounded-xl border border-purple-500/30 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-purple-200 flex items-center space-x-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-purple-400" />
+                    <span>💳 Apartado en Cajita para TDC Nu</span>
+                  </p>
+                  <p className="text-[10px] text-purple-300/80 mt-0.5">
+                    Resguardo al 13% en Cajita Turbo hasta fecha de pago
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-black text-rose-400">{fmt(cajita.apartado_tdc_nu)}</p>
+                  <span className="text-[9px] text-emerald-400 font-bold">⚡ Generando 13%</span>
+                </div>
+              </div>
+            )}
 
             {/* Banner Cuentas Externas */}
             <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1.5 text-xs">

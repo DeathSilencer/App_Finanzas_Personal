@@ -597,9 +597,44 @@ export function computeFuturo(
   const aporte_emergencia_quincenal = round2(ingreso_base * pct_p3);
   const saldo_emergencia = Math.max(emergencia_aportado + extra_emergencia, round2(hist_emg + aporte_emergencia_quincenal + extra_emergencia));
 
+  // Filtrar gastos y compras TDC vinculadas a los fondos de la quincena activa
+  const registrosGastosIds = new Set(registrosGastos.map(r => String(r.id)));
+  const registrosOcioIds = new Set(registrosOcio.map(r => String(r.id)));
+  const comprasTdcIndependientes = comprasTdc.filter(c => {
+    if (c.quincena_cerrada) return false;
+    if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosGastosIds.has(String(c.origen_id)))) {
+      return false;
+    }
+    if (c.origen_tipo === 'gasto_ocio' || (c.origen_id && registrosOcioIds.has(String(c.origen_id)))) {
+      return false;
+    }
+    return true;
+  });
+
+  // Compras TDC independientes asignadas a Ocio / Gustos
+  const comprasTdcOcio = comprasTdcIndependientes.filter(c => {
+    const cat = c.categoria || '';
+    return (cat === 'Ocio' || cat.includes('Ocio') || cat.includes('Gustos / Ocio')) && !isGastoExcedente20(cat);
+  });
+  const gasto_ocio_tdc = comprasTdcOcio.reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+
+  const formatted_ocio = [
+    ...registrosOcio.map(r => ({ ...r, fila: r.id })),
+    ...comprasTdcOcio.map(c => ({
+      id: c.id,
+      fila: c.id,
+      fecha: c.fecha,
+      monto: c.monto,
+      categoria: '🍕 Salidas & Gustos',
+      concepto: c.concepto,
+      metodo_pago: 'TDC Nu',
+      origen_tipo: 'compra_tdc',
+      origen_id: c.id
+    }))
+  ];
+
   const presupuesto_ocio_base = round2(ingreso_base * pct_p7);
   const presupuesto_ocio = round2(presupuesto_ocio_base + hist_rem_ocio + extra_ocio);
-  const formatted_ocio = registrosOcio.map(r => ({ ...r, fila: r.id }));
   const gasto_real_ocio = round2(
     formatted_ocio
       .filter(r => !isGastoExcedente20(r.categoria || ''))
@@ -664,20 +699,6 @@ export function computeFuturo(
     }
   }
 
-  // Filtrar gastos y compras TDC vinculadas a los fondos de la quincena activa
-  const registrosGastosIds = new Set(registrosGastos.map(r => String(r.id)));
-  const registrosOcioIds = new Set(registrosOcio.map(r => String(r.id)));
-  const comprasTdcIndependientes = comprasTdc.filter(c => {
-    if (c.quincena_cerrada) return false;
-    if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosGastosIds.has(String(c.origen_id)))) {
-      return false;
-    }
-    if (c.origen_tipo === 'gasto_ocio' || (c.origen_id && registrosOcioIds.has(String(c.origen_id)))) {
-      return false;
-    }
-    return true;
-  });
-
   // Copias: todos los gastos registrados en copias (efectivo, débito o TDC)
   const gasto_copias_diarios = registrosGastos
     .filter(r => (r.categoria || '').includes("Copias") || (r.categoria || '').includes("Material"))
@@ -738,7 +759,10 @@ export function computeFuturo(
   const saldo_salidas_20 = Math.max(0, round2(hist_salidas + monto_salidas_20 + extra_salidas_20 - gasto_real_salidas_20));
   const total_digital_gastos = round2(saldo_imprevistos + saldo_moto_80 + saldo_salidas_20);
 
-  const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia);
+  // Deuda actual de TDC Nu apartada en Cajita Nu al 13%:
+  const apartado_tdc_nu = deuda_actual;
+
+  const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia + apartado_tdc_nu);
   const total_asignado_cajita = round2(total_futuro_cajita + total_digital_gastos);
 
   // --- TRÍADA DE ALTO RENDIMIENTO (Nu 13% + DiDi 15% + Openbank 13% • Capacidad $65,000 MXN) ---
@@ -761,9 +785,9 @@ export function computeFuturo(
   const capital_base_total = round2(capital_base_nu + capital_base_didi + capital_base_openbank);
 
   // Distribución física de los 5 fondos entre las tres bóvedas (CERO FUGAS):
-  // 1. En Nu Turbo se resguardan primero los fondos intocables de mayor plazo: Emergencia + Ocio
+  // 1. En Nu Turbo se resguardan primero los fondos intocables de mayor plazo: Emergencia + Ocio + Apartado TDC Nu
   // y la porción de la Moto que cabe en el capital base de Nu:
-  const parte_moto_nu = Math.max(0, Math.min(saldo_moto_80, round2(capital_base_nu - saldo_emergencia - remanente_ocio)));
+  const parte_moto_nu = Math.max(0, Math.min(saldo_moto_80, round2(capital_base_nu - saldo_emergencia - remanente_ocio - apartado_tdc_nu)));
   const remanente_moto = Math.max(0, round2(saldo_moto_80 - parte_moto_nu));
 
   // 2. En DiDi Cuenta (Prioridad #1 al 15%) se resguardan la porción activa de la Moto, Refuerzo Salidas 20% e Imprevistos:
@@ -891,6 +915,7 @@ export function computeFuturo(
         gran_total: gran_total_cajita,
         gran_total_liquido,
         capital_base: capital_base_cajita,
+        apartado_tdc_nu,
         total_asignado: total_asignado_cajita,
         saldo_base_disponible,
         saldo_nu,
@@ -945,7 +970,8 @@ export function computeFuturo(
             fondos: {
               emergencia: saldo_emergencia,
               ocio: remanente_ocio,
-              moto_80: parte_moto_nu
+              moto_80: parte_moto_nu,
+              apartado_tdc: apartado_tdc_nu
             }
           },
           didi: {

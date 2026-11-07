@@ -1138,6 +1138,54 @@ export async function addTDC(data) {
   };
 
   const docRef = await addDoc(collection(db, "compras_tdc"), docData);
+
+  // Si se registró directamente desde Control TDC Nu (sin origen previo),
+  // vincular de inmediato con la categoría de Ocio o Gastos Diarios para que descuente al instante del presupuesto:
+  if (!data.origen_tipo && !data.origen_id) {
+    const cat = String(data.categoria || '');
+    if (cat === 'Ocio' || cat.includes('Ocio') || cat.includes('Gustos / Ocio')) {
+      try {
+        const ocioRef = await addDoc(collection(db, "gastos_ocio"), {
+          fecha: docData.fecha,
+          monto: docData.monto,
+          categoria: '🍕 Salidas & Gustos',
+          concepto: docData.concepto || 'Compra TDC Nu',
+          metodo_pago: 'TDC Nu',
+          origen_tipo: 'compra_tdc',
+          origen_id: docRef.id,
+          created_at: new Date().toISOString()
+        });
+        await updateDoc(docRef, { origen_id: ocioRef.id, origen_tipo: 'gasto_ocio' });
+      } catch (err) {
+        console.warn("Aviso al vincular compra TDC con Ocio:", err);
+      }
+    } else if (cat.includes('Excedente 20%') || cat.includes('Salidas') || cat.includes('Imprevistos') || cat.includes('Copias') || cat.includes('Comida')) {
+      try {
+        let mappedCat = cat;
+        if (cat.includes('Excedente 20%') || cat.includes('Salidas')) mappedCat = "🍕 Excedente 20%: Refuerzo Gustos / Salidas";
+        else if (cat.includes('Imprevistos')) mappedCat = "🛡️ Imprevistos / Por si acaso";
+        else if (cat.includes('Copias') || cat.includes('Material')) mappedCat = "📄 Copias, Material & Papelería";
+        else if (cat.includes('Comida')) mappedCat = "🥪 Comidas en Escuela (Efectivo)";
+
+        const gastoRef = await addDoc(collection(db, "gastos_diarios"), {
+          fecha: docData.fecha,
+          dia: new Date(docData.fecha + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'Long' }),
+          monto: docData.monto,
+          categoria: mappedCat,
+          concepto: docData.concepto || 'Compra TDC Nu',
+          metodo_pago: 'TDC Nu',
+          retirado: 'En Cajita Nu',
+          origen_tipo: 'compra_tdc',
+          origen_id: docRef.id,
+          created_at: new Date().toISOString()
+        });
+        await updateDoc(docRef, { origen_id: gastoRef.id, origen_tipo: 'gasto_diario' });
+      } catch (err) {
+        console.warn("Aviso al vincular compra TDC con Gastos Diarios:", err);
+      }
+    }
+  }
+
   return { status: "success", id: docRef.id, message: "Compra TDC registrada" };
 }
 
@@ -1160,25 +1208,74 @@ export async function editTDC(data) {
 
 export async function deleteTDC(id) {
   const idStr = String(id);
+  const compraToDelete = memoryState.comprasTdc.find(c => String(c.id) === idStr);
   memoryState.comprasTdc = memoryState.comprasTdc.filter(c => String(c.id) !== idStr);
   notifyListeners();
-  await deleteDoc(doc(db, "compras_tdc", idStr));
+
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "compras_tdc", idStr));
+
+  if (compraToDelete && compraToDelete.origen_id) {
+    const oId = String(compraToDelete.origen_id);
+    if (compraToDelete.origen_tipo === 'gasto_ocio') {
+      batch.delete(doc(db, "gastos_ocio", oId));
+      memoryState.gastosOcio = memoryState.gastosOcio.filter(r => String(r.id) !== oId);
+    } else if (compraToDelete.origen_tipo === 'gasto_diario') {
+      batch.delete(doc(db, "gastos_diarios", oId));
+      memoryState.gastosDiarios = memoryState.gastosDiarios.filter(r => String(r.id) !== oId);
+    }
+  }
+
+  // Búsqueda adicional por si algún registro apunta a esta compra_tdc
+  try {
+    const ocioSnap = await getDocs(collection(db, "gastos_ocio"));
+    ocioSnap.forEach(d => {
+      if (d.data().origen_id === idStr) {
+        batch.delete(d.ref);
+        memoryState.gastosOcio = memoryState.gastosOcio.filter(r => String(r.id) !== d.id);
+      }
+    });
+    const diarioSnap = await getDocs(collection(db, "gastos_diarios"));
+    diarioSnap.forEach(d => {
+      if (d.data().origen_id === idStr) {
+        batch.delete(d.ref);
+        memoryState.gastosDiarios = memoryState.gastosDiarios.filter(r => String(r.id) !== d.id);
+      }
+    });
+  } catch (e) {
+    console.warn("Aviso al limpiar dependencias de compra TDC:", e);
+  }
+
+  await batch.commit();
+  notifyListeners();
   return { status: "success", message: "Compra TDC eliminada" };
 }
 
 export async function payTDC() {
   const snap = await getDocs(collection(db, "compras_tdc"));
   const batch = writeBatch(db);
+  let totalLiquidado = 0;
   snap.forEach((d) => {
     if (d.data().estado !== 'Liquidado') {
+      totalLiquidado += Number(d.data().monto) || 0;
       batch.update(d.ref, { estado: 'Liquidado' });
     }
   });
   await batch.commit();
 
   memoryState.comprasTdc = memoryState.comprasTdc.map(c => ({ ...c, estado: 'Liquidado' }));
+
+  // Descontar la deuda liquidada de la Cajita Turbo Nu (salida física del dinero hacia la TDC)
+  if (totalLiquidado > 0) {
+    const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
+    const newNu = Math.max(0, round2(curNu - totalLiquidado));
+    const upFuturo = { ...memoryState.configFuturo, saldo_real_ajustado: newNu, updated_at: new Date().toISOString() };
+    memoryState.configFuturo = upFuturo;
+    await setDoc(doc(db, "config_futuro", "main"), upFuturo);
+  }
+
   notifyListeners();
-  return { status: "success", message: "Tarjeta Nu liquidada (Totalero)" };
+  return { status: "success", message: `Tarjeta Nu liquidada (Totalero: -$${round2(totalLiquidado).toFixed(2)})` };
 }
 
 export async function saveConfigFuturo(data) {

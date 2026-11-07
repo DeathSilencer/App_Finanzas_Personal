@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditCard, PlusCircle, Trash2, CheckCircle2, DollarSign } from 'lucide-react';
+import { CreditCard, PlusCircle, Trash2, CheckCircle2, DollarSign, Zap } from 'lucide-react';
 import { fmt, getTodayDate } from '../../utils/formatters';
 
 export default function ControlTDCNu({
@@ -19,7 +19,7 @@ export default function ControlTDCNu({
   const [fecha, setFecha] = useState(getTodayDate());
   const [monto, setMonto] = useState('');
   const [concepto, setConcepto] = useState('');
-  const [categoria, setCategoria] = useState('Básicos');
+  const [categoria, setCategoria] = useState('Ocio');
   const [tipo, setTipo] = useState('Gasto Diario');
   const [apartado, setApartado] = useState('Sí (En Cajita)');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,15 +126,16 @@ export default function ControlTDCNu({
                 }}
                 className="form-select"
               >
-                <option value="🍕 Excedente 20%: Refuerzo Gustos / Salidas">🍕 Excedente 20%: Refuerzo Gustos / Salidas (Ocio y fin de semana)</option>
-                <option value="Ocio">🍕 Gustos / Ocio (Plan a Futuro)</option>
-                <option value="Básicos">Básicos</option>
-                <option value="🛡️ Imprevistos / Por si acaso">🛡️ Imprevistos / Por si acaso</option>
+                <option value="Ocio">🍕 Ocio &amp; Estilo de Vida (30% en Nu)</option>
+                <option value="🍕 Excedente 20%: Refuerzo Gustos / Salidas">🍦 Refuerzo Gustos / Salidas (20% en DiDi)</option>
+                <option value="🛡️ Imprevistos / Por si acaso">🛡️ Colchón de Imprevistos (en DiDi)</option>
                 <option value="📄 Copias, Material & Papelería">📄 Copias, Material & Papelería</option>
+                <option value="🥪 Comidas en Escuela (Efectivo)">🥪 Comidas en Escuela</option>
+                <option value="🛡️ Excedente 80%: Fondo Emergencia / Moto">🏍️ Acelerador Moto</option>
               </select>
             </div>
             <div>
-              <label className="form-label">¿Apartado en Cajita Básicos?</label>
+              <label className="form-label">¿Apartado en Cajita Nu?</label>
               <select
                 value={apartado}
                 onChange={(e) => setApartado(e.target.value)}
@@ -152,6 +153,17 @@ export default function ControlTDCNu({
               {isSubmitting ? 'Guardando...' : 'Guardar Compra en la Nube'}
             </button>
           </form>
+
+          {/* Banner Educativo Jineteo 13% */}
+          <div className="p-3 rounded-xl bg-purple-950/40 border border-purple-500/30 text-[11px] text-purple-200 space-y-1">
+            <span className="font-bold text-white flex items-center space-x-1.5">
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              <span>Jineteo Inteligente al 13%:</span>
+            </span>
+            <p className="text-slate-300">
+              Al pagar con TDC Nu, la compra <b>se descuenta hoy de tu categoría</b> para no gastar de más, pero el dinero físico <b>sigue en tu Cajita Nu generando el 13%</b> hasta tu fecha límite de pago (Día 3).
+            </p>
+          </div>
 
           {deuda > 0 && (
             <button
