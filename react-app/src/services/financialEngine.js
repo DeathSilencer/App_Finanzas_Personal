@@ -128,7 +128,17 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
   const registrosIds = new Set(registros.map(r => String(r.id)));
   let total_tdc_adicional = 0;
   for (const c of comprasTdc) {
+    const isMsi = Number(c.meses_totales) > 1;
+    const isContadoLiquidado = !isMsi && c.estado === 'Liquidado';
     if (c.quincena_cerrada) {
+      // Si es MSI con cuota ya avanzada después del último cierre de Gastos, aún debe contar la nueva cuota
+      const cuotaYaCerrada = c.gastos_cuota_cerrada !== undefined && c.gastos_cuota_cerrada !== null
+        ? Number(c.gastos_cuota_cerrada)
+        : (Number(c.meses_pagados) || 0);
+      if (!isMsi || c.estado === 'Liquidado' || Number(c.meses_pagados || 0) <= cuotaYaCerrada) {
+        continue;
+      }
+    } else if (isContadoLiquidado && c.quincena_cerrada) {
       continue;
     }
     if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosIds.has(String(c.origen_id)))) {
@@ -690,6 +700,12 @@ export function computeFuturo(
   // una compra pendiente en Ocio (ej. Pago Gemini) siga descontándose de Ocio y no se duplique con Apartado TDC Nu.
   const comprasTdcOcio = comprasTdc.filter(c => {
     if (c.futuro_cerrado) return false;
+    const isMsi = Number(c.meses_totales) > 1;
+    if (isMsi && c.futuro_cuota_cerrada !== undefined && c.futuro_cuota_cerrada !== null) {
+      if (Number(c.meses_pagados || 0) <= Number(c.futuro_cuota_cerrada)) {
+        return false;
+      }
+    }
     if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosGastosIds.has(String(c.origen_id)))) {
       return false;
     }

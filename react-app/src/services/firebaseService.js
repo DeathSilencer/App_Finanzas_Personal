@@ -681,9 +681,11 @@ export async function cerrarQuincenaGastos(data) {
 
   for (const c of comprasTdcActivas) {
     if (c.id) {
+      const isMsi = Number(c.meses_totales) > 1;
       batch.update(doc(db, "compras_tdc", String(c.id)), {
         quincena_cerrada: true,
-        periodo_cierre: periodo
+        periodo_cierre: periodo,
+        ...(isMsi ? { gastos_cuota_cerrada: Number(c.meses_pagados || 0) } : {})
       });
     }
   }
@@ -703,11 +705,17 @@ export async function cerrarQuincenaGastos(data) {
   memoryState.gastosDiarios = [];
   const ex20Ids = new Set(gastosOcioExcedente20.map(g => String(g.id)));
   memoryState.gastosOcio = memoryState.gastosOcio.filter(r => !ex20Ids.has(String(r.id)));
-  memoryState.comprasTdc = memoryState.comprasTdc.map(c => ({
-    ...c,
-    quincena_cerrada: true,
-    periodo_cierre: periodo
-  }));
+  const activeTdcIds = new Set(comprasTdcActivas.map(c => String(c.id)));
+  memoryState.comprasTdc = memoryState.comprasTdc.map(c => {
+    if (!activeTdcIds.has(String(c.id))) return c;
+    const isMsi = Number(c.meses_totales) > 1;
+    return {
+      ...c,
+      quincena_cerrada: true,
+      periodo_cierre: periodo,
+      ...(isMsi ? { gastos_cuota_cerrada: Number(c.meses_pagados || 0) } : {})
+    };
+  });
   memoryState.ingresosExtra = memoryState.ingresosExtra.map(ie => ({
     ...ie,
     quincena_cerrada: true,
@@ -812,7 +820,8 @@ export async function revertirQuincenaGastos(id) {
     if (c.id) {
       batch.update(doc(db, "compras_tdc", String(c.id)), {
         quincena_cerrada: false,
-        periodo_cierre: null
+        periodo_cierre: null,
+        gastos_cuota_cerrada: null
       });
     }
   }
@@ -838,7 +847,7 @@ export async function revertirQuincenaGastos(id) {
   const toAddOcio = registrosOcioEx20.filter(r => !existingOcioIds.has(String(r.id)));
   memoryState.gastosOcio = [...toAddOcio, ...memoryState.gastosOcio];
   memoryState.comprasTdc = memoryState.comprasTdc.map(c => 
-    c.periodo_cierre === targetDoc.periodo ? { ...c, quincena_cerrada: false, periodo_cierre: null } : c
+    c.periodo_cierre === targetDoc.periodo ? { ...c, quincena_cerrada: false, periodo_cierre: null, gastos_cuota_cerrada: null } : c
   );
   memoryState.ingresosExtra = memoryState.ingresosExtra.map(ie =>
     ie.periodo_cierre === targetDoc.periodo ? { ...ie, quincena_cerrada: false, periodo_cierre: null } : ie
@@ -993,9 +1002,19 @@ export async function cerrarQuincenaFuturo(data) {
   const caj = current.otros_fondos.cajita_turbo;
 
   const ocioFuturoActivos = memoryState.gastosOcio.filter(r => !isGastoExcedente20(r.categoria || ''));
-  const tdcOcioCerradasIds = ocio.registros
-    .filter(r => r.origen_tipo === 'compra_tdc' && r.origen_id)
-    .map(r => String(r.origen_id));
+  const tdcOcioCerradasIds = [...new Set(
+    ocio.registros
+      .filter(r => r.origen_tipo === 'compra_tdc' && r.origen_id)
+      .map(r => String(r.origen_id))
+  )];
+  const tdcOcioPrev = tdcOcioCerradasIds.map(tdcId => {
+    const tdcObj = memoryState.comprasTdc.find(c => String(c.id) === tdcId);
+    return {
+      id: tdcId,
+      futuro_cerrado: !!tdcObj?.futuro_cerrado,
+      futuro_cuota_cerrada: tdcObj?.futuro_cuota_cerrada ?? null
+    };
+  });
 
   const cierreData = {
     periodo: data.periodo || `Quincena ${new Date().toLocaleDateString()}`,
@@ -1012,7 +1031,8 @@ export async function cerrarQuincenaFuturo(data) {
     num_movimientos: ocioFuturoActivos.length + tdcOcioCerradasIds.length,
     detalle_json: JSON.stringify({
       registros_ocio: ocioFuturoActivos,
-      compras_tdc_ocio_ids: tdcOcioCerradasIds
+      compras_tdc_ocio_ids: tdcOcioCerradasIds,
+      compras_tdc_ocio_prev: tdcOcioPrev
     }),
     created_at: new Date().toISOString()
   };
@@ -1026,17 +1046,24 @@ export async function cerrarQuincenaFuturo(data) {
       batch.delete(doc(db, "gastos_ocio", String(r.id)));
     }
   }
+  const tdcUpdatesMap = new Map();
   for (const tdcId of tdcOcioCerradasIds) {
-    batch.update(doc(db, "compras_tdc", tdcId), { futuro_cerrado: true });
+    const tdcObj = memoryState.comprasTdc.find(c => String(c.id) === tdcId);
+    const isMsi = Number(tdcObj?.meses_totales) > 1;
+    const tdcPatch = isMsi
+      ? { futuro_cerrado: false, futuro_cuota_cerrada: Number(tdcObj?.meses_pagados || 0) }
+      : { futuro_cerrado: true };
+    tdcUpdatesMap.set(tdcId, tdcPatch);
+    batch.update(doc(db, "compras_tdc", tdcId), tdcPatch);
   }
   await batch.commit();
 
   const closedIds = new Set(ocioFuturoActivos.map(r => String(r.id)));
-  const closedTdcSet = new Set(tdcOcioCerradasIds);
   memoryState.gastosOcio = memoryState.gastosOcio.filter(r => !closedIds.has(String(r.id)));
-  memoryState.comprasTdc = memoryState.comprasTdc.map(c =>
-    closedTdcSet.has(String(c.id)) ? { ...c, futuro_cerrado: true } : c
-  );
+  memoryState.comprasTdc = memoryState.comprasTdc.map(c => {
+    const patch = tdcUpdatesMap.get(String(c.id));
+    return patch ? { ...c, ...patch } : c;
+  });
   notifyListeners();
   return { status: "success", message: "Quincena de Futuro archivada" };
 }
@@ -1081,19 +1108,29 @@ export async function revertirQuincenaFuturo(id) {
 
   let registros = [];
   let tdcOcioIds = [];
+  let tdcOcioPrevMap = new Map();
   try {
     const det = typeof targetDoc.detalle_json === 'string'
       ? JSON.parse(targetDoc.detalle_json)
       : (targetDoc.detalle_json || {});
     registros = Array.isArray(det.registros_ocio) ? det.registros_ocio : [];
     tdcOcioIds = Array.isArray(det.compras_tdc_ocio_ids) ? det.compras_tdc_ocio_ids : [];
+    if (Array.isArray(det.compras_tdc_ocio_prev)) {
+      for (const p of det.compras_tdc_ocio_prev) {
+        if (p?.id) tdcOcioPrevMap.set(String(p.id), p);
+      }
+    }
   } catch (e) {
     console.warn("Error al parsear detalle_json:", e);
   }
 
   const batch = writeBatch(db);
   for (const tdcId of tdcOcioIds) {
-    batch.update(doc(db, "compras_tdc", String(tdcId)), { futuro_cerrado: false });
+    const prev = tdcOcioPrevMap.get(String(tdcId));
+    batch.update(doc(db, "compras_tdc", String(tdcId)), {
+      futuro_cerrado: prev ? !!prev.futuro_cerrado : false,
+      futuro_cuota_cerrada: prev ? (prev.futuro_cuota_cerrada ?? null) : null
+    });
   }
   for (const r of registros) {
     const cleanRecord = {
@@ -1122,9 +1159,15 @@ export async function revertirQuincenaFuturo(id) {
   memoryState.gastosOcio = [...toAdd, ...memoryState.gastosOcio];
   if (tdcOcioIds.length > 0) {
     const tdcRevertSet = new Set(tdcOcioIds.map(String));
-    memoryState.comprasTdc = memoryState.comprasTdc.map(c =>
-      tdcRevertSet.has(String(c.id)) ? { ...c, futuro_cerrado: false } : c
-    );
+    memoryState.comprasTdc = memoryState.comprasTdc.map(c => {
+      if (!tdcRevertSet.has(String(c.id))) return c;
+      const prev = tdcOcioPrevMap.get(String(c.id));
+      return {
+        ...c,
+        futuro_cerrado: prev ? !!prev.futuro_cerrado : false,
+        futuro_cuota_cerrada: prev ? (prev.futuro_cuota_cerrada ?? null) : null
+      };
+    });
   }
 
   notifyListeners();
@@ -1188,6 +1231,84 @@ export const ajustarTriada = ajustarCajitaTurbo;
 // OPERACIONES DE TARJETA DE CRÉDITO NU (TDC)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Vincula una cuota de compra TDC (inicial 1/N o siguiente k/N tras liquidar una mensualidad MSI)
+ * en gastos_ocio o gastos_diarios para que descuente del presupuesto del periodo activo.
+ */
+async function vincularCuotaTdcACategoria({ docId, categoria, fecha, monto, concepto, batch = null }) {
+  const cat = String(categoria || '');
+  const cuota = round2(Number(monto) || 0);
+  if (!docId || cuota <= 0) return null;
+
+  let targetCol = null;
+  let origenTipoTdc = null;
+  let payload = null;
+
+  if ((cat === 'Ocio' || cat.includes('Ocio') || cat.includes('Gustos / Ocio')) && !isGastoExcedente20(cat)) {
+    targetCol = 'gastos_ocio';
+    origenTipoTdc = 'gasto_ocio';
+    payload = {
+      fecha,
+      monto: cuota,
+      categoria: '🍕 Salidas & Gustos',
+      concepto,
+      metodo_pago: 'TDC Nu',
+      origen_tipo: 'compra_tdc',
+      origen_id: String(docId),
+      created_at: new Date().toISOString()
+    };
+  } else if (cat.includes('Excedente 20%') || cat.includes('Salidas') || cat.includes('Imprevistos') || cat.includes('Copias') || cat.includes('Material') || cat.includes('Comida') || cat.includes('Moto')) {
+    let mappedCat = cat;
+    if (cat.includes('Excedente 20%') || cat.includes('Salidas')) mappedCat = "🍕 Excedente 20%: Refuerzo Gustos / Salidas";
+    else if (cat.includes('Imprevistos')) mappedCat = "🛡️ Imprevistos / Por si acaso";
+    else if (cat.includes('Copias') || cat.includes('Material')) mappedCat = "📄 Copias, Material & Papelería";
+    else if (cat.includes('Comida')) mappedCat = "🥪 Comidas en Escuela (Efectivo)";
+    else if (cat.includes('Moto')) mappedCat = "🛡️ Excedente 80%: Fondo Emergencia / Moto";
+
+    targetCol = 'gastos_diarios';
+    origenTipoTdc = 'gasto_diario';
+    payload = {
+      fecha,
+      dia: getDiaSemana(fecha),
+      monto: cuota,
+      categoria: mappedCat,
+      concepto,
+      metodo_pago: 'TDC Nu',
+      retirado: 'En Cajita Nu',
+      origen_tipo: 'compra_tdc',
+      origen_id: String(docId),
+      created_at: new Date().toISOString()
+    };
+  }
+
+  if (!targetCol || !payload) return null;
+
+  if (batch) {
+    const newRef = doc(collection(db, targetCol));
+    batch.set(newRef, payload);
+    batch.update(doc(db, "compras_tdc", String(docId)), { origen_id: newRef.id, origen_tipo: origenTipoTdc });
+    return { targetCol, record: { id: newRef.id, ...payload }, origen_id: newRef.id, origen_tipo: origenTipoTdc };
+  }
+
+  const newRef = await addDoc(collection(db, targetCol), payload);
+  await updateDoc(doc(db, "compras_tdc", String(docId)), { origen_id: newRef.id, origen_tipo: origenTipoTdc });
+  return { targetCol, record: { id: newRef.id, ...payload }, origen_id: newRef.id, origen_tipo: origenTipoTdc };
+}
+
+function registrarCuotaEnMemoria(linked) {
+  if (!linked || !linked.record) return;
+  const rid = String(linked.record.id);
+  if (linked.targetCol === 'gastos_ocio') {
+    if (!memoryState.gastosOcio.some(r => String(r.id) === rid)) {
+      memoryState.gastosOcio = [linked.record, ...memoryState.gastosOcio];
+    }
+  } else if (linked.targetCol === 'gastos_diarios') {
+    if (!memoryState.gastosDiarios.some(r => String(r.id) === rid)) {
+      memoryState.gastosDiarios = [linked.record, ...memoryState.gastosDiarios];
+    }
+  }
+}
+
 export async function addTDC(data) {
   const mesesTotales = Math.max(1, parseInt(data.meses_totales, 10) || 1);
   const mesesPagados = Math.min(mesesTotales, Math.max(0, parseInt(data.meses_pagados, 10) || 0));
@@ -1218,48 +1339,17 @@ export async function addTDC(data) {
   // Si se registró directamente desde Control TDC Nu (sin origen previo),
   // vincular de inmediato con la categoría de Ocio o Gastos Diarios para que descuente al instante del presupuesto:
   if (!data.origen_tipo && !data.origen_id && montoCategoria > 0) {
-    const cat = String(data.categoria || '');
-    if (cat === 'Ocio' || cat.includes('Ocio') || cat.includes('Gustos / Ocio')) {
-      try {
-        const ocioRef = await addDoc(collection(db, "gastos_ocio"), {
-          fecha: docData.fecha,
-          monto: montoCategoria,
-          categoria: '🍕 Salidas & Gustos',
-          concepto: conceptoCategoria,
-          metodo_pago: 'TDC Nu',
-          origen_tipo: 'compra_tdc',
-          origen_id: docRef.id,
-          created_at: new Date().toISOString()
-        });
-        await updateDoc(docRef, { origen_id: ocioRef.id, origen_tipo: 'gasto_ocio' });
-      } catch (err) {
-        console.warn("Aviso al vincular compra TDC con Ocio:", err);
-      }
-    } else if (cat.includes('Excedente 20%') || cat.includes('Salidas') || cat.includes('Imprevistos') || cat.includes('Copias') || cat.includes('Comida') || cat.includes('Moto')) {
-      try {
-        let mappedCat = cat;
-        if (cat.includes('Excedente 20%') || cat.includes('Salidas')) mappedCat = "🍕 Excedente 20%: Refuerzo Gustos / Salidas";
-        else if (cat.includes('Imprevistos')) mappedCat = "🛡️ Imprevistos / Por si acaso";
-        else if (cat.includes('Copias') || cat.includes('Material')) mappedCat = "📄 Copias, Material & Papelería";
-        else if (cat.includes('Comida')) mappedCat = "🥪 Comidas en Escuela (Efectivo)";
-        else if (cat.includes('Moto')) mappedCat = "🛡️ Excedente 80%: Fondo Emergencia / Moto";
-
-        const gastoRef = await addDoc(collection(db, "gastos_diarios"), {
-          fecha: docData.fecha,
-          dia: getDiaSemana(docData.fecha),
-          monto: montoCategoria,
-          categoria: mappedCat,
-          concepto: conceptoCategoria,
-          metodo_pago: 'TDC Nu',
-          retirado: 'En Cajita Nu',
-          origen_tipo: 'compra_tdc',
-          origen_id: docRef.id,
-          created_at: new Date().toISOString()
-        });
-        await updateDoc(docRef, { origen_id: gastoRef.id, origen_tipo: 'gasto_diario' });
-      } catch (err) {
-        console.warn("Aviso al vincular compra TDC con Gastos Diarios:", err);
-      }
+    try {
+      const linked = await vincularCuotaTdcACategoria({
+        docId: docRef.id,
+        categoria: docData.categoria,
+        fecha: docData.fecha,
+        monto: montoCategoria,
+        concepto: conceptoCategoria
+      });
+      registrarCuotaEnMemoria(linked);
+    } catch (err) {
+      console.warn("Aviso al vincular compra TDC con categoría:", err);
     }
   }
 
@@ -1334,7 +1424,10 @@ export async function payTDC() {
   let totalLiquidado = 0;
 
   const updatedList = [];
-  snap.forEach((d) => {
+  const nextMsiLinks = [];
+  const hoyIso = new Date().toISOString().split('T')[0];
+
+  for (const d of snap.docs) {
     const data = d.data();
     const metrics = getTdcCompraMetrics(data);
     if (!metrics.liquidado && metrics.cuotaActual > 0) {
@@ -1343,32 +1436,47 @@ export async function payTDC() {
         const nextPagados = metrics.mesesPagados + 1;
         const nextMontoPagado = round2(metrics.montoPagado + metrics.cuotaActual);
         const nextEstado = nextPagados >= metrics.mesesTotales || nextMontoPagado >= metrics.montoTotal ? 'Liquidado' : 'Pendiente';
-        const fechaLiq = nextEstado === 'Liquidado' ? new Date().toISOString().split('T')[0] : null;
-        batch.update(d.ref, {
+        const fechaLiq = nextEstado === 'Liquidado' ? hoyIso : null;
+        const tdcPatch = {
           meses_pagados: nextPagados,
           monto_pagado: nextMontoPagado,
           estado: nextEstado,
           ...(fechaLiq ? { fecha_liquidacion: fechaLiq } : {})
-        });
-        updatedList.push({
-          id: d.id,
-          ...data,
-          meses_pagados: nextPagados,
-          monto_pagado: nextMontoPagado,
-          estado: nextEstado,
-          ...(fechaLiq ? { fecha_liquidacion: fechaLiq } : {})
-        });
+        };
+        batch.update(d.ref, tdcPatch);
+
+        let updatedCompra = { id: d.id, ...data, ...tdcPatch };
+        if (nextEstado === 'Pendiente') {
+          const nextMetrics = getTdcCompraMetrics({ ...data, ...tdcPatch });
+          if (nextMetrics.cuotaActual > 0) {
+            const linked = await vincularCuotaTdcACategoria({
+              docId: d.id,
+              categoria: data.categoria,
+              fecha: hoyIso,
+              monto: nextMetrics.cuotaActual,
+              concepto: `${data.concepto || 'Compra MSI'} (MSI ${nextPagados + 1}/${metrics.mesesTotales})`,
+              batch
+            });
+            if (linked) {
+              nextMsiLinks.push(linked);
+              updatedCompra = { ...updatedCompra, origen_id: linked.origen_id, origen_tipo: linked.origen_tipo };
+            }
+          }
+        }
+        updatedList.push(updatedCompra);
       } else {
-        const fechaLiq = new Date().toISOString().split('T')[0];
-        batch.update(d.ref, { estado: 'Liquidado', fecha_liquidacion: fechaLiq });
-        updatedList.push({ id: d.id, ...data, estado: 'Liquidado', fecha_liquidacion: fechaLiq });
+        batch.update(d.ref, { estado: 'Liquidado', fecha_liquidacion: hoyIso });
+        updatedList.push({ id: d.id, ...data, estado: 'Liquidado', fecha_liquidacion: hoyIso });
       }
     } else {
       updatedList.push({ id: d.id, ...data });
     }
-  });
+  }
   await batch.commit();
 
+  for (const linked of nextMsiLinks) {
+    registrarCuotaEnMemoria(linked);
+  }
   memoryState.comprasTdc = updatedList;
 
   // Descontar la deuda liquidada de DiDi Cuenta por defecto (para mantener Nu Turbo intacta al 13%)
@@ -1420,7 +1528,33 @@ export async function payCuotaTDC(id) {
   }
 
   await updateDoc(docRef, updates);
-  memoryState.comprasTdc = memoryState.comprasTdc.map(c => String(c.id) === idStr ? { ...c, ...updates } : c);
+  let linkedNext = null;
+  if (metrics.esMsi && updates.estado === 'Pendiente') {
+    const nextMetrics = getTdcCompraMetrics({ ...data, ...updates });
+    if (nextMetrics.cuotaActual > 0) {
+      try {
+        linkedNext = await vincularCuotaTdcACategoria({
+          docId: idStr,
+          categoria: data.categoria,
+          fecha: hoyIso,
+          monto: nextMetrics.cuotaActual,
+          concepto: `${data.concepto || 'Compra MSI'} (MSI ${updates.meses_pagados + 1}/${metrics.mesesTotales})`
+        });
+        registrarCuotaEnMemoria(linkedNext);
+      } catch (err) {
+        console.warn("Aviso al programar siguiente mensualidad MSI:", err);
+      }
+    }
+  }
+  memoryState.comprasTdc = memoryState.comprasTdc.map(c =>
+    String(c.id) === idStr
+      ? {
+          ...c,
+          ...updates,
+          ...(linkedNext ? { origen_id: linkedNext.origen_id, origen_tipo: linkedNext.origen_tipo } : {})
+        }
+      : c
+  );
 
   const curDiDi = Number(memoryState.configFuturo?.saldo_real_didi ?? 0);
   const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
