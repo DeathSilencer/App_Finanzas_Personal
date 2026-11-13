@@ -6,7 +6,8 @@ export default function TDCSideReminder({ isOpen, onClose, tdcData, onGoToTDC })
   if (!isOpen) return null;
 
   const deuda = tdcData?.deuda_actual ?? 0;
-  const limite = tdcData?.limite_credito ?? tdcData?.limite ?? 500;
+  const pagoMes = tdcData?.pago_mes ?? deuda;
+  const limite = tdcData?.limite_credito ?? tdcData?.limite ?? 2400;
   const disponible = tdcData?.saldo_disponible ?? tdcData?.disponible ?? Math.max(0, limite - deuda);
   const usoPct = tdcData?.pct_uso ?? tdcData?.pct_uso_credito ?? 0;
   const corte = tdcData?.proximo_corte || tdcData?.fecha_corte_prox || (tdcData?.dia_corte_config ? `Día ${tdcData.dia_corte_config}` : "Día 23");
@@ -58,7 +59,7 @@ export default function TDCSideReminder({ isOpen, onClose, tdcData, onGoToTDC })
           <div className="p-3 rounded-xl bg-purple-950/60 border border-purple-500/30 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-purple-200">Monto para no pagar intereses:</span>
-              <span className="text-sm font-black text-white">{fmt(deuda)}</span>
+              <span className="text-sm font-black text-white">{fmt(pagoMes)}</span>
             </div>
             <div className="mt-2 pt-2 border-t border-purple-500/20 grid grid-cols-2 gap-2 text-[10px]">
               <div>

@@ -17,7 +17,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../firebase/config.js';
-import { computeGastos, computeFuturo, getDiaSemana, round2 } from './financialEngine.js';
+import { computeGastos, computeFuturo, getDiaSemana, getTdcCompraMetrics, round2 } from './financialEngine.js';
 import {
   INITIAL_CONFIG_GASTOS,
   INITIAL_GASTOS_DIARIOS,
@@ -1124,12 +1124,18 @@ export const ajustarTriada = ajustarCajitaTurbo;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function addTDC(data) {
+  const mesesTotales = Math.max(1, parseInt(data.meses_totales, 10) || 1);
+  const mesesPagados = Math.min(mesesTotales, Math.max(0, parseInt(data.meses_pagados, 10) || 0));
+  const montoTotal = round2(data.monto);
   const docData = {
     fecha: data.fecha || new Date().toISOString().split('T')[0],
-    monto: round2(data.monto),
+    monto: montoTotal,
     concepto: data.concepto || "",
     categoria: data.categoria || "Básicos",
-    tipo: data.tipo || "Gasto Diario",
+    tipo: data.tipo || (mesesTotales > 1 ? `MSI (${mesesTotales}m)` : "Gasto Diario"),
+    meses_totales: mesesTotales,
+    meses_pagados: mesesPagados,
+    monto_pagado: round2(data.monto_pagado || 0),
     apartado: data.apartado || "Sí (En Cajita)",
     estado: data.estado || "Pendiente",
     origen_tipo: data.origen_tipo || null,
@@ -1138,18 +1144,23 @@ export async function addTDC(data) {
   };
 
   const docRef = await addDoc(collection(db, "compras_tdc"), docData);
+  const metrics = getTdcCompraMetrics(docData);
+  const montoCategoria = metrics.cuotaActual;
+  const conceptoCategoria = metrics.esMsi
+    ? `${docData.concepto || 'Compra MSI'} (MSI ${metrics.mesesPagados + 1}/${metrics.mesesTotales})`
+    : (docData.concepto || 'Compra TDC Nu');
 
   // Si se registró directamente desde Control TDC Nu (sin origen previo),
   // vincular de inmediato con la categoría de Ocio o Gastos Diarios para que descuente al instante del presupuesto:
-  if (!data.origen_tipo && !data.origen_id) {
+  if (!data.origen_tipo && !data.origen_id && montoCategoria > 0) {
     const cat = String(data.categoria || '');
     if (cat === 'Ocio' || cat.includes('Ocio') || cat.includes('Gustos / Ocio')) {
       try {
         const ocioRef = await addDoc(collection(db, "gastos_ocio"), {
           fecha: docData.fecha,
-          monto: docData.monto,
+          monto: montoCategoria,
           categoria: '🍕 Salidas & Gustos',
-          concepto: docData.concepto || 'Compra TDC Nu',
+          concepto: conceptoCategoria,
           metodo_pago: 'TDC Nu',
           origen_tipo: 'compra_tdc',
           origen_id: docRef.id,
@@ -1159,20 +1170,21 @@ export async function addTDC(data) {
       } catch (err) {
         console.warn("Aviso al vincular compra TDC con Ocio:", err);
       }
-    } else if (cat.includes('Excedente 20%') || cat.includes('Salidas') || cat.includes('Imprevistos') || cat.includes('Copias') || cat.includes('Comida')) {
+    } else if (cat.includes('Excedente 20%') || cat.includes('Salidas') || cat.includes('Imprevistos') || cat.includes('Copias') || cat.includes('Comida') || cat.includes('Moto')) {
       try {
         let mappedCat = cat;
         if (cat.includes('Excedente 20%') || cat.includes('Salidas')) mappedCat = "🍕 Excedente 20%: Refuerzo Gustos / Salidas";
         else if (cat.includes('Imprevistos')) mappedCat = "🛡️ Imprevistos / Por si acaso";
         else if (cat.includes('Copias') || cat.includes('Material')) mappedCat = "📄 Copias, Material & Papelería";
         else if (cat.includes('Comida')) mappedCat = "🥪 Comidas en Escuela (Efectivo)";
+        else if (cat.includes('Moto')) mappedCat = "🛡️ Excedente 80%: Fondo Emergencia / Moto";
 
         const gastoRef = await addDoc(collection(db, "gastos_diarios"), {
           fecha: docData.fecha,
-          dia: new Date(docData.fecha + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'Long' }),
-          monto: docData.monto,
+          dia: getDiaSemana(docData.fecha),
+          monto: montoCategoria,
           categoria: mappedCat,
-          concepto: docData.concepto || 'Compra TDC Nu',
+          concepto: conceptoCategoria,
           metodo_pago: 'TDC Nu',
           retirado: 'En Cajita Nu',
           origen_tipo: 'compra_tdc',
@@ -1186,7 +1198,7 @@ export async function addTDC(data) {
     }
   }
 
-  return { status: "success", id: docRef.id, message: "Compra TDC registrada" };
+  return { status: "success", id: docRef.id, message: metrics.esMsi ? `Compra a ${mesesTotales} MSI registrada ($${montoCategoria.toFixed(2)}/mes)` : "Compra TDC registrada" };
 }
 
 export async function editTDC(data) {
@@ -1255,15 +1267,34 @@ export async function payTDC() {
   const snap = await getDocs(collection(db, "compras_tdc"));
   const batch = writeBatch(db);
   let totalLiquidado = 0;
+
+  const updatedList = [];
   snap.forEach((d) => {
-    if (d.data().estado !== 'Liquidado') {
-      totalLiquidado += Number(d.data().monto) || 0;
-      batch.update(d.ref, { estado: 'Liquidado' });
+    const data = d.data();
+    const metrics = getTdcCompraMetrics(data);
+    if (!metrics.liquidado && metrics.cuotaActual > 0) {
+      totalLiquidado = round2(totalLiquidado + metrics.cuotaActual);
+      if (metrics.esMsi) {
+        const nextPagados = metrics.mesesPagados + 1;
+        const nextMontoPagado = round2(metrics.montoPagado + metrics.cuotaActual);
+        const nextEstado = nextPagados >= metrics.mesesTotales || nextMontoPagado >= metrics.montoTotal ? 'Liquidado' : 'Pendiente';
+        batch.update(d.ref, {
+          meses_pagados: nextPagados,
+          monto_pagado: nextMontoPagado,
+          estado: nextEstado
+        });
+        updatedList.push({ id: d.id, ...data, meses_pagados: nextPagados, monto_pagado: nextMontoPagado, estado: nextEstado });
+      } else {
+        batch.update(d.ref, { estado: 'Liquidado' });
+        updatedList.push({ id: d.id, ...data, estado: 'Liquidado' });
+      }
+    } else {
+      updatedList.push({ id: d.id, ...data });
     }
   });
   await batch.commit();
 
-  memoryState.comprasTdc = memoryState.comprasTdc.map(c => ({ ...c, estado: 'Liquidado' }));
+  memoryState.comprasTdc = updatedList;
 
   // Descontar la deuda liquidada de la Cajita Turbo Nu (salida física del dinero hacia la TDC)
   if (totalLiquidado > 0) {
@@ -1275,7 +1306,50 @@ export async function payTDC() {
   }
 
   notifyListeners();
-  return { status: "success", message: `Tarjeta Nu liquidada (Totalero: -$${round2(totalLiquidado).toFixed(2)})` };
+  return { status: "success", message: `Corte TDC Nu liquidado (-$${round2(totalLiquidado).toFixed(2)} de Cajita Nu)` };
+}
+
+export async function payCuotaTDC(id) {
+  const idStr = String(id);
+  const docRef = doc(db, "compras_tdc", idStr);
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) return { status: "error", message: "Compra no encontrada" };
+
+  const data = snap.data();
+  const metrics = getTdcCompraMetrics(data);
+  if (metrics.liquidado || metrics.cuotaActual <= 0) {
+    return { status: "info", message: "Esta compra ya está liquidada" };
+  }
+
+  const cuota = metrics.cuotaActual;
+  let updates = { estado: 'Liquidado' };
+  if (metrics.esMsi) {
+    const nextPagados = metrics.mesesPagados + 1;
+    const nextMontoPagado = round2(metrics.montoPagado + cuota);
+    const nextEstado = nextPagados >= metrics.mesesTotales || nextMontoPagado >= metrics.montoTotal ? 'Liquidado' : 'Pendiente';
+    updates = {
+      meses_pagados: nextPagados,
+      monto_pagado: nextMontoPagado,
+      estado: nextEstado
+    };
+  }
+
+  await updateDoc(docRef, updates);
+  memoryState.comprasTdc = memoryState.comprasTdc.map(c => String(c.id) === idStr ? { ...c, ...updates } : c);
+
+  const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
+  const newNu = Math.max(0, round2(curNu - cuota));
+  const upFuturo = { ...memoryState.configFuturo, saldo_real_ajustado: newNu, updated_at: new Date().toISOString() };
+  memoryState.configFuturo = upFuturo;
+  await setDoc(doc(db, "config_futuro", "main"), upFuturo);
+
+  notifyListeners();
+  return {
+    status: "success",
+    message: metrics.esMsi
+      ? `Mensualidad ${updates.meses_pagados}/${metrics.mesesTotales} pagada (-$${cuota.toFixed(2)})`
+      : `Compra liquidada (-$${cuota.toFixed(2)})`
+  };
 }
 
 export async function saveConfigFuturo(data) {

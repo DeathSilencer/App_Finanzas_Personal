@@ -326,9 +326,20 @@ export default function App() {
   };
 
   const handleLiquidarTDC = async () => {
-    if (!window.confirm('¿Confirmas que liquidaste todas las compras pendientes de tu tarjeta Nu?')) return;
+    const pagoMes = futuroData?.tdc?.pago_mes ?? futuroData?.tdc?.deuda_actual ?? 0;
+    if (!window.confirm(`¿Confirmas que liquidaste el corte del mes ($${pagoMes.toFixed(2)}) de tu tarjeta Nu? (Las compras a MSI avanzarán 1 mensualidad)`)) return;
     try {
       const res = await api.payTDC();
+      addToast(res.message, 'success');
+      await loadFuturo();
+    } catch (err) {
+      addToast(err.message, 'error');
+    }
+  };
+
+  const handlePayCuotaTDC = async (id) => {
+    try {
+      const res = await api.payCuotaTDC(id);
       addToast(res.message, 'success');
       await loadFuturo();
     } catch (err) {
@@ -634,6 +645,7 @@ export default function App() {
                 onAddCompra={handleAddCompraTDC}
                 onDeleteCompra={handleDeleteCompraTDC}
                 onLiquidarDeuda={handleLiquidarTDC}
+                onPayCuota={handlePayCuotaTDC}
               />
             )}
 

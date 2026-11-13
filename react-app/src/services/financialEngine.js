@@ -29,6 +29,60 @@ export const isGastoExcedente20 = (cat = '') => {
   return c.includes('excedente 20%') || c.includes('refuerzo');
 };
 
+/**
+ * Calcula métricas vigentes de una compra en TDC (soporta Contado y Meses Sin Intereses).
+ */
+export function getTdcCompraMetrics(c = {}) {
+  const montoTotal = round2(Number(c.monto) || 0);
+  const mesesTotales = Math.max(1, parseInt(c.meses_totales, 10) || 1);
+  const esMsi = mesesTotales > 1;
+  const mesesPagados = Math.min(mesesTotales, Math.max(0, parseInt(c.meses_pagados, 10) || 0));
+  const liquidado = c.estado === 'Liquidado' || (esMsi && mesesPagados >= mesesTotales);
+
+  if (liquidado) {
+    return {
+      esMsi,
+      mesesTotales,
+      mesesPagados: mesesTotales,
+      montoTotal,
+      montoPagado: montoTotal,
+      saldoPendiente: 0,
+      cuotaActual: 0,
+      liquidado: true
+    };
+  }
+
+  if (!esMsi) {
+    return {
+      esMsi: false,
+      mesesTotales: 1,
+      mesesPagados: 0,
+      montoTotal,
+      montoPagado: 0,
+      saldoPendiente: montoTotal,
+      cuotaActual: montoTotal,
+      liquidado: false
+    };
+  }
+
+  const cuotaBase = round2(montoTotal / mesesTotales);
+  const montoPagado = round2(Number(c.monto_pagado ?? (mesesPagados * cuotaBase)) || 0);
+  const saldoPendiente = Math.max(0, round2(montoTotal - montoPagado));
+  const esUltimaCuota = mesesPagados >= mesesTotales - 1;
+  const cuotaActual = esUltimaCuota ? saldoPendiente : Math.min(saldoPendiente, cuotaBase);
+
+  return {
+    esMsi: true,
+    mesesTotales,
+    mesesPagados,
+    montoTotal,
+    montoPagado,
+    saldoPendiente,
+    cuotaActual: round2(cuotaActual),
+    liquidado: saldoPendiente <= 0
+  };
+}
+
 export function computeGastos(config = {}, registros = [], historico = [], comprasTdc = [], ingresosExtra = [], registrosOcio = []) {
   const ingresos_activos = (ingresosExtra || []).filter(i => !i.quincena_cerrada);
 
@@ -75,7 +129,7 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
       continue;
     }
     const cCat = c.categoria || '';
-    const montoC = Number(c.monto) || 0;
+    const montoC = getTdcCompraMetrics(c).cuotaActual;
     if (montoC <= 0) continue;
 
     if (cCat.includes('Excedente 20%') || cCat.includes('Salidas') || cCat.includes('Gustos / Salidas')) {
@@ -477,7 +531,7 @@ export function computeFuturo(
   const pct_p7 = Number(configFuturo.pct_p7 ?? 0.30);
   const pct_p3 = Number(configFuturo.pct_p3 ?? 0.10);
   const pct_p6 = Number(configFuturo.pct_p6 ?? 0.05);
-  const tdc_limite = Number(configFuturo.tdc_limite ?? 500);
+  const tdc_limite = Number(configFuturo.tdc_limite ?? 2400);
   const tdc_corte = Number(configFuturo.tdc_corte ?? 23);
   const tdc_pago = Number(configFuturo.tdc_pago ?? 3);
   const cetes_aportado = Number(configFuturo.cetes_aportado_activo ?? 250);
@@ -517,9 +571,22 @@ export function computeFuturo(
     });
   }
 
-  // 3. TDC Nu
-  const formatted_tdc = comprasTdc.map(c => ({ ...c, fila: c.id }));
-  const deuda_actual = round2(formatted_tdc.filter(c => c.estado !== 'Liquidado').reduce((sum, c) => sum + (Number(c.monto) || 0), 0));
+  // 3. TDC Nu (soporta Contado y Meses Sin Intereses)
+  const formatted_tdc = comprasTdc.map(c => {
+    const metrics = getTdcCompraMetrics(c);
+    return {
+      ...c,
+      fila: c.id,
+      es_msi: metrics.esMsi,
+      meses_totales: metrics.mesesTotales,
+      meses_pagados: metrics.mesesPagados,
+      monto_pagado: metrics.montoPagado,
+      saldo_pendiente: metrics.saldoPendiente,
+      cuota_actual: metrics.cuotaActual
+    };
+  });
+  const deuda_actual = round2(formatted_tdc.filter(c => c.estado !== 'Liquidado').reduce((sum, c) => sum + c.saldo_pendiente, 0));
+  const pago_del_mes = round2(formatted_tdc.filter(c => c.estado !== 'Liquidado').reduce((sum, c) => sum + c.cuota_actual, 0));
   const saldo_disponible = Math.max(0, round2(tdc_limite - deuda_actual));
   const pct_uso_credito = tdc_limite > 0 ? Math.round((deuda_actual / tdc_limite) * 1000) / 10 : 0;
 
@@ -616,21 +683,23 @@ export function computeFuturo(
     const cat = c.categoria || '';
     return (cat === 'Ocio' || cat.includes('Ocio') || cat.includes('Gustos / Ocio')) && !isGastoExcedente20(cat);
   });
-  const gasto_ocio_tdc = comprasTdcOcio.reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
 
   const formatted_ocio = [
     ...registrosOcio.map(r => ({ ...r, fila: r.id })),
-    ...comprasTdcOcio.map(c => ({
-      id: c.id,
-      fila: c.id,
-      fecha: c.fecha,
-      monto: c.monto,
-      categoria: '🍕 Salidas & Gustos',
-      concepto: c.concepto,
-      metodo_pago: 'TDC Nu',
-      origen_tipo: 'compra_tdc',
-      origen_id: c.id
-    }))
+    ...comprasTdcOcio.map(c => {
+      const m = getTdcCompraMetrics(c);
+      return {
+        id: c.id,
+        fila: c.id,
+        fecha: c.fecha,
+        monto: m.cuotaActual,
+        categoria: '🍕 Salidas & Gustos',
+        concepto: m.esMsi ? `${c.concepto} (MSI ${m.mesesPagados + 1}/${m.mesesTotales})` : c.concepto,
+        metodo_pago: 'TDC Nu',
+        origen_tipo: 'compra_tdc',
+        origen_id: c.id
+      };
+    })
   ];
 
   const presupuesto_ocio_base = round2(ingreso_base * pct_p7);
@@ -705,7 +774,7 @@ export function computeFuturo(
     .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
   const gasto_copias_tdc = comprasTdcIndependientes
     .filter(c => (c.categoria || '').includes("Copias") || (c.categoria || '').includes("Material"))
-    .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+    .reduce((sum, c) => sum + getTdcCompraMetrics(c).cuotaActual, 0);
   const gasto_real_copias = round2(gasto_copias_diarios + gasto_copias_tdc);
 
   const gasto_copias_digital_diarios = registrosGastos
@@ -719,7 +788,7 @@ export function computeFuturo(
     .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
   const gasto_imp_tdc = comprasTdcIndependientes
     .filter(c => (c.categoria || '').includes("Imprevistos"))
-    .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+    .reduce((sum, c) => sum + getTdcCompraMetrics(c).cuotaActual, 0);
   const gasto_real_imprevistos = round2(gasto_imp_diarios + gasto_imp_tdc);
 
   // Salidas 20% (Refuerzo Gustos / Salidas)
@@ -728,7 +797,7 @@ export function computeFuturo(
     .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
   const gasto_salidas_tdc = comprasTdcIndependientes
     .filter(c => isGastoExcedente20(c.categoria || '') || (c.categoria || '').includes("Salidas") || (c.categoria || '').includes("Gustos / Salidas"))
-    .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+    .reduce((sum, c) => sum + getTdcCompraMetrics(c).cuotaActual, 0);
   const gasto_salidas_ocio = registrosOcio
     .filter(r => isGastoExcedente20(r.categoria || ''))
     .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
@@ -740,7 +809,7 @@ export function computeFuturo(
     .reduce((sum, r) => sum + (Number(r.monto) || 0), 0);
   const gasto_moto_tdc = comprasTdcIndependientes
     .filter(c => (c.categoria || '').includes("Excedente 80%") || (c.categoria || '').includes("Moto"))
-    .reduce((sum, c) => sum + (Number(c.monto) || 0), 0);
+    .reduce((sum, c) => sum + getTdcCompraMetrics(c).cuotaActual, 0);
   const gasto_real_moto_80 = round2(gasto_moto_diarios + gasto_moto_tdc);
 
   // Gastos diarios en efectivo para cartera (Pasajes, Comidas y Copias)
@@ -759,8 +828,8 @@ export function computeFuturo(
   const saldo_salidas_20 = Math.max(0, round2(hist_salidas + monto_salidas_20 + extra_salidas_20 - gasto_real_salidas_20));
   const total_digital_gastos = round2(saldo_imprevistos + saldo_moto_80 + saldo_salidas_20);
 
-  // Deuda actual de TDC Nu apartada en Cajita Nu al 13%:
-  const apartado_tdc_nu = deuda_actual;
+  // Deuda exigible este corte de TDC Nu apartada en Cajita Nu al 13% (Contado + Cuotas MSI del mes):
+  const apartado_tdc_nu = pago_del_mes;
 
   const total_futuro_cajita = round2(remanente_ocio + saldo_emergencia + apartado_tdc_nu);
   const total_asignado_cajita = round2(total_futuro_cajita + total_digital_gastos);
@@ -841,6 +910,9 @@ export function computeFuturo(
     limite: tdc_limite,
     limite_credito: tdc_limite,
     deuda_actual,
+    deuda_total: deuda_actual,
+    pago_mes: pago_del_mes,
+    pago_del_mes,
     disponible: saldo_disponible,
     saldo_disponible,
     pct_uso_credito,

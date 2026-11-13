@@ -89,7 +89,7 @@ export const INITIAL_CONFIG_FUTURO = {
   pct_p7: 0.3,
   pct_p3: 0.1,
   pct_p6: 0.05,
-  tdc_limite: 500.0,
+  tdc_limite: 2400.0,
   tdc_corte: 23,
   tdc_pago: 3,
   cetes_aportado_activo: 250.0,
