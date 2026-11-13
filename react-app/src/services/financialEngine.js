@@ -40,6 +40,9 @@ export function getTdcCompraMetrics(c = {}) {
   const liquidado = c.estado === 'Liquidado' || (esMsi && mesesPagados >= mesesTotales);
 
   if (liquidado) {
+    const cuotaFinalMsi = esMsi
+      ? round2(Math.max(0, montoTotal - round2(montoTotal / mesesTotales) * Math.max(0, mesesTotales - 1)))
+      : montoTotal;
     return {
       esMsi,
       mesesTotales,
@@ -48,6 +51,7 @@ export function getTdcCompraMetrics(c = {}) {
       montoPagado: montoTotal,
       saldoPendiente: 0,
       cuotaActual: 0,
+      cuotaQuincena: cuotaFinalMsi,
       liquidado: true
     };
   }
@@ -61,6 +65,7 @@ export function getTdcCompraMetrics(c = {}) {
       montoPagado: 0,
       saldoPendiente: montoTotal,
       cuotaActual: montoTotal,
+      cuotaQuincena: montoTotal,
       liquidado: false
     };
   }
@@ -79,6 +84,7 @@ export function getTdcCompraMetrics(c = {}) {
     montoPagado,
     saldoPendiente,
     cuotaActual: round2(cuotaActual),
+    cuotaQuincena: round2(cuotaActual),
     liquidado: saldoPendiente <= 0
   };
 }
@@ -679,10 +685,25 @@ export function computeFuturo(
     return true;
   });
 
-  // Compras TDC independientes asignadas a Ocio / Gustos
-  const comprasTdcOcio = comprasTdcIndependientes.filter(c => {
+  // Compras TDC independientes asignadas a Ocio / Gustos:
+  // Usar futuro_cerrado (no quincena_cerrada de Gastos) para que si Gastos cerró primero,
+  // una compra pendiente en Ocio (ej. Pago Gemini) siga descontándose de Ocio y no se duplique con Apartado TDC Nu.
+  const comprasTdcOcio = comprasTdc.filter(c => {
+    if (c.futuro_cerrado) return false;
+    if (c.origen_tipo === 'gasto_diario' || (c.origen_id && registrosGastosIds.has(String(c.origen_id)))) {
+      return false;
+    }
+    if (c.origen_tipo === 'gasto_ocio' || (c.origen_id && registrosOcioIds.has(String(c.origen_id)))) {
+      return false;
+    }
     const cat = c.categoria || '';
-    return (cat === 'Ocio' || cat.includes('Ocio') || cat.includes('Gustos / Ocio')) && !isGastoExcedente20(cat);
+    const isOcioCat = (cat === 'Ocio' || cat.includes('Ocio') || cat.includes('Gustos / Ocio')) && !isGastoExcedente20(cat);
+    if (!isOcioCat) return false;
+    // Ignorar compras históricas ya liquidadas antes de introducir futuro_cerrado (sin fecha_liquidacion reciente)
+    if (c.estado === 'Liquidado' && c.quincena_cerrada && !c.fecha_liquidacion) {
+      return false;
+    }
+    return true;
   });
 
   const formatted_ocio = [
@@ -693,7 +714,7 @@ export function computeFuturo(
         id: c.id,
         fila: c.id,
         fecha: c.fecha,
-        monto: m.cuotaActual,
+        monto: m.cuotaQuincena,
         categoria: '🍕 Salidas & Gustos',
         concepto: m.esMsi ? `${c.concepto} (MSI ${m.mesesPagados + 1}/${m.mesesTotales})` : c.concepto,
         metodo_pago: 'TDC Nu',

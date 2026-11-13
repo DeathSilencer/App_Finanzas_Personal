@@ -993,6 +993,9 @@ export async function cerrarQuincenaFuturo(data) {
   const caj = current.otros_fondos.cajita_turbo;
 
   const ocioFuturoActivos = memoryState.gastosOcio.filter(r => !isGastoExcedente20(r.categoria || ''));
+  const tdcOcioCerradasIds = ocio.registros
+    .filter(r => r.origen_tipo === 'compra_tdc' && r.origen_id)
+    .map(r => String(r.origen_id));
 
   const cierreData = {
     periodo: data.periodo || `Quincena ${new Date().toLocaleDateString()}`,
@@ -1006,9 +1009,10 @@ export async function cerrarQuincenaFuturo(data) {
     aporte_retiro: ret.aportado,
     aporte_cetes: cet.aportado,
     total_cajita_cierre: caj.gran_total,
-    num_movimientos: ocioFuturoActivos.length,
+    num_movimientos: ocioFuturoActivos.length + tdcOcioCerradasIds.length,
     detalle_json: JSON.stringify({
-      registros_ocio: ocioFuturoActivos
+      registros_ocio: ocioFuturoActivos,
+      compras_tdc_ocio_ids: tdcOcioCerradasIds
     }),
     created_at: new Date().toISOString()
   };
@@ -1022,10 +1026,17 @@ export async function cerrarQuincenaFuturo(data) {
       batch.delete(doc(db, "gastos_ocio", String(r.id)));
     }
   }
+  for (const tdcId of tdcOcioCerradasIds) {
+    batch.update(doc(db, "compras_tdc", tdcId), { futuro_cerrado: true });
+  }
   await batch.commit();
 
   const closedIds = new Set(ocioFuturoActivos.map(r => String(r.id)));
+  const closedTdcSet = new Set(tdcOcioCerradasIds);
   memoryState.gastosOcio = memoryState.gastosOcio.filter(r => !closedIds.has(String(r.id)));
+  memoryState.comprasTdc = memoryState.comprasTdc.map(c =>
+    closedTdcSet.has(String(c.id)) ? { ...c, futuro_cerrado: true } : c
+  );
   notifyListeners();
   return { status: "success", message: "Quincena de Futuro archivada" };
 }
@@ -1069,16 +1080,21 @@ export async function revertirQuincenaFuturo(id) {
   }
 
   let registros = [];
+  let tdcOcioIds = [];
   try {
     const det = typeof targetDoc.detalle_json === 'string'
       ? JSON.parse(targetDoc.detalle_json)
       : (targetDoc.detalle_json || {});
     registros = Array.isArray(det.registros_ocio) ? det.registros_ocio : [];
+    tdcOcioIds = Array.isArray(det.compras_tdc_ocio_ids) ? det.compras_tdc_ocio_ids : [];
   } catch (e) {
     console.warn("Error al parsear detalle_json:", e);
   }
 
   const batch = writeBatch(db);
+  for (const tdcId of tdcOcioIds) {
+    batch.update(doc(db, "compras_tdc", String(tdcId)), { futuro_cerrado: false });
+  }
   for (const r of registros) {
     const cleanRecord = {
       fecha: r.fecha || new Date().toISOString().split('T')[0],
@@ -1104,6 +1120,12 @@ export async function revertirQuincenaFuturo(id) {
   const existingIds = new Set(memoryState.gastosOcio.map(g => String(g.id)));
   const toAdd = registros.filter(r => !existingIds.has(String(r.id)));
   memoryState.gastosOcio = [...toAdd, ...memoryState.gastosOcio];
+  if (tdcOcioIds.length > 0) {
+    const tdcRevertSet = new Set(tdcOcioIds.map(String));
+    memoryState.comprasTdc = memoryState.comprasTdc.map(c =>
+      tdcRevertSet.has(String(c.id)) ? { ...c, futuro_cerrado: false } : c
+    );
+  }
 
   notifyListeners();
   return {
@@ -1321,15 +1343,25 @@ export async function payTDC() {
         const nextPagados = metrics.mesesPagados + 1;
         const nextMontoPagado = round2(metrics.montoPagado + metrics.cuotaActual);
         const nextEstado = nextPagados >= metrics.mesesTotales || nextMontoPagado >= metrics.montoTotal ? 'Liquidado' : 'Pendiente';
+        const fechaLiq = nextEstado === 'Liquidado' ? new Date().toISOString().split('T')[0] : null;
         batch.update(d.ref, {
           meses_pagados: nextPagados,
           monto_pagado: nextMontoPagado,
-          estado: nextEstado
+          estado: nextEstado,
+          ...(fechaLiq ? { fecha_liquidacion: fechaLiq } : {})
         });
-        updatedList.push({ id: d.id, ...data, meses_pagados: nextPagados, monto_pagado: nextMontoPagado, estado: nextEstado });
+        updatedList.push({
+          id: d.id,
+          ...data,
+          meses_pagados: nextPagados,
+          monto_pagado: nextMontoPagado,
+          estado: nextEstado,
+          ...(fechaLiq ? { fecha_liquidacion: fechaLiq } : {})
+        });
       } else {
-        batch.update(d.ref, { estado: 'Liquidado' });
-        updatedList.push({ id: d.id, ...data, estado: 'Liquidado' });
+        const fechaLiq = new Date().toISOString().split('T')[0];
+        batch.update(d.ref, { estado: 'Liquidado', fecha_liquidacion: fechaLiq });
+        updatedList.push({ id: d.id, ...data, estado: 'Liquidado', fecha_liquidacion: fechaLiq });
       }
     } else {
       updatedList.push({ id: d.id, ...data });
@@ -1365,7 +1397,8 @@ export async function payCuotaTDC(id) {
   }
 
   const cuota = metrics.cuotaActual;
-  let updates = { estado: 'Liquidado' };
+  const hoyIso = new Date().toISOString().split('T')[0];
+  let updates = { estado: 'Liquidado', fecha_liquidacion: hoyIso };
   if (metrics.esMsi) {
     const nextPagados = metrics.mesesPagados + 1;
     const nextMontoPagado = round2(metrics.montoPagado + cuota);
@@ -1373,7 +1406,8 @@ export async function payCuotaTDC(id) {
     updates = {
       meses_pagados: nextPagados,
       monto_pagado: nextMontoPagado,
-      estado: nextEstado
+      estado: nextEstado,
+      ...(nextEstado === 'Liquidado' ? { fecha_liquidacion: hoyIso } : {})
     };
   }
 

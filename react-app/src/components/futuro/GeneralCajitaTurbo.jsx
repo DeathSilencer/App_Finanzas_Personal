@@ -197,7 +197,8 @@ export default function GeneralCajitaTurbo({
     (porcOcio.monto || 0) +
     (porcMoto.monto || 0) +
     (porcSalidas.monto || 0) +
-    (porcImp.monto || 0)
+    (porcImp.monto || 0) +
+    (Number(cajita.apartado_tdc_nu) || 0)
   ) * 100) / 100;
   const diferenciaCuadre = Math.round((totalBaseBancos - totalAsignadoFondos) * 100) / 100;
 
