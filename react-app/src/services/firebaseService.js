@@ -1371,17 +1371,25 @@ export async function payTDC() {
 
   memoryState.comprasTdc = updatedList;
 
-  // Descontar la deuda liquidada de la Cajita Turbo Nu (salida física del dinero hacia la TDC)
+  // Descontar la deuda liquidada de DiDi Cuenta por defecto (para mantener Nu Turbo intacta al 13%)
+  let fuenteMsg = 'DiDi Cuenta';
   if (totalLiquidado > 0) {
+    const curDiDi = Number(memoryState.configFuturo?.saldo_real_didi ?? 0);
     const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
-    const newNu = Math.max(0, round2(curNu - totalLiquidado));
-    const upFuturo = { ...memoryState.configFuturo, saldo_real_ajustado: newNu, updated_at: new Date().toISOString() };
+    const upFuturo = { ...memoryState.configFuturo, updated_at: new Date().toISOString() };
+    if (curDiDi >= totalLiquidado) {
+      upFuturo.saldo_real_didi = round2(curDiDi - totalLiquidado);
+      fuenteMsg = 'DiDi Cuenta';
+    } else {
+      upFuturo.saldo_real_ajustado = Math.max(0, round2(curNu - totalLiquidado));
+      fuenteMsg = 'Cajita Nu';
+    }
     memoryState.configFuturo = upFuturo;
     await setDoc(doc(db, "config_futuro", "main"), upFuturo);
   }
 
   notifyListeners();
-  return { status: "success", message: `Corte TDC Nu liquidado (-$${round2(totalLiquidado).toFixed(2)} de Cajita Nu)` };
+  return { status: "success", message: `Corte TDC Nu liquidado (-$${round2(totalLiquidado).toFixed(2)} de ${fuenteMsg})` };
 }
 
 export async function payCuotaTDC(id) {
@@ -1414,9 +1422,17 @@ export async function payCuotaTDC(id) {
   await updateDoc(docRef, updates);
   memoryState.comprasTdc = memoryState.comprasTdc.map(c => String(c.id) === idStr ? { ...c, ...updates } : c);
 
+  const curDiDi = Number(memoryState.configFuturo?.saldo_real_didi ?? 0);
   const curNu = Number(memoryState.configFuturo?.saldo_real_ajustado ?? 25054.21);
-  const newNu = Math.max(0, round2(curNu - cuota));
-  const upFuturo = { ...memoryState.configFuturo, saldo_real_ajustado: newNu, updated_at: new Date().toISOString() };
+  const upFuturo = { ...memoryState.configFuturo, updated_at: new Date().toISOString() };
+  let fuenteMsg = 'DiDi Cuenta';
+  if (curDiDi >= cuota) {
+    upFuturo.saldo_real_didi = round2(curDiDi - cuota);
+    fuenteMsg = 'DiDi Cuenta';
+  } else {
+    upFuturo.saldo_real_ajustado = Math.max(0, round2(curNu - cuota));
+    fuenteMsg = 'Cajita Nu';
+  }
   memoryState.configFuturo = upFuturo;
   await setDoc(doc(db, "config_futuro", "main"), upFuturo);
 
@@ -1424,8 +1440,8 @@ export async function payCuotaTDC(id) {
   return {
     status: "success",
     message: metrics.esMsi
-      ? `Mensualidad ${updates.meses_pagados}/${metrics.mesesTotales} pagada (-$${cuota.toFixed(2)})`
-      : `Compra liquidada (-$${cuota.toFixed(2)})`
+      ? `Mensualidad ${updates.meses_pagados}/${metrics.mesesTotales} pagada (-$${cuota.toFixed(2)} de ${fuenteMsg})`
+      : `Compra liquidada (-$${cuota.toFixed(2)} de ${fuenteMsg})`
   };
 }
 

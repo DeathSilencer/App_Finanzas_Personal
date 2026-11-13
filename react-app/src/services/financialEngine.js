@@ -876,17 +876,61 @@ export function computeFuturo(
   const gran_total_liquido = round2(saldo_nu + saldo_didi + saldo_openbank);
   const capital_base_total = round2(capital_base_nu + capital_base_didi + capital_base_openbank);
 
-  // Distribución física de los 5 fondos entre las tres bóvedas (CERO FUGAS):
-  // 1. En Nu Turbo se resguardan primero los fondos intocables de mayor plazo: Emergencia + Ocio + Apartado TDC Nu
-  // y la porción de la Moto que cabe en el capital base de Nu:
-  const parte_moto_nu = Math.max(0, Math.min(saldo_moto_80, round2(capital_base_nu - saldo_emergencia - remanente_ocio - apartado_tdc_nu)));
-  const remanente_moto = Math.max(0, round2(saldo_moto_80 - parte_moto_nu));
+  // Distribución física de los 6 fondos entre las tres bóvedas (CERO FUGAS):
+  // Estrategia: Nu Turbo (13%, tope $25k) blinda fondos intocables de largo plazo (Emergencia -> Moto -> Ocio largo)
+  // para no retirar de Nu ni perder su interés compuesto; DiDi Cuenta (15%) alberga los fondos operativos
+  // gastables (Imprevistos -> Refuerzo Salidas 20% -> Apartado TDC Nu -> Ocio activo -> excedente Moto).
+  let rem_nu = capital_base_nu;
+  const emergencia_nu = round2(Math.min(saldo_emergencia, rem_nu));
+  rem_nu = Math.max(0, round2(rem_nu - emergencia_nu));
 
-  // 2. En DiDi Cuenta (Prioridad #1 al 15%) se resguardan la porción activa de la Moto, Refuerzo Salidas 20% e Imprevistos:
-  const parte_moto_didi = Math.min(remanente_moto, Math.max(0, round2(capital_base_didi - saldo_salidas_20 - saldo_imprevistos)));
+  const parte_moto_nu = round2(Math.min(saldo_moto_80, rem_nu));
+  rem_nu = Math.max(0, round2(rem_nu - parte_moto_nu));
 
-  // 3. En Openbank (Receptor de Cascada al 13%) se resguarda el excedente de moto restante:
-  const parte_moto_openbank = Math.max(0, round2(remanente_moto - parte_moto_didi));
+  const ocio_nu = round2(Math.min(remanente_ocio, rem_nu));
+  rem_nu = Math.max(0, round2(rem_nu - ocio_nu));
+
+  const apartado_tdc_en_nu = round2(Math.min(apartado_tdc_nu, rem_nu));
+  rem_nu = Math.max(0, round2(rem_nu - apartado_tdc_en_nu));
+
+  const salidas_nu = round2(Math.min(saldo_salidas_20, rem_nu));
+  rem_nu = Math.max(0, round2(rem_nu - salidas_nu));
+
+  const imprevistos_nu = round2(Math.min(saldo_imprevistos, rem_nu));
+
+  const rem_emergencia = Math.max(0, round2(saldo_emergencia - emergencia_nu));
+  const rem_moto = Math.max(0, round2(saldo_moto_80 - parte_moto_nu));
+  const rem_ocio_pend = Math.max(0, round2(remanente_ocio - ocio_nu));
+  const rem_tdc_pend = Math.max(0, round2(apartado_tdc_nu - apartado_tdc_en_nu));
+  const rem_salidas_pend = Math.max(0, round2(saldo_salidas_20 - salidas_nu));
+  const rem_imp_pend = Math.max(0, round2(saldo_imprevistos - imprevistos_nu));
+
+  // 2. En DiDi Cuenta (Prioridad operativa al 15%) se albergan primero Imprevistos, Salidas 20%, Apartado TDC y Ocio activo:
+  let rem_didi = capital_base_didi;
+  const imprevistos_didi = round2(Math.min(rem_imp_pend, rem_didi));
+  rem_didi = Math.max(0, round2(rem_didi - imprevistos_didi));
+
+  const salidas_didi = round2(Math.min(rem_salidas_pend, rem_didi));
+  rem_didi = Math.max(0, round2(rem_didi - salidas_didi));
+
+  const apartado_tdc_didi = round2(Math.min(rem_tdc_pend, rem_didi));
+  rem_didi = Math.max(0, round2(rem_didi - apartado_tdc_didi));
+
+  const ocio_didi = round2(Math.min(rem_ocio_pend, rem_didi));
+  rem_didi = Math.max(0, round2(rem_didi - ocio_didi));
+
+  const parte_moto_didi = round2(Math.min(rem_moto, rem_didi));
+  rem_didi = Math.max(0, round2(rem_didi - parte_moto_didi));
+
+  const emergencia_didi = round2(Math.min(rem_emergencia, rem_didi));
+
+  // 3. En Openbank (Receptor de Cascada al 13%) cae cualquier excedente/faltante restante:
+  const emergencia_openbank = Math.max(0, round2(rem_emergencia - emergencia_didi));
+  const parte_moto_openbank = Math.max(0, round2(rem_moto - parte_moto_didi));
+  const ocio_openbank = Math.max(0, round2(rem_ocio_pend - ocio_didi));
+  const apartado_tdc_openbank = Math.max(0, round2(rem_tdc_pend - apartado_tdc_didi));
+  const salidas_openbank = Math.max(0, round2(rem_salidas_pend - salidas_didi));
+  const imprevistos_openbank = Math.max(0, round2(rem_imp_pend - imprevistos_didi));
 
   const tope_nu = 25000.0;
   const tope_didi = 10000.0;
@@ -1063,10 +1107,12 @@ export function computeFuturo(
             rend_mensual: round2(rend_diario_nu * 30),
             check_mensual: nu_check_mensual,
             fondos: {
-              emergencia: saldo_emergencia,
-              ocio: remanente_ocio,
+              emergencia: emergencia_nu,
+              ocio: ocio_nu,
               moto_80: parte_moto_nu,
-              apartado_tdc: apartado_tdc_nu
+              apartado_tdc: apartado_tdc_en_nu,
+              salidas_20: salidas_nu,
+              imprevistos: imprevistos_nu
             }
           },
           didi: {
@@ -1082,9 +1128,12 @@ export function computeFuturo(
             rend_mensual: round2(rend_diario_didi * 30),
             check_mensual: didi_check_mensual,
             fondos: {
+              emergencia: emergencia_didi,
               moto_80: parte_moto_didi,
-              salidas_20: saldo_salidas_20,
-              imprevistos: saldo_imprevistos
+              ocio: ocio_didi,
+              apartado_tdc: apartado_tdc_didi,
+              salidas_20: salidas_didi,
+              imprevistos: imprevistos_didi
             }
           },
           openbank: {
@@ -1100,7 +1149,12 @@ export function computeFuturo(
             rend_mensual: round2(rend_diario_openbank * 30),
             check_mensual: openbank_check_mensual,
             fondos: {
-              moto_80: parte_moto_openbank
+              emergencia: emergencia_openbank,
+              moto_80: parte_moto_openbank,
+              ocio: ocio_openbank,
+              apartado_tdc: apartado_tdc_openbank,
+              salidas_20: salidas_openbank,
+              imprevistos: imprevistos_openbank
             }
           }
         },

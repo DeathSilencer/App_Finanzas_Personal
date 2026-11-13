@@ -327,7 +327,7 @@ export default function App() {
 
   const handleLiquidarTDC = async () => {
     const pagoMes = futuroData?.tdc?.pago_mes ?? futuroData?.tdc?.deuda_actual ?? 0;
-    if (!window.confirm(`¿Confirmas que liquidaste el corte del mes ($${pagoMes.toFixed(2)}) de tu tarjeta Nu? (Las compras a MSI avanzarán 1 mensualidad)`)) return;
+    if (!window.confirm(`¿Confirmas que liquidaste el corte del mes ($${pagoMes.toFixed(2)}) de tu tarjeta Nu? Se descontará de DiDi Cuenta para no tocar Nu (y MSI avanzará 1 mensualidad).`)) return;
     try {
       const res = await api.payTDC();
       addToast(res.message, 'success');
