@@ -244,11 +244,12 @@ export function computeGastos(config = {}, registros = [], historico = [], compr
 
       const g_sal = allTx.filter(t => (t.categoria || '').includes("Excedente 20%") || (t.categoria || '').includes("Salidas") || (t.categoria || '').includes("Refuerzo Gustos")).reduce((s, t) => s + (Number(t.monto) || 0), 0);
       const pres_sal = Number(h.refuerzo_gustos_20 ?? excedente_20_salidas);
-      hist_salidas += Math.max(0, pres_sal - g_sal);
+      hist_salidas += (pres_sal - g_sal);
     } catch (e) {
       hist_salidas += Number(h.refuerzo_gustos_20 || 0);
     }
   }
+  hist_salidas = Math.max(0, round2(hist_salidas));
 
   // Categorías mostrando ÚNICAMENTE el presupuesto real asignado para la quincena activa
   // (para disciplina psicológica) y activando el colchón acumulado solo si se rebasa la cuota.
@@ -759,14 +760,15 @@ export function computeFuturo(
         hist_imprevistos += Math.max(0, Number(det.monto_imprevistos ?? m_imprevistos) - g_imp);
       }
 
-      // 3. Salidas / Refuerzo 20%: remanente no gastado en la quincena cerrada
+      // 3. Salidas / Refuerzo 20%: remanente neto acumulado (puede descontar de la reserva si se excedió en la quincena)
       const g_sal = allTx.filter(t => (t.categoria || '').includes("Excedente 20%") || (t.categoria || '').includes("Salidas") || (t.categoria || '').includes("Refuerzo Gustos")).reduce((s, t) => s + (Number(t.monto) || 0), 0);
       const pres_sal = Number(h.refuerzo_gustos_20 ?? monto_salidas_20);
-      hist_salidas += Math.max(0, pres_sal - g_sal);
+      hist_salidas += (pres_sal - g_sal);
     } catch (e) {
       hist_salidas += Number(h.refuerzo_gustos_20 || 0);
     }
   }
+  hist_salidas = Math.max(0, round2(hist_salidas));
 
   // Copias: todos los gastos registrados en copias (efectivo, débito o TDC)
   const gasto_copias_diarios = registrosGastos

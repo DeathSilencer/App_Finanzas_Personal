@@ -17,7 +17,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../firebase/config.js';
-import { computeGastos, computeFuturo, getDiaSemana, getTdcCompraMetrics, round2 } from './financialEngine.js';
+import { computeGastos, computeFuturo, getDiaSemana, getTdcCompraMetrics, isGastoExcedente20, round2 } from './financialEngine.js';
 import {
   INITIAL_CONFIG_GASTOS,
   INITIAL_GASTOS_DIARIOS,
@@ -628,14 +628,19 @@ export async function cerrarQuincenaGastos(data) {
       id: c.id,
       fecha: c.fecha,
       dia: 'TDC',
-      monto: Number(c.monto) || 0,
+      monto: getTdcCompraMetrics(c).cuotaActual,
       categoria: c.categoria || 'Otros',
       concepto: c.concepto || 'Compra TDC Nu',
       metodo_pago: 'TDC Nu',
       retirado: c.apartado || 'Sí (En Cajita)'
     }));
 
-  const todosMovimientos = [...memoryState.gastosDiarios, ...tdcComoMovimientos];
+  // Incluir gastos de Excedente 20% registrados desde la pestaña de Ocio (gastos_ocio)
+  const gastosOcioExcedente20 = memoryState.gastosOcio
+    .filter(r => isGastoExcedente20(r.categoria || ''))
+    .map(r => ({ ...r, origen_coleccion: 'gastos_ocio' }));
+
+  const todosMovimientos = [...memoryState.gastosDiarios, ...gastosOcioExcedente20, ...tdcComoMovimientos];
 
   const cierreData = {
     periodo,
@@ -663,10 +668,16 @@ export async function cerrarQuincenaGastos(data) {
   // Guardar quincena archivada
   await addDoc(collection(db, "historico_quincenas_gastos"), cierreData);
 
-  // Batch en Firestore: limpiar gastos diarios y marcar compras TDC e ingresos extra como archivadas
+  // Batch en Firestore: limpiar gastos diarios, gastos Excedente 20% en gastos_ocio y marcar compras TDC e ingresos extra como archivadas
   const snap = await getDocs(collection(db, "gastos_diarios"));
   const batch = writeBatch(db);
   snap.forEach((d) => batch.delete(d.ref));
+
+  for (const go of gastosOcioExcedente20) {
+    if (go.id) {
+      batch.delete(doc(db, "gastos_ocio", String(go.id)));
+    }
+  }
 
   for (const c of comprasTdcActivas) {
     if (c.id) {
@@ -690,6 +701,8 @@ export async function cerrarQuincenaGastos(data) {
 
   // Actualizar estado en memoria
   memoryState.gastosDiarios = [];
+  const ex20Ids = new Set(gastosOcioExcedente20.map(g => String(g.id)));
+  memoryState.gastosOcio = memoryState.gastosOcio.filter(r => !ex20Ids.has(String(r.id)));
   memoryState.comprasTdc = memoryState.comprasTdc.map(c => ({
     ...c,
     quincena_cerrada: true,
@@ -753,8 +766,11 @@ export async function revertirQuincenaGastos(id) {
     console.warn("Error al parsear detalle_json:", e);
   }
 
+  const registrosDiarios = registros.filter(r => r.origen_coleccion !== 'gastos_ocio');
+  const registrosOcioEx20 = registros.filter(r => r.origen_coleccion === 'gastos_ocio');
+
   const batch = writeBatch(db);
-  for (const r of registros) {
+  for (const r of registrosDiarios) {
     const cleanRecord = {
       fecha: r.fecha || new Date().toISOString().split('T')[0],
       dia: r.dia || "Lunes",
@@ -770,6 +786,24 @@ export async function revertirQuincenaGastos(id) {
     } else {
       const newRef = doc(collection(db, "gastos_diarios"));
       batch.set(newRef, cleanRecord);
+    }
+  }
+
+  for (const r of registrosOcioEx20) {
+    const cleanOcio = {
+      fecha: r.fecha || new Date().toISOString().split('T')[0],
+      dia: r.dia || "Lunes",
+      monto: round2(Number(r.monto) || 0),
+      categoria: r.categoria || "🍦 Excedente 20%: Refuerzo Gustos / Salidas",
+      concepto: r.concepto || "",
+      metodo_pago: r.metodo_pago || "Débito DiDi",
+      created_at: r.created_at || new Date().toISOString()
+    };
+    if (r.id) {
+      batch.set(doc(db, "gastos_ocio", String(r.id)), cleanOcio);
+    } else {
+      const newRef = doc(collection(db, "gastos_ocio"));
+      batch.set(newRef, cleanOcio);
     }
   }
 
@@ -798,8 +832,11 @@ export async function revertirQuincenaGastos(id) {
 
   memoryState.historicoGastos = memoryState.historicoGastos.filter(c => String(c.id) !== targetId);
   const existingIds = new Set(memoryState.gastosDiarios.map(g => String(g.id)));
-  const toAdd = registros.filter(r => !existingIds.has(String(r.id)));
+  const toAdd = registrosDiarios.filter(r => !existingIds.has(String(r.id)));
   memoryState.gastosDiarios = [...toAdd, ...memoryState.gastosDiarios];
+  const existingOcioIds = new Set(memoryState.gastosOcio.map(g => String(g.id)));
+  const toAddOcio = registrosOcioEx20.filter(r => !existingOcioIds.has(String(r.id)));
+  memoryState.gastosOcio = [...toAddOcio, ...memoryState.gastosOcio];
   memoryState.comprasTdc = memoryState.comprasTdc.map(c => 
     c.periodo_cierre === targetDoc.periodo ? { ...c, quincena_cerrada: false, periodo_cierre: null } : c
   );
@@ -955,6 +992,8 @@ export async function cerrarQuincenaFuturo(data) {
   const cet = current.otros_fondos.cetes;
   const caj = current.otros_fondos.cajita_turbo;
 
+  const ocioFuturoActivos = memoryState.gastosOcio.filter(r => !isGastoExcedente20(r.categoria || ''));
+
   const cierreData = {
     periodo: data.periodo || `Quincena ${new Date().toLocaleDateString()}`,
     mes: inferMes(data),
@@ -967,22 +1006,26 @@ export async function cerrarQuincenaFuturo(data) {
     aporte_retiro: ret.aportado,
     aporte_cetes: cet.aportado,
     total_cajita_cierre: caj.gran_total,
-    num_movimientos: memoryState.gastosOcio.length,
+    num_movimientos: ocioFuturoActivos.length,
     detalle_json: JSON.stringify({
-      registros_ocio: memoryState.gastosOcio
+      registros_ocio: ocioFuturoActivos
     }),
     created_at: new Date().toISOString()
   };
 
   await addDoc(collection(db, "historico_quincenas_futuro"), cierreData);
 
-  // Limpiar gastos de ocio en Firestore
-  const snap = await getDocs(collection(db, "gastos_ocio"));
+  // Limpiar únicamente gastos de ocio propios de Futuro (mantener Excedente 20% hasta que cierre Gastos)
   const batch = writeBatch(db);
-  snap.forEach((d) => batch.delete(d.ref));
+  for (const r of ocioFuturoActivos) {
+    if (r.id) {
+      batch.delete(doc(db, "gastos_ocio", String(r.id)));
+    }
+  }
   await batch.commit();
 
-  memoryState.gastosOcio = [];
+  const closedIds = new Set(ocioFuturoActivos.map(r => String(r.id)));
+  memoryState.gastosOcio = memoryState.gastosOcio.filter(r => !closedIds.has(String(r.id)));
   notifyListeners();
   return { status: "success", message: "Quincena de Futuro archivada" };
 }
